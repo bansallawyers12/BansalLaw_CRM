@@ -8,10 +8,9 @@
         }
 
         $clientMattersList = \App\Models\ClientMatter::query()
-            ->where('client_id', $fetchedData->id)
-            ->where('matter_status', 1)
+            ->activeForClientPicker((int) $fetchedData->id)
             ->with($with)
-            ->orderByDesc('id')
+            ->orderByDesc('client_matters.id')
             ->get();
     }
 
@@ -60,15 +59,7 @@
     </header>
 
     <div class="cdn-ov-card__body cdn-ov-card__body--scroll">
-    @if($matterCount === 0)
-    <p class="cdn-ov-empty">
-        @if($canAddClientMatter)
-            No active matters yet. Use <strong>Add</strong> to create one.
-        @else
-            No active matters yet.
-        @endif
-    </p>
-    @else
+    @if($matterCount > 0)
     @if($matterCount > 1)
     <p class="cdn-ov-matters-hint">Select a row to switch the active matter.</p>
     @endif

@@ -740,10 +740,10 @@
                     <div class="clients-toolbar">
                         <ul class="clients-tabs nav" id="client_tabs" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link" id="master-list-tab" href="{{ URL::to('/clients') }}">Master List</a>
+                                <a class="nav-link" id="matter-list-tab" href="{{ URL::to('/clients') }}">Matter list</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" id="clients-tab" href="{{ URL::to('/clients?list=clients') }}">Clients</a>
+                                <a class="nav-link" id="clients-tab" href="{{ URL::to('/clients?list=master') }}">Clients</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="archived-tab" href="{{ URL::to('/archived') }}">Archived</a>

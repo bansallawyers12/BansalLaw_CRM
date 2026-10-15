@@ -1,6 +1,6 @@
 /**
  * Clients listing SPA — no full page reloads for tabs, filters, pagination, bulk actions.
- * Loaded only on /clients index; handles Master List / Clients / Archived tab swaps via AJAX.
+ * Loaded only on /clients index; handles Matter list / Clients / Archived tab swaps via AJAX.
  */
 (function ($, window) {
     'use strict';

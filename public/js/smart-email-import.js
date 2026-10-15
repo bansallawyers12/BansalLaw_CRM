@@ -462,8 +462,8 @@
                     '<label class="smart-import-field-label">Client (search manually)</label>' +
                     '<select class="form-control form-control-sm smart-import-client-select" id="' + clientSelectId + '" data-index="' + index + '"></select>' +
                 '</td>' +
-                '<td>' +
-                    '<label class="smart-import-field-label">Matter (select manually)</label>' +
+                '<td class="smart-import-matter-cell">' +
+                    '<label class="smart-import-field-label smart-import-matter-label">Matter (select manually)</label>' +
                     '<select class="form-control form-control-sm smart-import-matter-select" id="' + matterSelectId + '" data-index="' + index + '"><option value="">Select matter</option></select>' +
                 '</td>' +
                 '<td>' +
@@ -623,6 +623,19 @@
             var data = await response.json();
             var matters = data.clientMatetrs || [];
 
+            var matterCell = matterSelect.closest('.smart-import-matter-cell');
+            if (!matters.length) {
+                if (matterCell) {
+                    matterCell.hidden = true;
+                }
+                matterSelect.innerHTML = '<option value="">No matters</option>';
+                state.items[index].selected_client_matter_id = null;
+                return;
+            }
+
+            if (matterCell) {
+                matterCell.hidden = false;
+            }
             matterSelect.innerHTML = '<option value="">Select matter</option>';
             matters.forEach(function (matter) {
                 var option = document.createElement('option');

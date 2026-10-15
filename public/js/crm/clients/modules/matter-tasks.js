@@ -40,6 +40,15 @@
         return cfg().urls && cfg().urls.personalCalendarEnabled === true;
     }
 
+    function isLeadRecord() {
+        return String(cfg().recordType || '').toLowerCase() === 'lead';
+    }
+
+    /** Lead detail without a matter in the URL — tasks stay on the lead record. */
+    function canAddLeadTaskWithoutMatter() {
+        return isLeadRecord() && !!clientId() && !matterId() && !matterRef();
+    }
+
     function getComposerKind() {
         var $composer = $('#cdn-matter-tasks .cdn-matter-task-composer');
         var kind = ($composer.attr('data-composer-kind') || composerKind || 'task').toLowerCase();
@@ -88,6 +97,10 @@
                 $hint.html(
                     '<i class="fa-solid fa-bell" aria-hidden="true"></i> <strong>Reminder</strong> — saved to your personal calendar (My Calendar). A date is required.'
                 );
+            } else if (canAddLeadTaskWithoutMatter()) {
+                $hint.html(
+                    '<strong>Task</strong> — stays on this lead until a matter is added. Tick the checkbox when done.'
+                );
             } else if (!(matterId() || matterRef())) {
                 $hint.html(
                     '<strong>Task</strong> needs a matter. Switch to <strong>Reminder</strong> to add something on your calendar for this lead/client.'
@@ -103,6 +116,11 @@
         var fp = getDueFlatpickr($due);
         if (fp && fp.altInput) {
             $(fp.altInput).attr('placeholder', kind === 'reminder' ? 'Remind on' : 'Due date');
+        }
+        var $taskKind = $('#cdn-matter-tasks .cdn-matter-task-composer__kind[data-kind="task"]');
+        if ($taskKind.length) {
+            var taskDesc = canAddLeadTaskWithoutMatter() ? 'Stays on this lead' : 'Stays on this matter';
+            $taskKind.find('.cdn-matter-task-composer__kind-desc').text(taskDesc);
         }
         syncComposerLock();
     }
@@ -194,8 +212,19 @@
         if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.error === 'function') {
             window.crmNotify.error({ message: msg });
         } else if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-            iziToast.error({ message: msg, position: 'topRight' });
+            iziToast.error({ title: 'Failed', message: msg, position: 'topRight' });
         } else {
+            crmAlert(msg);
+        }
+    }
+
+    function notifySuccess(message) {
+        var msg = message || 'Saved successfully.';
+        if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.success === 'function') {
+            window.crmNotify.success({ message: msg });
+        } else if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+            iziToast.success({ title: 'Success', message: msg, position: 'topRight' });
+        } else if (typeof crmAlert === 'function') {
             crmAlert(msg);
         }
     }
@@ -240,8 +269,9 @@
         var hasMatter = !!(matterId() || matterRef());
         var isReminderKind = getComposerKind() === 'reminder';
         var calendarOk = canUsePersonalCalendar();
-        // Reminders can be added on leads/clients without a matter; tasks still need a matter.
-        var unlocked = !!(clientId() && (hasMatter || (isReminderKind && calendarOk)));
+        var leadTaskWithoutMatter = !isReminderKind && canAddLeadTaskWithoutMatter();
+        // Reminders and lead-level tasks can be added without a matter.
+        var unlocked = !!(clientId() && (hasMatter || (isReminderKind && calendarOk) || leadTaskWithoutMatter));
         var busy = !!taskAddInFlight;
         $inp.prop('disabled', !unlocked || busy);
         $due.prop('disabled', !unlocked || busy);
@@ -278,10 +308,13 @@
         var storeUrl = urlMap().matterTaskStore;
         // Keep the composer interactive when reminders are allowed without a matter,
         // so the Reminder card remains clickable even while Task fields stay disabled.
-        var unlockedClass = !!(cid && storeUrl && (mid || ref || calendarOk));
+        var unlockedClass = !!(cid && storeUrl && (mid || ref || calendarOk || canAddLeadTaskWithoutMatter()));
         $wrap.toggleClass('cdn-matter-tasks--locked', !unlockedClass);
         $wrap.toggleClass('cdn-matter-tasks--busy', busy);
-        $wrap.toggleClass('cdn-matter-tasks--needs-matter', !!(cid && !mid && !ref && !isReminderKind));
+        $wrap.toggleClass(
+            'cdn-matter-tasks--needs-matter',
+            !!(cid && !mid && !ref && !isReminderKind && !canAddLeadTaskWithoutMatter())
+        );
     }
 
     function clearDueDateInput() {
@@ -321,6 +354,20 @@
     function pad2(n) {
         return (n < 10 ? '0' : '') + n;
     }
+
+    function todayYmdLocal() {
+        var t = new Date();
+        return t.getFullYear() + '-' + pad2(t.getMonth() + 1) + '-' + pad2(t.getDate());
+    }
+
+    function isPastDateYmd(ymd) {
+        if (!ymd || typeof ymd !== 'string') {
+            return false;
+        }
+        return ymd < todayYmdLocal();
+    }
+
+    var PAST_DUE_DATE_MESSAGE = 'Due date cannot be in the past. Choose today or a future date.';
 
     /**
      * Parse typed due date (optional). Empty is allowed.
@@ -366,6 +413,29 @@
         return ($due.val() || '').trim();
     }
 
+    /**
+     * Resolve Y-m-d from Flatpickr selection or typed d/m/Y (calendar click can lag input value).
+     * @returns {{ok:boolean, empty?:boolean, value?:string, message?:string}}
+     */
+    function resolveDueDateFromPicker($due) {
+        var fp = getDueFlatpickr($due);
+        if (fp && fp.selectedDates && fp.selectedDates.length > 0) {
+            var d = fp.selectedDates[0];
+            if (d && !isNaN(d.getTime())) {
+                return {
+                    ok: true,
+                    value:
+                        d.getFullYear() +
+                        '-' +
+                        pad2(d.getMonth() + 1) +
+                        '-' +
+                        pad2(d.getDate())
+                };
+            }
+        }
+        return parseDueDateInput(getDueDateTypedValue($due));
+    }
+
     function validateTaskTitle($inp) {
         var title = ($inp.val() || '').trim();
         clearFieldInvalid($inp);
@@ -387,8 +457,7 @@
         clearFieldInvalid($due);
         clearFieldInvalid($visible);
 
-        var typed = getDueDateTypedValue($due);
-        var parsed = parseDueDateInput(typed);
+        var parsed = resolveDueDateFromPicker($due);
         if (!parsed.ok) {
             markFieldInvalid($visible);
             notifyError(parsed.message || 'Please enter a valid due date.');
@@ -404,10 +473,21 @@
             return '';
         }
 
+        if (isPastDateYmd(parsed.value)) {
+            markFieldInvalid($visible);
+            if (fp && typeof fp.clear === 'function') {
+                fp.clear();
+            } else {
+                $due.val('');
+            }
+            notifyError(PAST_DUE_DATE_MESSAGE);
+            $visible.trigger('focus');
+            return null;
+        }
+
         if (fp && typeof fp.setDate === 'function') {
             try {
-                // Input shows d/m/Y; selectedDates still resolve from parsed Y-m-d
-                fp.setDate(parsed.value, true, 'Y-m-d');
+                fp.setDate(parsed.value, false, 'Y-m-d');
             } catch (e) {
                 markFieldInvalid($visible);
                 notifyError('Please enter a valid due date (DD/MM/YYYY).');
@@ -461,6 +541,7 @@
         var fp = flatpickr(el, {
             // Single visible input (d/m/Y) — avoids altInput + hidden field CSS races
             dateFormat: 'd/m/Y',
+            minDate: 'today',
             allowInput: true,
             clickOpens: true,
             closeOnSelect: true,
@@ -477,20 +558,36 @@
                 $(instance.input)
                     .off('blur.matterTaskDue input.matterTaskDue')
                     .on('blur.matterTaskDue', function () {
-                        var typed = (instance.input.value || '').trim();
-                        if (!typed) {
+                        // Defer: clicking a calendar day blurs the input first — do not clear mid-pick.
+                        window.setTimeout(function () {
+                            if (instance.isOpen) {
+                                return;
+                            }
+                            if (instance.selectedDates && instance.selectedDates.length > 0) {
+                                clearFieldInvalid($(instance.input));
+                                return;
+                            }
+                            var typed = (instance.input.value || '').trim();
+                            if (!typed) {
+                                clearFieldInvalid($(instance.input));
+                                instance.clear();
+                                return;
+                            }
+                            var parsed = parseDueDateInput(typed);
+                            if (!parsed.ok) {
+                                markFieldInvalid($(instance.input));
+                                notifyError(parsed.message || 'Please enter a valid due date (DD/MM/YYYY).');
+                                return;
+                            }
+                            if (!parsed.empty && isPastDateYmd(parsed.value)) {
+                                markFieldInvalid($(instance.input));
+                                instance.clear();
+                                notifyError(PAST_DUE_DATE_MESSAGE);
+                                return;
+                            }
                             clearFieldInvalid($(instance.input));
-                            instance.clear();
-                            return;
-                        }
-                        var parsed = parseDueDateInput(typed);
-                        if (!parsed.ok) {
-                            markFieldInvalid($(instance.input));
-                            return;
-                        }
-                        clearFieldInvalid($(instance.input));
-                        instance.setDate(parsed.value, true, 'Y-m-d');
-                        instance.close();
+                            instance.setDate(parsed.value, true, 'Y-m-d');
+                        }, 0);
                     })
                     .on('input.matterTaskDue', function () {
                         clearFieldInvalid($(instance.input));
@@ -498,18 +595,11 @@
             },
             onChange: function (selectedDates, dateStr, instance) {
                 clearFieldInvalid($due);
+                clearFieldInvalid($(instance.input));
                 // Ensure popup hides after picking a day (do not leave sticky inline styles)
                 if (selectedDates && selectedDates.length && instance && typeof instance.close === 'function') {
                     instance.close();
                 }
-            },
-            onOpen: function (selectedDates, dateStr, instance) {
-                if (!instance.calendarContainer) {
-                    return;
-                }
-                instance.calendarContainer.classList.add('cdn-matter-task-due-calendar');
-                // Only z-index — never set display/visibility/opacity inline or closeOnSelect cannot hide the calendar
-                instance.calendarContainer.style.zIndex = '100000';
             },
             onClose: function (selectedDates, dateStr, instance) {
                 if (!instance.calendarContainer) {
@@ -519,6 +609,17 @@
                 instance.calendarContainer.style.removeProperty('display');
                 instance.calendarContainer.style.removeProperty('visibility');
                 instance.calendarContainer.style.removeProperty('opacity');
+                if (selectedDates && selectedDates.length > 0) {
+                    clearFieldInvalid($(instance.input));
+                }
+            },
+            onOpen: function (selectedDates, dateStr, instance) {
+                if (!instance.calendarContainer) {
+                    return;
+                }
+                instance.calendarContainer.classList.add('cdn-matter-task-due-calendar');
+                // Only z-index — never set display/visibility/opacity inline or closeOnSelect cannot hide the calendar
+                instance.calendarContainer.style.zIndex = '100000';
             }
         });
 
@@ -1135,9 +1236,10 @@
 
         var ref = matterRef();
         if (!mid && !ref) {
-            // Lead / client with no matter: still load client-level reminders.
+            // Lead / client with no matter: load lead-level tasks and/or reminders.
             var indexUrlNoMatter = urlMap().matterTaskIndex;
-            if (!indexUrlNoMatter || !canUsePersonalCalendar()) {
+            var canLoadWithoutMatter = indexUrlNoMatter && (canUsePersonalCalendar() || isLeadRecord());
+            if (!canLoadWithoutMatter) {
                 $list.html(
                     statusBlock(
                         'muted',
@@ -1245,6 +1347,13 @@
             e.preventDefault();
             var kind = String($(this).data('kind') || 'task');
             setComposerKind(kind);
+            var $taskKind = $('#cdn-matter-tasks .cdn-matter-task-composer__kind[data-kind="task"]');
+            if ($taskKind.length) {
+                var taskDesc = canAddLeadTaskWithoutMatter()
+                    ? 'Stays on this lead'
+                    : 'Stays on this matter';
+                $taskKind.find('.cdn-matter-task-composer__kind-desc').text(taskDesc);
+            }
             syncComposerLock();
             $('#cdn-matter-task-title').trigger('focus');
         });
@@ -1290,7 +1399,7 @@
                 notifyError(kind === 'reminder' ? 'Unable to add a reminder for this record.' : 'Unable to add a task for this record.');
                 return;
             }
-            if (kind !== 'reminder' && !mid && !ref) {
+            if (kind !== 'reminder' && !mid && !ref && !canAddLeadTaskWithoutMatter()) {
                 notifyError('Select a matter before adding a task.');
                 return;
             }
@@ -1331,6 +1440,8 @@
                 data: storeData,
                 success: function (res) {
                     if (res && res.status) {
+                        var addedLabel = kind === 'reminder' ? 'Reminder' : 'Task';
+                        notifySuccess(addedLabel + ' added successfully.');
                         $inp.val('');
                         clearFieldInvalid($inp);
                         clearDueDateInput();
@@ -1339,7 +1450,10 @@
                             $inp.trigger('focus');
                         }, 0);
                     } else {
-                        notifyError(res && res.message ? res.message : null);
+                        var failMsg =
+                            (res && res.message) ||
+                            (kind === 'reminder' ? 'Failed to add reminder.' : 'Failed to add task.');
+                        notifyError(failMsg);
                     }
                 },
                 error: function (xhr) {
@@ -1354,6 +1468,9 @@
                                 msg = first[k][0];
                             }
                         }
+                    }
+                    if (!msg) {
+                        msg = kind === 'reminder' ? 'Failed to add reminder.' : 'Failed to add task.';
                     }
                     notifyError(msg);
                 },

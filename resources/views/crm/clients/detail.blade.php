@@ -1205,9 +1205,9 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 					</div>
 				</div>
 
-                <div class="form-group row">
+                <div class="form-group row js-client-matter-picker-row" hidden>
 					<div class="col-sm-12">
-						<select id="reassign_client_matter_id" name="reassign_client_matter_id" class="form-control crm-ts-plain" style="width: 100%;" disabled data-valid="required" title="Select a client first — matter list loads after client is chosen" aria-label="Client matter" aria-describedby="reassign_inbox_matter_hint">
+						<select id="reassign_client_matter_id" name="reassign_client_matter_id" class="form-control crm-ts-plain" style="width: 100%;" disabled title="Select a client first — matter list loads after client is chosen" aria-label="Client matter" aria-describedby="reassign_inbox_matter_hint">
 							<option value="">Select a client first</option>
 						</select>
 						<small id="reassign_inbox_matter_hint" class="form-text text-muted">Matter options unlock after you select a client.</small>
@@ -1251,9 +1251,9 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 					</div>
 				</div>
 
-                <div class="form-group row">
+                <div class="form-group row js-client-matter-picker-row" hidden>
 					<div class="col-sm-12">
-						<select id="reassign_sent_client_matter_id" name="reassign_sent_client_matter_id" class="form-control crm-ts-plain" style="width: 100%;" disabled data-valid="required" title="Select a client first — matter list loads after client is chosen" aria-label="Client matter" aria-describedby="reassign_sent_matter_hint">
+						<select id="reassign_sent_client_matter_id" name="reassign_sent_client_matter_id" class="form-control crm-ts-plain" style="width: 100%;" disabled title="Select a client first — matter list loads after client is chosen" aria-label="Client matter" aria-describedby="reassign_sent_matter_hint">
 							<option value="">Select a client first</option>
 						</select>
 						<small id="reassign_sent_matter_hint" class="form-text text-muted">Matter options unlock after you select a client.</small>

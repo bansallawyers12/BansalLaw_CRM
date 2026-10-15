@@ -7391,6 +7391,10 @@ function crmInitOutlookEmailsInterface() {
         showEmail(stub, null);
     }
 
+    function assignMatterSelectionRequired() {
+        return !!(assignMatterField && !assignMatterField.hidden);
+    }
+
     function updateAssignConfirmButton() {
         if (!assignEmailConfirmBtn) {
             return;
@@ -7408,7 +7412,8 @@ function crmInitOutlookEmailsInterface() {
             : null;
         const hasClient = !!clientIdValue;
         const hasMatter = assignMatterHiddenInput && assignMatterHiddenInput.value !== '';
-        assignEmailConfirmBtn.disabled = !(hasClient && hasMatter);
+        const matterRequired = assignMatterSelectionRequired();
+        assignEmailConfirmBtn.disabled = !hasClient || (matterRequired && !hasMatter);
     }
 
     function setAssignModalBusy(isBusy, busyLabel) {
@@ -7539,7 +7544,11 @@ function crmInitOutlookEmailsInterface() {
             if (typingQuery) {
                 assignClientHint.textContent = 'Pick a client from the results below.';
             } else if (hasClient) {
-                assignClientHint.textContent = 'Client selected. Choose a matter below, or tap Change to search again.';
+                if (assignMatterSelectionRequired()) {
+                    assignClientHint.textContent = 'Client selected. Choose a matter below, or tap Change to search again.';
+                } else {
+                    assignClientHint.textContent = 'Client selected — no matters on file. You can assign without a matter, or tap Change to pick another client.';
+                }
             } else {
                 assignClientHint.textContent = 'Type a name, email, phone, or client ref — then pick a result.';
             }
@@ -7788,6 +7797,9 @@ function crmInitOutlookEmailsInterface() {
         }
         if (assignMatterList) {
             assignMatterList.innerHTML = '';
+        }
+        if (assignMatterField) {
+            assignMatterField.hidden = true;
         }
         setAssignMatterPickerView('placeholder');
         setAssignMatterFieldState('idle');
@@ -8122,6 +8134,9 @@ function crmInitOutlookEmailsInterface() {
         if (assignMatterHiddenInput) {
             assignMatterHiddenInput.value = '';
         }
+        if (assignMatterField) {
+            assignMatterField.hidden = false;
+        }
         setAssignMatterFieldState('loading');
         setAssignMatterPickerView('loading');
         setAssignMatterHint('Loading matters...', 'loading');
@@ -8161,10 +8176,16 @@ function crmInitOutlookEmailsInterface() {
 
                 const matterCount = matters.length;
                 if (matterCount === 0) {
+                    if (assignMatterField) {
+                        assignMatterField.hidden = true;
+                    }
                     setAssignMatterFieldState('empty');
-                    setAssignMatterHint('No matters found for this client. Create a matter first.', 'error');
+                    setAssignMatterHint('', null);
                     renderAssignMatterPicker([], null);
                 } else {
+                    if (assignMatterField) {
+                        assignMatterField.hidden = false;
+                    }
                     setAssignMatterFieldState('ready');
                     setAssignMatterHint(
                         matterCount === 1

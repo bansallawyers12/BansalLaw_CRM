@@ -14,6 +14,34 @@
     }
     window.safeParseJsonResponse = safeParseJsonResponse;
 
+    function applyClientMatterPickerAjaxResult(selectSelector, matters) {
+        var $select = $(selectSelector);
+        if (!$select.length) {
+            return;
+        }
+        var $row = $select.closest('.js-client-matter-picker-row');
+        var list = Array.isArray(matters) ? matters : [];
+
+        if (list.length === 0) {
+            $row.prop('hidden', true);
+            $select.removeAttr('data-valid');
+            $select.html('<option value="">No matters for this client</option>');
+            initTS(selectSelector, { create: false, dropdownParent: 'body' });
+            setDisabledTS(selectSelector, true);
+            return;
+        }
+
+        $row.prop('hidden', false);
+        $select.attr('data-valid', 'required');
+        var matterlist = '<option value="">Select Client Matter</option>';
+        $.each(list, function (index, subArray) {
+            matterlist += '<option value="' + subArray.id + '">' + subArray.title + '(' + subArray.client_unique_matter_no + ')</option>';
+        });
+        $select.html(matterlist);
+        initTS(selectSelector, { create: false, dropdownParent: 'body' });
+        setDisabledTS(selectSelector, false);
+    }
+
     /**
      * Build CLIENT_ID / MATTER_REF for compose subjects (email auto-matching).
      * Example: "CPRE2600130 / CIV_1"
@@ -925,25 +953,14 @@ success: function(response) {
                             }
                             return;
                         }
-                        var matterlist = '<option value="">Select Client Matter</option>';
-
-                        $.each(obj.clientMatetrs, function(index, subArray) {
-
-                            matterlist += '<option value="'+subArray.id+'">'+subArray.title+'('+subArray.client_unique_matter_no+')</option>';
-
-                        });
-
-                        $('#reassign_client_matter_id').html(matterlist);
-
-                        // Reinit Tom Select so it picks up the new options
-                        initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
-                        setDisabledTS('#reassign_client_matter_id', false);
+                        applyClientMatterPickerAjaxResult('#reassign_client_matter_id', obj.clientMatetrs || []);
 
                     },
 
                     error: function() {
                         $('.popuploader').hide();
                         $('#reassign_client_matter_id').html('<option value="">Select a client first</option>');
+                        $('#reassign_client_matter_id').closest('.js-client-matter-picker-row').prop('hidden', true);
                         initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
                         setDisabledTS('#reassign_client_matter_id', true);
                         if (typeof crmAlert === 'function') {
@@ -958,6 +975,7 @@ success: function(response) {
                 $('#reassign_client_matter_id').html('<option value="">Select a client first</option>');
                 initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
                 setDisabledTS('#reassign_client_matter_id', true);
+                $('#reassign_client_matter_id').closest('.js-client-matter-picker-row').prop('hidden', true);
 
             }
 
@@ -1063,25 +1081,14 @@ success: function(response) {
                             }
                             return;
                         }
-                        var matterlist = '<option value="">Select Client Matter</option>';
-
-                        $.each(obj.clientMatetrs, function(index, subArray) {
-
-                            matterlist += '<option value="'+subArray.id+'">'+subArray.title+'('+subArray.client_unique_matter_no+')</option>';
-
-                        });
-
-                        $('#reassign_sent_client_matter_id').html(matterlist);
-
-                        // Reinit Tom Select so it picks up the new options
-                        initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
-                        setDisabledTS('#reassign_sent_client_matter_id', false);
+                        applyClientMatterPickerAjaxResult('#reassign_sent_client_matter_id', obj.clientMatetrs || []);
 
                     },
 
                     error: function() {
                         $('.popuploader').hide();
                         $('#reassign_sent_client_matter_id').html('<option value="">Select a client first</option>');
+                        $('#reassign_sent_client_matter_id').closest('.js-client-matter-picker-row').prop('hidden', true);
                         initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
                         setDisabledTS('#reassign_sent_client_matter_id', true);
                         if (typeof crmAlert === 'function') {
@@ -1096,6 +1103,7 @@ success: function(response) {
                 $('#reassign_sent_client_matter_id').html('<option value="">Select a client first</option>');
                 initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
                 setDisabledTS('#reassign_sent_client_matter_id', true);
+                $('#reassign_sent_client_matter_id').closest('.js-client-matter-picker-row').prop('hidden', true);
 
             }
 
