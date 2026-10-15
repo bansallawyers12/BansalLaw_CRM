@@ -467,17 +467,25 @@ class IncomingEmailSyncService
         $cursorUid = $since !== null ? 0 : $afterUid;
         $maxUid = $afterUid;
         $lowestFailedUid = null;
+        $emptyResponseRetry = ImapEmptyResponseRetry::fromConfig();
 
         for ($batch = 0; $batch < $maxBatches; $batch++) {
             try {
-                $messages = $this->imapFetcher->fetchFromFolders(
-                    $mailbox,
-                    $cursorUid,
-                    $limit,
-                    $folders,
-                    $since,
-                    $this->knownMessageFilter,
-                    $defaultMailType
+                $messages = $emptyResponseRetry->fetchOrEmptyPage(
+                    fn (): array => $this->imapFetcher->fetchFromFolders(
+                        $mailbox,
+                        $cursorUid,
+                        $limit,
+                        $folders,
+                        $since,
+                        $this->knownMessageFilter,
+                        $defaultMailType
+                    ),
+                    [
+                        'mailbox' => $mailbox->email,
+                        'folder_type' => $defaultMailType,
+                        'batch' => $batch + 1,
+                    ]
                 );
             } catch (Throwable $e) {
                 $result['errors'][] = strtoupper($defaultMailType).': '.$e->getMessage();

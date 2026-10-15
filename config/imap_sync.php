@@ -28,6 +28,18 @@ return [
 
     'max_incremental_batches' => (int) env('MAIL_SYNC_MAX_INCREMENTAL_BATCHES', 3),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Empty IMAP response (Webklex "empty response")
+    |--------------------------------------------------------------------------
+    | Retry only this transient FETCH/SEARCH failure, then treat the page as
+    | empty. The UID cursor is not advanced. Other IMAP errors still fail the
+    | folder for this run.
+    */
+    'empty_response_retries' => (int) env('MAIL_SYNC_EMPTY_RESPONSE_RETRIES', 2),
+
+    'empty_response_retry_sleep_ms' => (int) env('MAIL_SYNC_EMPTY_RESPONSE_RETRY_SLEEP_MS', 500),
+
     'folders' => array_values(array_filter(array_map(
         'trim',
         explode(',', (string) env('MAIL_SYNC_FOLDERS', 'INBOX'))
