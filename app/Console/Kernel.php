@@ -2,8 +2,12 @@
 
 namespace App\Console;
 
+use App\Console\Commands\GenerateOutlookAddinManifest;
+use App\Services\EmailSync\InboxSyncMasterControl;
+use App\Services\EmailSync\IncomingEmailSyncService;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Log;
 
 class Kernel extends ConsoleKernel
 {
@@ -14,29 +18,29 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         '\App\Console\Commands\ProcessServiceAccountTokens',
-        
+
         // Appointment Sync System Commands
         '\App\Console\Commands\SyncBansalAppointments',
         '\App\Console\Commands\SendAppointmentReminders',
         '\App\Console\Commands\SendCourtHearingReminders',
         '\App\Console\Commands\TestBansalApiConnection',
         '\App\Console\Commands\BackfillBansalAppointments',
-        
+
         // Signature Management System Commands
         '\App\Console\Commands\ArchiveOldDrafts',
         '\App\Console\Commands\SendSignatureReminders',
-        
+
         // Client Reference Management Commands
         '\App\Console\Commands\FixDuplicateClientReferences',
         '\App\Console\Commands\RepairMissingInvoices',
-        
+
         // Client Age Management Commands
         '\App\Console\Commands\UpdateClientAges',
-        
+
         // Activity Cleanup Commands
         '\App\Console\Commands\CleanupActivityDescriptions',
         '\App\Console\Commands\ClearPersonalCalendarLegacyItems',
-        
+
         '\App\Console\Commands\ExpireCrmAccessGrants',
         '\App\Console\Commands\CacheAccessGrantGlobalCounts',
 
@@ -52,13 +56,12 @@ class Kernel extends ConsoleKernel
 
         '\App\Console\Commands\IssueMcpStaffTokenCommand',
         '\App\Console\Commands\PromotePendingUploadsToS3',
-        \App\Console\Commands\GenerateOutlookAddinManifest::class,
+        GenerateOutlookAddinManifest::class,
     ];
 
     /**
      * Define the application's command schedule.
      *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
      * @return void
      */
     protected function schedule(Schedule $schedule)
@@ -67,13 +70,14 @@ class Kernel extends ConsoleKernel
         //          ->hourly();
 
         // Appointment Sync System - Sync from public booking website every 5 minutes (look back 24 hours).
+        // Disabled until GET /api/appointments/recent exists on the public booking API (was 404 / log noise).
         // runInBackground: schedule:run must not throw when the artisan exit code is non-zero
         // (that exception was flooding system-errors every 5 minutes).
-        $schedule->command('booking:sync-appointments --minutes=1440')
-            ->everyFiveMinutes()
-            ->withoutOverlapping(5) // Max 5 minutes lock time
-            ->runInBackground()
-            ->appendOutputTo(storage_path('logs/appointment-sync.log'));
+        // $schedule->command('booking:sync-appointments --minutes=1440')
+        //     ->everyFiveMinutes()
+        //     ->withoutOverlapping(5) // Max 5 minutes lock time
+        //     ->runInBackground()
+        //     ->appendOutputTo(storage_path('logs/appointment-sync.log'));
 
         // Appointment Sync System - Send SMS reminders daily at 9 AM (appointments ~24h ahead)
         $schedule->command('booking:send-reminders')
@@ -88,14 +92,14 @@ class Kernel extends ConsoleKernel
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(10)
             ->appendOutputTo(storage_path('logs/court-hearing-reminders.log'));
-        
+
         // Signature Management - Archive old drafts daily at 2 AM
         /*$schedule->command('signatures:archive-drafts --days=30')
             ->daily()
             ->at('02:00')
             ->timezone('Australia/Melbourne')
             ->appendOutputTo(storage_path('logs/signature-archive.log'));
-        
+
         // Signature Management - Send auto-reminders daily at 10 AM
         $schedule->command('signatures:send-auto-reminders --days=7')
             ->daily()
@@ -103,14 +107,14 @@ class Kernel extends ConsoleKernel
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(30)
             ->appendOutputTo(storage_path('logs/signature-auto-reminders.log'));*/
-        
+
         // Client Age Management - Update ages bi-weekly (1st and 15th of each month) at 2 AM
-       /* $schedule->command('clients:update-ages --smart')
-            ->twiceMonthly(1, 15)
-            ->at('02:00')
-            ->timezone('Australia/Melbourne')
-            ->withoutOverlapping(30)
-            ->appendOutputTo(storage_path('logs/age-updates.log'));*/
+        /* $schedule->command('clients:update-ages --smart')
+             ->twiceMonthly(1, 15)
+             ->at('02:00')
+             ->timezone('Australia/Melbourne')
+             ->withoutOverlapping(30)
+             ->appendOutputTo(storage_path('logs/age-updates.log'));*/
 
         $schedule->command('access:expire-grants')->hourly();
         $schedule->command('access:cache-grant-stats')->hourly();
@@ -121,25 +125,25 @@ class Kernel extends ConsoleKernel
 
         // Automatic inbox fetch every N minutes (default 5). Super Admin master
         // switch can turn this off immediately (checked at every schedule:run).
-        if (\App\Services\EmailSync\InboxSyncMasterControl::isEnabled()) {
+        if (InboxSyncMasterControl::isEnabled()) {
             $minutes = max(1, (int) config('imap_sync.schedule_minutes', 5));
             $mailboxes = $this->syncEnabledMailboxes();
 
             if ($mailboxes === []) {
                 $schedule->command('emails:sync-inbox')
-                    ->cron('*/' . $minutes . ' * * * *')
+                    ->cron('*/'.$minutes.' * * * *')
                     ->withoutOverlapping(10)
-                    ->appendOutputTo(storage_path('logs/inbox-sync/email-inbox-sync-' . now()->format('Y-m-d') . '.log'));
+                    ->appendOutputTo(storage_path('logs/inbox-sync/email-inbox-sync-'.now()->format('Y-m-d').'.log'));
             } else {
                 foreach ($mailboxes as $address) {
                     $logFile = storage_path(
                         'logs/inbox-sync/email-inbox-sync-'
-                        . $this->mailboxLogSlug($address)
-                        . '-' . now()->format('Y-m-d') . '.log'
+                        .$this->mailboxLogSlug($address)
+                        .'-'.now()->format('Y-m-d').'.log'
                     );
 
                     $schedule->command('emails:sync-inbox', [$address])
-                        ->cron('*/' . $minutes . ' * * * *')
+                        ->cron('*/'.$minutes.' * * * *')
                         ->withoutOverlapping(10)
                         ->appendOutputTo($logFile);
                 }
@@ -152,7 +156,7 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(10)
             ->appendOutputTo(storage_path('logs/durable-storage-promote.log'))
             ->onFailure(function () {
-                \Illuminate\Support\Facades\Log::error('Scheduled durable storage promote command (storage:promote-pending-to-s3) reported errors.');
+                Log::error('Scheduled durable storage promote command (storage:promote-pending-to-s3) reported errors.');
             });
     }
 
@@ -165,7 +169,7 @@ class Kernel extends ConsoleKernel
     protected function syncEnabledMailboxes(): array
     {
         try {
-            return \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses();
+            return IncomingEmailSyncService::syncableMailboxAddresses();
         } catch (\Throwable $e) {
             return [];
         }
@@ -183,7 +187,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-       // $this->load(__DIR__.'/Commands');
+        // $this->load(__DIR__.'/Commands');
 
         require base_path('routes/console.php');
     }
