@@ -101,7 +101,7 @@ class IncomingEmailSyncService
             $summary['subject_auto_assigned'] = 0;
         }
 
-        return $summary;
+        return InboxSyncSummaryPresenter::withPresentationAliases($summary);
     }
 
     /**

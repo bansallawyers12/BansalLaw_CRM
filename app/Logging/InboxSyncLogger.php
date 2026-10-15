@@ -2,6 +2,7 @@
 
 namespace App\Logging;
 
+use App\Services\EmailSync\InboxSyncSummaryPresenter;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -47,6 +48,7 @@ class InboxSyncLogger
             'sync_range' => $summary['sync_range'] ?? null,
             'total_imported' => (int) ($summary['total_imported'] ?? 0),
             'total_skipped' => (int) ($summary['total_skipped'] ?? 0),
+            'total_already_in_crm' => InboxSyncSummaryPresenter::totalAlreadyInCrm($summary),
             'total_failed' => (int) ($summary['total_failed'] ?? 0),
             'mailboxes' => $summary['mailboxes'] ?? [],
             'logged_at' => now()->toDateTimeString(),

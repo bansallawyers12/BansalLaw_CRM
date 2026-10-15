@@ -105,29 +105,31 @@ class InboxSyncStatusStore
 
         if ($isPurgeOnly) {
             $cutoff = (string) ($summary['unassigned_available_from'] ?? '');
-            $detail = 'Deleted unassigned from CRM: ' . $purged
-                . ($cutoff !== '' ? ' (before ' . $cutoff . ')' : '');
+            $detail = 'Deleted unassigned from CRM: '.$purged
+                .($cutoff !== '' ? ' (before '.$cutoff.')' : '');
 
             if (IncomingEmailSyncService::purgeRangeDeletesFromImap($syncRange)) {
-                $detail .= ', Deleted from Zoho: ' . (int) ($summary['imap_deleted'] ?? 0);
+                $detail .= ', Deleted from Zoho: '.(int) ($summary['imap_deleted'] ?? 0);
                 $imapMissing = (int) ($summary['imap_missing'] ?? 0);
                 $imapFailed = (int) ($summary['imap_failed'] ?? 0);
                 if ($imapMissing > 0) {
-                    $detail .= ', Missing on Zoho: ' . $imapMissing;
+                    $detail .= ', Missing on Zoho: '.$imapMissing;
                 }
                 if ($imapFailed > 0) {
-                    $detail .= ', Zoho delete failed: ' . $imapFailed;
+                    $detail .= ', Zoho delete failed: '.$imapFailed;
                 }
             }
         } else {
-            $detail = 'Imported: ' . (int) ($summary['total_imported'] ?? 0)
-                . ', Skipped: ' . (int) ($summary['total_skipped'] ?? 0)
-                . ', Failed: ' . (int) ($summary['total_failed'] ?? 0);
+            $detail = InboxSyncSummaryPresenter::formatTotalsDetail(
+                (int) ($summary['total_imported'] ?? 0),
+                InboxSyncSummaryPresenter::totalAlreadyInCrm($summary),
+                (int) ($summary['total_failed'] ?? 0)
+            );
 
             if ($purged > 0) {
                 $cutoff = (string) ($summary['unassigned_available_from'] ?? '');
-                $detail .= ', Deleted older unassigned: ' . $purged
-                    . ($cutoff !== '' ? ' (before ' . $cutoff . ')' : '');
+                $detail .= ', Deleted older unassigned: '.$purged
+                    .($cutoff !== '' ? ' (before '.$cutoff.')' : '');
             }
         }
 
@@ -138,12 +140,12 @@ class InboxSyncStatusStore
                 if (! is_array($result) || empty($result['errors']) || ! is_array($result['errors'])) {
                     continue;
                 }
-                $mailboxErrors[] = $mailboxKey . ': ' . implode('; ', $result['errors']);
+                $mailboxErrors[] = $mailboxKey.': '.implode('; ', $result['errors']);
             }
         }
 
         if ($mailboxErrors !== []) {
-            $detail .= '. ' . implode(' | ', $mailboxErrors);
+            $detail .= '. '.implode(' | ', $mailboxErrors);
         }
 
         return $detail;
@@ -168,11 +170,11 @@ class InboxSyncStatusStore
 
     private function key(string $syncId): string
     {
-        return 'inbox_sync_status:' . $syncId;
+        return 'inbox_sync_status:'.$syncId;
     }
 
     private function activeKey(int $staffId): string
     {
-        return 'inbox_sync_active:' . $staffId;
+        return 'inbox_sync_active:'.$staffId;
     }
 }

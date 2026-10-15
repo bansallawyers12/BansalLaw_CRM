@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Logging\InboxSyncLogger;
 use App\Models\Email;
+use App\Services\EmailSync\InboxSyncMasterControl;
+use App\Services\EmailSync\InboxSyncSummaryPresenter;
 use App\Services\EmailSync\IncomingEmailSyncService;
 use Illuminate\Console\Command;
 
@@ -20,8 +22,8 @@ class SyncInboxEmails extends Command
     {
         IncomingEmailSyncService::configureSyncRuntime();
 
-        if (! \App\Services\EmailSync\InboxSyncMasterControl::isEnabled()) {
-            $this->warn(\App\Services\EmailSync\InboxSyncMasterControl::disabledMessage());
+        if (! InboxSyncMasterControl::isEnabled()) {
+            $this->warn(InboxSyncMasterControl::disabledMessage());
 
             return self::SUCCESS;
         }
@@ -64,14 +66,14 @@ class SyncInboxEmails extends Command
             $timezone = (string) config('app.timezone', 'UTC');
             $since = IncomingEmailSyncService::resolveTodaySyncSince();
             $this->info(
-                'Fetching mail since ' . $since->format('d/m/Y g:i a')
-                . ' (' . $timezone . ') only — messages before '
-                . IncomingEmailSyncService::formatTodaySyncStartForDisplay()
-                . ' today are excluded.'
+                'Fetching mail since '.$since->format('d/m/Y g:i a')
+                .' ('.$timezone.') only — messages before '
+                .IncomingEmailSyncService::formatTodaySyncStartForDisplay()
+                .' today are excluded.'
             );
         }
 
-        $this->info('Starting inbox sync' . ($email ? " for {$email}" : ' for all mailboxes') . '...');
+        $this->info('Starting inbox sync'.($email ? " for {$email}" : ' for all mailboxes').'...');
 
         InboxSyncLogger::info('Scheduled inbox sync started', [
             'source' => 'cron',
@@ -84,25 +86,21 @@ class SyncInboxEmails extends Command
         $summary = $syncService->syncAll($email, $since, 'cron');
 
         foreach ($summary['mailboxes'] as $mailboxEmail => $result) {
-            $imported = (int) ($result['imported'] ?? 0);
-            $skipped = (int) ($result['skipped'] ?? 0);
-            $failed = (int) ($result['failed'] ?? 0);
-            $line = "{$mailboxEmail}: imported={$imported}, skipped={$skipped}, failed={$failed}";
+            $line = InboxSyncSummaryPresenter::formatMailboxConsoleLine((string) $mailboxEmail, $result);
 
             if (! empty($result['errors'])) {
                 $this->error($line);
                 foreach ($result['errors'] as $error) {
-                    $this->line('  - ' . $error);
+                    $this->line('  - '.$error);
                 }
             } else {
                 $this->info($line);
             }
         }
 
-        $this->line(sprintf(
-            'Done. Imported: %d, Skipped: %d, Failed: %d',
+        $this->line(InboxSyncSummaryPresenter::formatTotalsConsoleLine(
             (int) ($summary['total_imported'] ?? 0),
-            (int) ($summary['total_skipped'] ?? 0),
+            InboxSyncSummaryPresenter::totalAlreadyInCrm($summary),
             (int) ($summary['total_failed'] ?? 0)
         ));
 
@@ -111,6 +109,7 @@ class SyncInboxEmails extends Command
             'email' => $email,
             'total_imported' => (int) ($summary['total_imported'] ?? 0),
             'total_skipped' => (int) ($summary['total_skipped'] ?? 0),
+            'total_already_in_crm' => InboxSyncSummaryPresenter::totalAlreadyInCrm($summary),
             'total_failed' => (int) ($summary['total_failed'] ?? 0),
             'mailboxes' => array_keys($summary['mailboxes'] ?? []),
         ];

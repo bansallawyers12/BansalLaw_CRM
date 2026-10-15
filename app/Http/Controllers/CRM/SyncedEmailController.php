@@ -1,53 +1,35 @@
 <?php
 
-
-
 namespace App\Http\Controllers\CRM;
 
-
-
 use App\Http\Controllers\Controller;
-
-use App\Logging\InboxSyncLogger;
-
-use App\Models\EmailLog;
-
-use App\Models\Staff;
-
-use App\Services\EmailSync\IncomingEmailSyncService;
-
 use App\Jobs\SyncInboxEmailsJob;
+use App\Logging\InboxSyncLogger;
+use App\Models\EmailLog;
+use App\Models\Staff;
+use App\Services\EmailSync\InboxSyncMasterControl;
 use App\Services\EmailSync\InboxSyncStatusStore;
+use App\Services\EmailSync\IncomingEmailSyncService;
 use App\Services\EmailSync\ManualInboxSyncRunner;
-
+use App\Services\EmailSync\SubjectReferenceAutoAssignService;
 use App\Services\EmailSync\UnassignedEmailAssignmentService;
-
 use App\Support\StaffClientVisibility;
-
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
-
-
 class SyncedEmailController extends Controller
-
 {
-
     public function __construct()
-
     {
 
         $this->middleware('auth:admin');
 
     }
 
-
-
     public function assignToClient(Request $request, UnassignedEmailAssignmentService $assignmentService)
-
     {
 
         if (! $this->staffCanSyncInbox()) {
@@ -61,8 +43,6 @@ class SyncedEmailController extends Controller
             ], 403);
 
         }
-
-
 
         $validated = $request->validate([
 
@@ -81,8 +61,6 @@ class SyncedEmailController extends Controller
             ], 404);
         }
 
-
-
         $result = $assignmentService->assignToClient(
 
             (int) $validated['email_log_id'],
@@ -95,17 +73,13 @@ class SyncedEmailController extends Controller
 
         );
 
-
-
         $status = $result['success'] ? 200 : 422;
-
-
 
         return response()->json($result, $status);
 
     }
 
-    public function assignBySubject(\App\Services\EmailSync\SubjectReferenceAutoAssignService $autoAssignService)
+    public function assignBySubject(SubjectReferenceAutoAssignService $autoAssignService)
     {
         if (! $this->staffCanSyncInbox()) {
             return response()->json([
@@ -139,7 +113,7 @@ class SyncedEmailController extends Controller
 
     public function confirmSubjectAssignments(
         Request $request,
-        \App\Services\EmailSync\SubjectReferenceAutoAssignService $autoAssignService
+        SubjectReferenceAutoAssignService $autoAssignService
     ) {
         if (! $this->staffCanSyncInbox()) {
             return response()->json([
@@ -175,13 +149,13 @@ class SyncedEmailController extends Controller
         $result = $autoAssignService->confirmMatterChoices($validated['assignments'], true);
         $result['message'] = $result['assigned_count'] === 1
             ? '1 selected email assigned.'
-            : $result['assigned_count'] . ' selected emails assigned.';
+            : $result['assigned_count'].' selected emails assigned.';
 
         return response()->json($result, $result['success'] ? 200 : 422);
     }
 
     /**
-     * @param array{ready_pairs?: list<mixed>, needs_matter: list<mixed>, skipped_count: int} $result
+     * @param  array{ready_pairs?: list<mixed>, needs_matter: list<mixed>, skipped_count: int}  $result
      */
     protected function assignBySubjectSummary(array $result): string
     {
@@ -191,12 +165,12 @@ class SyncedEmailController extends Controller
         if ($ready > 0) {
             $parts[] = $ready === 1
                 ? '1 email is ready to assign (matter known from subject or manual upload match) — select to assign.'
-                : $ready . ' emails are ready to assign (matter known from subject or manual upload match) — select to assign.';
+                : $ready.' emails are ready to assign (matter known from subject or manual upload match) — select to assign.';
         }
         if ($needs > 0) {
             $parts[] = $needs === 1
                 ? '1 client has multiple active matters — choose one.'
-                : $needs . ' clients have multiple active matters — choose one.';
+                : $needs.' clients have multiple active matters — choose one.';
         }
         if ($parts === []) {
             return 'No unassigned emails matched a client/matter reference, unique client name, or manually uploaded conversation.';
@@ -205,10 +179,7 @@ class SyncedEmailController extends Controller
         return implode(' ', $parts);
     }
 
-
-
     public function unlinkFromClient(Request $request, UnassignedEmailAssignmentService $assignmentService)
-
     {
         $request->merge([
 
@@ -227,8 +198,6 @@ class SyncedEmailController extends Controller
             'client_matter_id' => 'required_if:action,client|nullable|integer|min:1',
 
         ]);
-
-
 
         if (! $this->canReassignOrUnlinkEmail((int) $validated['email_log_id'], (string) $validated['action'])) {
             return response()->json([
@@ -255,14 +224,12 @@ class SyncedEmailController extends Controller
         return response()->json($result, $result['success'] ? 200 : 422);
     }
 
-
-
     public function unassignedIndex()
     {
-        if (\App\Services\EmailSync\InboxSyncMasterControl::isDisabled()) {
+        if (InboxSyncMasterControl::isDisabled()) {
             return redirect()->route('dashboard')->with(
                 'error',
-                \App\Services\EmailSync\InboxSyncMasterControl::disabledMessage()
+                InboxSyncMasterControl::disabledMessage()
             );
         }
 
@@ -282,19 +249,19 @@ class SyncedEmailController extends Controller
 
         $initialData = null;
         try {
-            $fetchReq = \Illuminate\Http\Request::create('/clients/outlook/fetch-all', 'GET', [
+            $fetchReq = Request::create('/clients/outlook/fetch-all', 'GET', [
                 'folder' => 'unassigned',
                 'page' => 1,
                 'per_page' => 20,
                 'include_meta' => 1,
                 'sort_order' => 'desc',
             ]);
-            $fetchRes = app(\App\Http\Controllers\CRM\ClientsController::class)->fetchAllOutlookEmails($fetchReq);
-            if ($fetchRes instanceof \Illuminate\Http\JsonResponse) {
+            $fetchRes = app(ClientsController::class)->fetchAllOutlookEmails($fetchReq);
+            if ($fetchRes instanceof JsonResponse) {
                 $initialData = $fetchRes->getData(true);
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Failed to pre-fetch unassigned emails initial data', ['error' => $e->getMessage()]);
+            Log::warning('Failed to pre-fetch unassigned emails initial data', ['error' => $e->getMessage()]);
         }
 
         return view('crm.unassigned_emails.index', [
@@ -302,10 +269,7 @@ class SyncedEmailController extends Controller
         ]);
     }
 
-
-
     public function autoAssignmentReviewIndex()
-
     {
 
         $staff = Auth::guard('admin')->user();
@@ -316,17 +280,13 @@ class SyncedEmailController extends Controller
 
         }
 
-
-
         return view('crm.auto_assignment_review.index');
 
     }
 
-
-
     public function unassignedCount()
     {
-        if (\App\Services\EmailSync\InboxSyncMasterControl::isDisabled()) {
+        if (InboxSyncMasterControl::isDisabled()) {
             return response()->json([
                 'success' => true,
                 'count' => 0,
@@ -359,16 +319,10 @@ class SyncedEmailController extends Controller
         ]);
     }
 
-
-
     /**
-
      * Mark all unread emails as read in a synced inbox folder (unassigned or assigned).
-
      */
-
     public function markFolderRead(Request $request)
-
     {
 
         $staff = Auth::guard('admin')->user();
@@ -387,8 +341,6 @@ class SyncedEmailController extends Controller
 
         }
 
-
-
         $folder = $request->input('folder', 'unassigned');
 
         if (! in_array($folder, ['unassigned', 'assigned'], true)) {
@@ -405,13 +357,9 @@ class SyncedEmailController extends Controller
 
         }
 
-
-
         $query = EmailLog::query();
 
         IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
-
-
 
         $query->where('mail_type', 1)
 
@@ -430,8 +378,6 @@ class SyncedEmailController extends Controller
                     ->orWhere('mail_is_read', false);
 
             });
-
-
 
         if ($folder === 'unassigned') {
 
@@ -453,13 +399,9 @@ class SyncedEmailController extends Controller
 
             }
 
-
-
             $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
 
                 ->whereNotNull('client_id');
-
-
 
             if (Schema::hasColumn('email_logs', 'synced_email_id')) {
 
@@ -469,11 +411,7 @@ class SyncedEmailController extends Controller
 
         }
 
-
-
         $updatedCount = (clone $query)->count();
-
-
 
         if ($updatedCount > 0) {
 
@@ -481,15 +419,11 @@ class SyncedEmailController extends Controller
 
         }
 
-
-
         $message = $updatedCount > 0
 
-            ? ($updatedCount === 1 ? '1 email marked as read.' : $updatedCount . ' emails marked as read.')
+            ? ($updatedCount === 1 ? '1 email marked as read.' : $updatedCount.' emails marked as read.')
 
             : 'No unread emails to update.';
-
-
 
         return response()->json([
 
@@ -503,9 +437,7 @@ class SyncedEmailController extends Controller
 
     }
 
-
-
-        public function syncNow(
+    public function syncNow(
         Request $request,
         ManualInboxSyncRunner $runner,
         InboxSyncStatusStore $statusStore,
@@ -618,28 +550,23 @@ class SyncedEmailController extends Controller
             'summary' => $status['summary'] ?? null,
             'total_imported' => (int) (($status['summary']['total_imported'] ?? 0)),
             'total_skipped' => (int) (($status['summary']['total_skipped'] ?? 0)),
+            'total_already_in_crm' => (int) (($status['summary']['total_already_in_crm'] ?? $status['summary']['total_skipped'] ?? 0)),
             'total_failed' => (int) (($status['summary']['total_failed'] ?? 0)),
             'mailboxes' => $status['summary']['mailboxes'] ?? [],
             'sync_range' => $status['sync_range'] ?? ($status['summary']['sync_range'] ?? null),
         ]);
     }
 
-protected function staffCanSyncInbox(): bool
-
+    protected function staffCanSyncInbox(): bool
     {
 
         $staff = Auth::guard('admin')->user();
-
-
 
         return $staff instanceof Staff && $staff->canSyncInboxEmails();
 
     }
 
-
-
     protected function canAccessSyncedEmail(int $emailLogId): bool
-
     {
 
         $staff = Auth::guard('admin')->user();
@@ -650,8 +577,6 @@ protected function staffCanSyncInbox(): bool
 
         }
 
-
-
         $query = EmailLog::query()
 
             ->whereKey($emailLogId)
@@ -660,13 +585,9 @@ protected function staffCanSyncInbox(): bool
 
         IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
 
-
-
         return $query->exists();
 
     }
-
-
 
     protected function canUnlinkSyncedEmail(int $emailLogId): bool
     {
@@ -719,5 +640,3 @@ protected function staffCanSyncInbox(): bool
         return false;
     }
 }
-
-

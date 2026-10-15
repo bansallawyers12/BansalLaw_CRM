@@ -8515,9 +8515,12 @@ function crmInitOutlookEmailsInterface() {
     }
 
     function buildInboxSyncResultMessage(data, rangeLabel) {
+        const alreadyInCrm = data.total_already_in_crm != null
+            ? data.total_already_in_crm
+            : (data.total_skipped || 0);
         const detail = data.message
             || ('Imported: ' + (data.total_imported || 0)
-                + ', Skipped: ' + (data.total_skipped || 0)
+                + ', Already in CRM: ' + alreadyInCrm
                 + ', Failed: ' + (data.total_failed || 0));
         const prefix = rangeLabel ? ('Sync complete (' + rangeLabel + '). ') : 'Sync complete. ';
         return prefix + detail;
