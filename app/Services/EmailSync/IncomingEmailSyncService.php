@@ -37,6 +37,7 @@ class IncomingEmailSyncService
         private ZohoImapFetcher $imapFetcher,
         private EmailMatchingService $matchingService,
         private EmailUploadController $uploadController,
+        private ImapSyncKnownMessageFilter $knownMessageFilter,
     ) {}
 
     /**
@@ -474,7 +475,9 @@ class IncomingEmailSyncService
                     $cursorUid,
                     $limit,
                     $folders,
-                    $since
+                    $since,
+                    $this->knownMessageFilter,
+                    $defaultMailType
                 );
             } catch (Throwable $e) {
                 $result['errors'][] = strtoupper($defaultMailType).': '.$e->getMessage();
@@ -496,6 +499,14 @@ class IncomingEmailSyncService
 
             foreach ($messages as $message) {
                 $uid = (int) $message['uid'];
+
+                if (! empty($message['prefetch_skip'])) {
+                    $result['skipped']++;
+                    $batchHighestUid = max($batchHighestUid, $uid);
+                    $maxUid = max($maxUid, $uid);
+
+                    continue;
+                }
 
                 try {
                     $importResult = $this->importMessage(

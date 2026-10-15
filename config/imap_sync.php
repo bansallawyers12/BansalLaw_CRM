@@ -69,6 +69,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Skip body fetch for messages already in email_logs (UID / Message-ID)
+    |--------------------------------------------------------------------------
+    | Uses IMAP headers-only reads before downloading .eml bodies. Disable only
+    | when diagnosing suspected missed mail.
+    */
+    'prefetch_known_duplicates' => filter_var(env('MAIL_SYNC_PREFETCH_KNOWN_DUPLICATES', true), FILTER_VALIDATE_BOOLEAN),
+
+    /*
+    |--------------------------------------------------------------------------
     | "Today" manual/CLI sync start time (app timezone)
     |--------------------------------------------------------------------------
     | HH:MM wall-clock time. Emails before this time today are not fetched

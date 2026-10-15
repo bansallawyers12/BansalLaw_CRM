@@ -10,6 +10,8 @@ use Webklex\PHPIMAP\ClientManager;
 use Webklex\PHPIMAP\IMAP;
 use Webklex\PHPIMAP\Message;
 use Webklex\PHPIMAP\Query\Query;
+use Webklex\PHPIMAP\Query\WhereQuery;
+use Webklex\PHPIMAP\Support\MessageCollection;
 
 class ZohoImapFetcher
 {
@@ -22,22 +24,23 @@ class ZohoImapFetcher
     }
 
     /**
-     * @return list<array{uid: int, raw_eml: string, subject: string, is_seen: bool}>
+     * @return list<array{uid: int, raw_eml: string, subject: string, is_seen: bool, prefetch_skip?: bool}>
      */
     public function fetchFromFolders(
         Email $mailbox,
         int $afterUid,
         int $limit,
         array $folders,
-        ?\DateTimeInterface $since = null
+        ?\DateTimeInterface $since = null,
+        ?ImapSyncKnownMessageFilter $knownMessageFilter = null,
+        string $mailBodyType = 'inbox'
     ): array {
         $password = $this->resolvePassword($mailbox);
         if ($password === '') {
-            throw new \RuntimeException('Zoho app password is missing for ' . $mailbox->email);
+            throw new \RuntimeException('Zoho app password is missing for '.$mailbox->email);
         }
 
         $client = $this->connect($mailbox, $password);
-        $results = [];
 
         try {
             // Use only the first resolvable folder. Mixing UIDs across Sent / Sent Items
@@ -45,49 +48,124 @@ class ZohoImapFetcher
             $folder = $this->resolveFirstFolder($client, $folders, (string) $mailbox->email);
             if ($folder === null) {
                 throw new \RuntimeException(
-                    'IMAP folder not found (tried: ' . implode(', ', array_map('strval', $folders)) . ')'
+                    'IMAP folder not found (tried: '.implode(', ', array_map('strval', $folders)).')'
                 );
             }
 
-            // Discover candidate UIDs without bodies, then read authoritative FLAGS before any body fetch.
-            $candidateUids = $this->collectCandidateUids($folder, $afterUid, $limit, $since);
-            $seenByUid = $this->usePeekFetch()
-                ? $this->readSeenFlagsFromClient($client, $candidateUids)
-                : [];
+            if ($this->shouldPrefetchKnownDuplicates($knownMessageFilter)) {
+                return $this->fetchFromFolderWithPrefetch(
+                    $client,
+                    $folder,
+                    $mailbox,
+                    $afterUid,
+                    $limit,
+                    $since,
+                    $knownMessageFilter,
+                    $mailBodyType
+                );
+            }
 
-            $query = $this->buildFolderQuery($folder, $afterUid, $limit, $since);
-            $query = $this->applyPeekFetch($query);
+            return $this->fetchFromFolderWithFullBodies(
+                $client,
+                $folder,
+                $afterUid,
+                $limit,
+                $since
+            );
+        } finally {
+            try {
+                $client->disconnect();
+            } catch (Throwable) {
+            }
+        }
+    }
 
-            /** @var \Webklex\PHPIMAP\Support\MessageCollection $messages */
+    protected function shouldPrefetchKnownDuplicates(?ImapSyncKnownMessageFilter $knownMessageFilter): bool
+    {
+        return $knownMessageFilter !== null
+            && (bool) config('imap_sync.prefetch_known_duplicates', true)
+            && $this->usePeekFetch();
+    }
+
+    /**
+     * @return list<array{uid: int, raw_eml: string, subject: string, is_seen: bool, prefetch_skip?: bool}>
+     */
+    protected function fetchFromFolderWithPrefetch(
+        Client $client,
+        mixed $folder,
+        Email $mailbox,
+        int $afterUid,
+        int $limit,
+        ?\DateTimeInterface $since,
+        ImapSyncKnownMessageFilter $knownMessageFilter,
+        string $mailBodyType
+    ): array {
+        $results = [];
+
+        try {
+            $query = $this->applyPeekFetch($this->buildFolderQuery($folder, $afterUid, $limit, $since));
+            if (method_exists($query, 'setFetchBody')) {
+                $query->setFetchBody(false);
+            }
+
+            /** @var MessageCollection $messages */
             $messages = $query->get();
             if ($since === null && $afterUid <= 0) {
                 $messages = $messages->reverse();
             }
 
+            $headerRows = [];
+            /** @var array<int, Message> $messageByUid */
+            $messageByUid = [];
+
             /** @var Message $message */
             foreach ($messages as $message) {
                 $uid = (int) $message->getUid();
-                // Date-range sync may re-fetch UIDs below the incremental watermark.
-                // When paginating a date window with afterUid, still require uid > afterUid.
-                if ($uid <= $afterUid) {
+                if (! $this->messagePassesSyncFilters($uid, $message, $afterUid, $since)) {
                     continue;
                 }
 
-                if ($since !== null) {
-                    try {
-                        $msgDate = $message->getDate()?->toDate();
-                        if ($msgDate && $msgDate->lt($since)) {
-                            continue;
-                        }
-                    } catch (Throwable) {
-                    }
+                $headerRows[] = [
+                    'uid' => $uid,
+                    'message_id' => $this->extractMessageId($message),
+                ];
+                $messageByUid[$uid] = $message;
+
+                if (count($headerRows) >= $limit) {
+                    break;
+                }
+            }
+
+            if ($headerRows === []) {
+                return [];
+            }
+
+            $candidateUids = array_map(static fn (array $row): int => (int) $row['uid'], $headerRows);
+            $seenByUid = $this->readSeenFlagsFromClient($client, $candidateUids);
+            $skipUids = $knownMessageFilter->knownUidsWithoutBodyFetch($mailbox, $mailBodyType, $headerRows);
+
+            foreach ($headerRows as $row) {
+                $uid = (int) $row['uid'];
+                $message = $messageByUid[$uid] ?? null;
+                if (! $message instanceof Message) {
+                    continue;
                 }
 
-                // Never trust post-body hasFlag('seen'). Missing FLAGS => treat as unread (safer).
-                $isSeen = $this->usePeekFetch()
-                    ? (bool) ($seenByUid[$uid] ?? false)
-                    : $this->messageIsSeen($message);
+                $isSeen = (bool) ($seenByUid[$uid] ?? false);
 
+                if (isset($skipUids[$uid])) {
+                    $results[] = [
+                        'uid' => $uid,
+                        'raw_eml' => '',
+                        'subject' => (string) ($message->getSubject()?->toString() ?? ''),
+                        'is_seen' => $isSeen,
+                        'prefetch_skip' => true,
+                    ];
+
+                    continue;
+                }
+
+                $this->ensureMessageBodyFetched($message);
                 $rawEml = $this->buildRawEml($message);
                 if ($rawEml === '') {
                     continue;
@@ -95,29 +173,147 @@ class ZohoImapFetcher
 
                 $this->restoreUnreadStateIfNeeded($message, $isSeen);
 
-                $subject = (string) ($message->getSubject()?->toString() ?? '');
-
                 $results[] = [
                     'uid' => $uid,
                     'raw_eml' => $rawEml,
-                    'subject' => $subject,
+                    'subject' => (string) ($message->getSubject()?->toString() ?? ''),
                     'is_seen' => $isSeen,
                 ];
-
-                if (count($results) >= $limit) {
-                    break;
-                }
             }
-        } finally {
-            try {
-                $client->disconnect();
-            } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::warning('IMAP prefetch duplicate filter failed; falling back to full body fetch', [
+                'mailbox' => $mailbox->email,
+                'after_uid' => $afterUid,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->fetchFromFolderWithFullBodies($client, $folder, $afterUid, $limit, $since);
+        }
+
+        usort($results, static fn (array $a, array $b) => $a['uid'] <=> $b['uid']);
+
+        return $results;
+    }
+
+    /**
+     * @return list<array{uid: int, raw_eml: string, subject: string, is_seen: bool}>
+     */
+    protected function fetchFromFolderWithFullBodies(
+        Client $client,
+        mixed $folder,
+        int $afterUid,
+        int $limit,
+        ?\DateTimeInterface $since
+    ): array {
+        $results = [];
+
+        $candidateUids = $this->collectCandidateUids($folder, $afterUid, $limit, $since);
+        $seenByUid = $this->usePeekFetch()
+            ? $this->readSeenFlagsFromClient($client, $candidateUids)
+            : [];
+
+        $query = $this->buildFolderQuery($folder, $afterUid, $limit, $since);
+        $query = $this->applyPeekFetch($query);
+
+        /** @var MessageCollection $messages */
+        $messages = $query->get();
+        if ($since === null && $afterUid <= 0) {
+            $messages = $messages->reverse();
+        }
+
+        /** @var Message $message */
+        foreach ($messages as $message) {
+            $uid = (int) $message->getUid();
+            if (! $this->messagePassesSyncFilters($uid, $message, $afterUid, $since)) {
+                continue;
+            }
+
+            $isSeen = $this->usePeekFetch()
+                ? (bool) ($seenByUid[$uid] ?? false)
+                : $this->messageIsSeen($message);
+
+            $rawEml = $this->buildRawEml($message);
+            if ($rawEml === '') {
+                continue;
+            }
+
+            $this->restoreUnreadStateIfNeeded($message, $isSeen);
+
+            $results[] = [
+                'uid' => $uid,
+                'raw_eml' => $rawEml,
+                'subject' => (string) ($message->getSubject()?->toString() ?? ''),
+                'is_seen' => $isSeen,
+            ];
+
+            if (count($results) >= $limit) {
+                break;
             }
         }
 
         usort($results, static fn (array $a, array $b) => $a['uid'] <=> $b['uid']);
 
         return $results;
+    }
+
+    protected function messagePassesSyncFilters(
+        int $uid,
+        Message $message,
+        int $afterUid,
+        ?\DateTimeInterface $since
+    ): bool {
+        if ($uid <= $afterUid) {
+            return false;
+        }
+
+        if ($since !== null) {
+            try {
+                $msgDate = $message->getDate()?->toDate();
+                if ($msgDate && $msgDate->lt($since)) {
+                    return false;
+                }
+            } catch (Throwable) {
+            }
+        }
+
+        return true;
+    }
+
+    protected function extractMessageId(Message $message): string
+    {
+        try {
+            $header = $message->getHeader();
+            if ($header !== null && method_exists($header, 'get')) {
+                foreach (['message_id', 'Message-ID', 'Message-Id'] as $key) {
+                    $value = $header->get($key);
+                    if ($value === null) {
+                        continue;
+                    }
+
+                    if (is_object($value) && method_exists($value, 'toString')) {
+                        return trim($value->toString());
+                    }
+
+                    return trim((string) $value);
+                }
+            }
+        } catch (Throwable) {
+        }
+
+        return '';
+    }
+
+    protected function ensureMessageBodyFetched(Message $message): void
+    {
+        if (method_exists($message, 'fetchBody')) {
+            $message->fetchBody();
+
+            return;
+        }
+
+        if (method_exists($message, 'parseBody')) {
+            $message->parseBody();
+        }
     }
 
     /**
@@ -287,7 +483,7 @@ class ZohoImapFetcher
 
         $password = $this->resolvePassword($mailbox);
         if ($password === '') {
-            throw new \RuntimeException('Zoho app password is missing for ' . $mailbox->email);
+            throw new \RuntimeException('Zoho app password is missing for '.$mailbox->email);
         }
 
         $folders = [];
@@ -413,8 +609,8 @@ class ZohoImapFetcher
     }
 
     /**
-     * @param  Query|\Webklex\PHPIMAP\Query\WhereQuery  $query
-     * @return Query|\Webklex\PHPIMAP\Query\WhereQuery
+     * @param  Query|WhereQuery  $query
+     * @return Query|WhereQuery
      */
     protected function applyPeekFetch($query)
     {
@@ -432,8 +628,7 @@ class ZohoImapFetcher
     /**
      * Build the folder query used for both UID discovery and body fetch.
      *
-     * @param  mixed  $folder
-     * @return Query|\Webklex\PHPIMAP\Query\WhereQuery
+     * @return Query|WhereQuery
      */
     protected function buildFolderQuery(mixed $folder, int $afterUid, int $limit, ?\DateTimeInterface $since = null)
     {
@@ -443,7 +638,7 @@ class ZohoImapFetcher
             // skip older UIDs in the same day/range (common for Sent).
             $query = $folder->query()->since($since)->limit($limit);
             if ($afterUid > 0) {
-                $query->where('CUSTOM UID ' . ($afterUid + 1) . ':*');
+                $query->where('CUSTOM UID '.($afterUid + 1).':*');
             }
             if (method_exists($query, 'setFetchOrderAsc')) {
                 return $query->setFetchOrderAsc();
@@ -455,7 +650,7 @@ class ZohoImapFetcher
         if ($afterUid > 0) {
             // CUSTOM avoids webklex quoting the range as UID "n:*" (Zoho BAD CLIENTBUG).
             return $folder->query()
-                ->where('CUSTOM UID ' . ($afterUid + 1) . ':*')
+                ->where('CUSTOM UID '.($afterUid + 1).':*')
                 ->limit($limit);
         }
 
@@ -483,7 +678,7 @@ class ZohoImapFetcher
                 $query->setFetchBody(false);
             }
 
-            /** @var \Webklex\PHPIMAP\Support\MessageCollection $messages */
+            /** @var MessageCollection $messages */
             $messages = $query->get();
             $uids = [];
 
@@ -620,7 +815,7 @@ class ZohoImapFetcher
             return '';
         }
 
-        return rtrim($rawHeader, "\r\n") . "\r\n\r\n" . ltrim($rawBody, "\r\n");
+        return rtrim($rawHeader, "\r\n")."\r\n\r\n".ltrim($rawBody, "\r\n");
     }
 
     protected function resolvePassword(Email $mailbox): string
@@ -659,7 +854,7 @@ class ZohoImapFetcher
 
         $password = $this->resolvePassword($mailbox);
         if ($password === '') {
-            throw new \RuntimeException('Zoho app password is missing for ' . $mailbox->email);
+            throw new \RuntimeException('Zoho app password is missing for '.$mailbox->email);
         }
 
         $client = $this->connect($mailbox, $password);
@@ -667,7 +862,7 @@ class ZohoImapFetcher
         try {
             $folder = $this->resolveFirstFolder($client, [$folderName], (string) $mailbox->email);
             if ($folder === null) {
-                $result['errors'][] = 'IMAP folder not found: ' . $folderName;
+                $result['errors'][] = 'IMAP folder not found: '.$folderName;
                 $result['failed'] = count($uids);
 
                 return $result;
@@ -683,6 +878,7 @@ class ZohoImapFetcher
                         $message = $this->findMessageByUid($folder, $uid);
                         if ($message === null) {
                             $result['missing']++;
+
                             continue;
                         }
 
@@ -700,7 +896,7 @@ class ZohoImapFetcher
                         $result['deleted']++;
                     } catch (Throwable $e) {
                         $result['failed']++;
-                        $result['errors'][] = 'UID ' . $uid . ': ' . $e->getMessage();
+                        $result['errors'][] = 'UID '.$uid.': '.$e->getMessage();
                         Log::warning('IMAP message delete failed', [
                             'mailbox' => $mailbox->email,
                             'folder' => $folderName,
@@ -720,14 +916,11 @@ class ZohoImapFetcher
         return $result;
     }
 
-    /**
-     * @param  mixed  $folder
-     */
     protected function findMessageByUid(mixed $folder, int $uid): ?Message
     {
         if (method_exists($folder, 'query')) {
             try {
-                $messages = $folder->query()->where('CUSTOM UID ' . $uid)->limit(1)->get();
+                $messages = $folder->query()->where('CUSTOM UID '.$uid)->limit(1)->get();
                 $message = $messages->first();
                 if ($message instanceof Message) {
                     return $message;
@@ -775,7 +968,7 @@ class ZohoImapFetcher
 
         $password = $this->resolvePassword($mailbox);
         if ($password === '') {
-            throw new \RuntimeException('Zoho app password is missing for ' . $mailbox->email);
+            throw new \RuntimeException('Zoho app password is missing for '.$mailbox->email);
         }
 
         $client = $this->connect($mailbox, $password);
