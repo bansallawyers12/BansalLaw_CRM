@@ -88,6 +88,38 @@ class MatterTaskReminderTest extends TestCase
     }
 
     #[Test]
+    public function staff_can_add_task_on_lead_without_matter(): void
+    {
+        $lead = Admin::factory()->create(['type' => 'lead', 'is_archived' => 0]);
+        $staff = Staff::factory()->superAdmin()->create(['status' => 1]);
+        $this->actingAs($staff, 'admin');
+
+        $this->postJson(route('clients.matterTask.store'), [
+            'client_id' => $lead->id,
+            'title' => 'Follow up lead paperwork',
+            'kind' => 'task',
+        ])->assertOk()->assertJson([
+            'status' => true,
+            'data' => [
+                'item_kind' => 'task',
+                'title' => 'Follow up lead paperwork',
+            ],
+        ]);
+
+        $this->assertDatabaseHas('client_matter_tasks', [
+            'client_id' => $lead->id,
+            'client_matter_id' => null,
+            'title' => 'Follow up lead paperwork',
+        ]);
+
+        $this->getJson(route('clients.matterTask.index', [
+            'client_id' => $lead->id,
+        ]))
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Follow up lead paperwork');
+    }
+
+    #[Test]
     public function staff_can_add_reminder_on_lead_without_matter(): void
     {
         $lead = Admin::factory()->create(['type' => 'lead', 'is_archived' => 0]);

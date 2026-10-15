@@ -4,6 +4,7 @@ namespace App\Http\Controllers\CRM\Clients;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
+use App\Models\Admin;
 use App\Models\ClientMatter;
 use App\Models\ClientMatterTask;
 use App\Models\Staff;
@@ -82,17 +83,73 @@ class ClientMatterTaskController extends Controller
 
         $matter = $this->resolveMatterFromRequest($request, $clientId);
         if (! $matter) {
-            // Lead / client with no matter selected: reminders only (no matter tasks).
+            $perPage = (int) ($request->query('per_page') ?: config('crm.notes.matter_task_per_page', 50));
+            $perPage = max(5, min(200, $perPage));
+            $page = max(1, (int) $request->query('page', 1));
+
+            $base = ClientMatterTask::query()
+                ->where('client_id', $clientId)
+                ->whereNull('client_matter_id');
+
+            $total = (clone $base)->count();
+            $openCount = (clone $base)->where('is_done', false)->count();
+            $doneCount = max(0, $total - $openCount);
+
+            $tasks = (clone $base)
+                ->with([
+                    'creator:id,first_name,last_name',
+                    'note:id,user_id,assigned_to,unique_group_id',
+                    'note.user:id,first_name,last_name',
+                    'note.assignedUser:id,first_name,last_name',
+                ])
+                ->orderBy('is_done')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->forPage($page, $perPage)
+                ->get();
+
+            $taskSync = app(ClientMatterTaskSyncService::class);
+            $taskSync->repairCreatedByFromLinkedNotes($tasks);
+
+            $data = $tasks->map(static function (ClientMatterTask $task) {
+                $row = $task->toArray();
+                $note = $task->note;
+                $noteCreator = $note?->user;
+                if ($noteCreator) {
+                    $row['created_by'] = (int) $noteCreator->id;
+                    $row['creator'] = [
+                        'id' => (int) $noteCreator->id,
+                        'first_name' => $noteCreator->first_name,
+                        'last_name' => $noteCreator->last_name,
+                    ];
+                }
+
+                $assignee = $note?->assignedUser;
+                if ($assignee) {
+                    $row['assignee'] = [
+                        'id' => (int) $assignee->id,
+                        'first_name' => $assignee->first_name,
+                        'last_name' => $assignee->last_name,
+                    ];
+                } else {
+                    $row['assignee'] = null;
+                }
+
+                $row['item_kind'] = 'task';
+
+                return $row;
+            })->values();
+
             return response()->json([
                 'status' => true,
-                'data' => [],
+                'data' => $data,
                 'reminders' => $this->clientRemindersPayload($clientId, null),
-                'page' => 1,
-                'per_page' => 50,
-                'total' => 0,
-                'open_count' => 0,
-                'done_count' => 0,
-                'has_more' => false,
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'open_count' => $openCount,
+                'done_count' => $doneCount,
+                'has_more' => ($page * $perPage) < $total,
             ]);
         }
 
@@ -188,7 +245,7 @@ class ClientMatterTaskController extends Controller
         $clientId = (int) $validated['client_id'];
         $this->ensureCrmRecordAccess($clientId);
         $matter = $this->resolveMatterFromRequest($request, $clientId);
-        if (! $matter) {
+        if (! $matter && ! $this->recordAllowsTasksWithoutMatter($clientId)) {
             return response()->json(['status' => false, 'message' => 'Matter not found for this client. Select a matter before creating tasks.'], 422);
         }
 
@@ -199,11 +256,18 @@ class ClientMatterTaskController extends Controller
 
         $dueYmd = $this->normalizeDueDateYmd($validated['due_date'] ?? null);
 
-        $maxSort = (int) ClientMatterTask::where('client_matter_id', $matter->id)->max('sort_order');
+        if ($matter) {
+            $maxSort = (int) ClientMatterTask::where('client_matter_id', $matter->id)->max('sort_order');
+        } else {
+            $maxSort = (int) ClientMatterTask::query()
+                ->where('client_id', $clientId)
+                ->whereNull('client_matter_id')
+                ->max('sort_order');
+        }
 
         $task = new ClientMatterTask;
-        $task->client_matter_id = $matter->id;
-        $task->client_id        = $matter->client_id;
+        $task->client_matter_id = $matter?->id;
+        $task->client_id        = $matter ? (int) $matter->client_id : $clientId;
         $task->title            = $title;
         $task->due_date         = $dueYmd !== '' ? $dueYmd : null;
         $task->is_done          = false;
@@ -551,5 +615,22 @@ class ClientMatterTaskController extends Controller
         $ts = strtotime($raw);
 
         return $ts ? date('Y-m-d', $ts) : '';
+    }
+
+    /**
+     * Leads may have checklist tasks before a matter exists.
+     */
+    private function recordAllowsTasksWithoutMatter(int $clientId): bool
+    {
+        if ($clientId < 1) {
+            return false;
+        }
+
+        $type = Admin::query()
+            ->where('id', $clientId)
+            ->whereIn('type', ['lead', 'client'])
+            ->value('type');
+
+        return strtolower((string) $type) === 'lead';
     }
 }

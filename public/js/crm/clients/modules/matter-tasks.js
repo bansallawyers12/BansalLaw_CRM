@@ -40,6 +40,15 @@
         return cfg().urls && cfg().urls.personalCalendarEnabled === true;
     }
 
+    function isLeadRecord() {
+        return String(cfg().recordType || '').toLowerCase() === 'lead';
+    }
+
+    /** Lead detail without a matter in the URL — tasks stay on the lead record. */
+    function canAddLeadTaskWithoutMatter() {
+        return isLeadRecord() && !!clientId() && !matterId() && !matterRef();
+    }
+
     function getComposerKind() {
         var $composer = $('#cdn-matter-tasks .cdn-matter-task-composer');
         var kind = ($composer.attr('data-composer-kind') || composerKind || 'task').toLowerCase();
@@ -88,6 +97,10 @@
                 $hint.html(
                     '<i class="fa-solid fa-bell" aria-hidden="true"></i> <strong>Reminder</strong> — saved to your personal calendar (My Calendar). A date is required.'
                 );
+            } else if (canAddLeadTaskWithoutMatter()) {
+                $hint.html(
+                    '<strong>Task</strong> — stays on this lead until a matter is added. Tick the checkbox when done.'
+                );
             } else if (!(matterId() || matterRef())) {
                 $hint.html(
                     '<strong>Task</strong> needs a matter. Switch to <strong>Reminder</strong> to add something on your calendar for this lead/client.'
@@ -103,6 +116,11 @@
         var fp = getDueFlatpickr($due);
         if (fp && fp.altInput) {
             $(fp.altInput).attr('placeholder', kind === 'reminder' ? 'Remind on' : 'Due date');
+        }
+        var $taskKind = $('#cdn-matter-tasks .cdn-matter-task-composer__kind[data-kind="task"]');
+        if ($taskKind.length) {
+            var taskDesc = canAddLeadTaskWithoutMatter() ? 'Stays on this lead' : 'Stays on this matter';
+            $taskKind.find('.cdn-matter-task-composer__kind-desc').text(taskDesc);
         }
         syncComposerLock();
     }
@@ -240,8 +258,9 @@
         var hasMatter = !!(matterId() || matterRef());
         var isReminderKind = getComposerKind() === 'reminder';
         var calendarOk = canUsePersonalCalendar();
-        // Reminders can be added on leads/clients without a matter; tasks still need a matter.
-        var unlocked = !!(clientId() && (hasMatter || (isReminderKind && calendarOk)));
+        var leadTaskWithoutMatter = !isReminderKind && canAddLeadTaskWithoutMatter();
+        // Reminders and lead-level tasks can be added without a matter.
+        var unlocked = !!(clientId() && (hasMatter || (isReminderKind && calendarOk) || leadTaskWithoutMatter));
         var busy = !!taskAddInFlight;
         $inp.prop('disabled', !unlocked || busy);
         $due.prop('disabled', !unlocked || busy);
@@ -278,10 +297,13 @@
         var storeUrl = urlMap().matterTaskStore;
         // Keep the composer interactive when reminders are allowed without a matter,
         // so the Reminder card remains clickable even while Task fields stay disabled.
-        var unlockedClass = !!(cid && storeUrl && (mid || ref || calendarOk));
+        var unlockedClass = !!(cid && storeUrl && (mid || ref || calendarOk || canAddLeadTaskWithoutMatter()));
         $wrap.toggleClass('cdn-matter-tasks--locked', !unlockedClass);
         $wrap.toggleClass('cdn-matter-tasks--busy', busy);
-        $wrap.toggleClass('cdn-matter-tasks--needs-matter', !!(cid && !mid && !ref && !isReminderKind));
+        $wrap.toggleClass(
+            'cdn-matter-tasks--needs-matter',
+            !!(cid && !mid && !ref && !isReminderKind && !canAddLeadTaskWithoutMatter())
+        );
     }
 
     function clearDueDateInput() {
@@ -1169,9 +1191,10 @@
 
         var ref = matterRef();
         if (!mid && !ref) {
-            // Lead / client with no matter: still load client-level reminders.
+            // Lead / client with no matter: load lead-level tasks and/or reminders.
             var indexUrlNoMatter = urlMap().matterTaskIndex;
-            if (!indexUrlNoMatter || !canUsePersonalCalendar()) {
+            var canLoadWithoutMatter = indexUrlNoMatter && (canUsePersonalCalendar() || isLeadRecord());
+            if (!canLoadWithoutMatter) {
                 $list.html(
                     statusBlock(
                         'muted',
@@ -1279,6 +1302,13 @@
             e.preventDefault();
             var kind = String($(this).data('kind') || 'task');
             setComposerKind(kind);
+            var $taskKind = $('#cdn-matter-tasks .cdn-matter-task-composer__kind[data-kind="task"]');
+            if ($taskKind.length) {
+                var taskDesc = canAddLeadTaskWithoutMatter()
+                    ? 'Stays on this lead'
+                    : 'Stays on this matter';
+                $taskKind.find('.cdn-matter-task-composer__kind-desc').text(taskDesc);
+            }
             syncComposerLock();
             $('#cdn-matter-task-title').trigger('focus');
         });
@@ -1324,7 +1354,7 @@
                 notifyError(kind === 'reminder' ? 'Unable to add a reminder for this record.' : 'Unable to add a task for this record.');
                 return;
             }
-            if (kind !== 'reminder' && !mid && !ref) {
+            if (kind !== 'reminder' && !mid && !ref && !canAddLeadTaskWithoutMatter()) {
                 notifyError('Select a matter before adding a task.');
                 return;
             }
