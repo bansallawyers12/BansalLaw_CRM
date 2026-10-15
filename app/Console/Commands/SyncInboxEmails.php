@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Logging\CronAppendLogFormatter;
 use App\Logging\InboxSyncLogger;
 use App\Models\Email;
 use App\Services\EmailSync\InboxSyncMasterControl;
@@ -23,7 +24,7 @@ class SyncInboxEmails extends Command
         IncomingEmailSyncService::configureSyncRuntime();
 
         if (! InboxSyncMasterControl::isEnabled()) {
-            $this->warn(InboxSyncMasterControl::disabledMessage());
+            $this->cronLine('WARNING', InboxSyncMasterControl::disabledMessage());
 
             return self::SUCCESS;
         }
@@ -33,7 +34,8 @@ class SyncInboxEmails extends Command
         if ($email) {
             $mailbox = IncomingEmailSyncService::findSyncableMailbox((string) $email);
             if ($mailbox === null) {
-                $this->warn(
+                $this->cronLine(
+                    'WARNING',
                     "Skipping {$email}: automatic inbox sync requires an active mailbox with a Zoho password."
                 );
 
@@ -42,7 +44,7 @@ class SyncInboxEmails extends Command
         }
 
         if ($this->option('full') && $this->option('today')) {
-            $this->error('Use either --today or --full, not both.');
+            $this->cronLine('ERROR', 'Use either --today or --full, not both.');
 
             return self::FAILURE;
         }
@@ -58,14 +60,15 @@ class SyncInboxEmails extends Command
                 'last_imap_uid' => null,
                 'last_imap_uid_sent' => null,
             ]);
-            $this->warn('UID tracking reset for selected mailbox(es). Running backfill sync...');
+            $this->cronLine('WARNING', 'UID tracking reset for selected mailbox(es). Running backfill sync...');
         }
 
         $since = null;
         if ($this->option('today')) {
             $timezone = (string) config('app.timezone', 'UTC');
             $since = IncomingEmailSyncService::resolveTodaySyncSince();
-            $this->info(
+            $this->cronLine(
+                'INFO',
                 'Fetching mail since '.$since->format('d/m/Y g:i a')
                 .' ('.$timezone.') only — messages before '
                 .IncomingEmailSyncService::formatTodaySyncStartForDisplay()
@@ -73,7 +76,10 @@ class SyncInboxEmails extends Command
             );
         }
 
-        $this->info('Starting inbox sync'.($email ? " for {$email}" : ' for all mailboxes').'...');
+        $this->cronLine(
+            'INFO',
+            'Starting inbox sync'.($email ? " for {$email}" : ' for all mailboxes').'...'
+        );
 
         InboxSyncLogger::info('Scheduled inbox sync started', [
             'source' => 'cron',
@@ -89,16 +95,16 @@ class SyncInboxEmails extends Command
             $line = InboxSyncSummaryPresenter::formatMailboxConsoleLine((string) $mailboxEmail, $result);
 
             if (! empty($result['errors'])) {
-                $this->error($line);
+                $this->cronLine('ERROR', $line);
                 foreach ($result['errors'] as $error) {
-                    $this->line('  - '.$error);
+                    $this->cronLine('ERROR', '  - '.$error);
                 }
             } else {
-                $this->info($line);
+                $this->cronLine('INFO', $line);
             }
         }
 
-        $this->line(InboxSyncSummaryPresenter::formatTotalsConsoleLine(
+        $this->cronLine('INFO', InboxSyncSummaryPresenter::formatTotalsConsoleLine(
             (int) ($summary['total_imported'] ?? 0),
             InboxSyncSummaryPresenter::totalAlreadyInCrm($summary),
             (int) ($summary['total_failed'] ?? 0)
@@ -120,10 +126,17 @@ class SyncInboxEmails extends Command
 
         if ((int) ($summary['total_failed'] ?? 0) > 0) {
             InboxSyncLogger::warning('Scheduled inbox sync completed with failures', $logContext);
+            $this->cronLine('WARNING', 'Scheduled inbox sync completed with failures.');
         } else {
             InboxSyncLogger::info('Scheduled inbox sync completed', $logContext);
+            $this->cronLine('INFO', 'Scheduled inbox sync completed.');
         }
 
         return ((int) ($summary['total_failed'] ?? 0)) > 0 ? self::FAILURE : self::SUCCESS;
+    }
+
+    protected function cronLine(string $level, string $message): void
+    {
+        $this->line(CronAppendLogFormatter::format($level, $message));
     }
 }

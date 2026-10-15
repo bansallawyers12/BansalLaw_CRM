@@ -2,16 +2,20 @@
 
 namespace App\Services;
 
-use App\Models\SystemBreakdownLog;
 use App\Models\Staff;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
+use App\Models\SystemBreakdownLog;
+use Carbon\Carbon;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 class SystemBreakdownService
@@ -23,7 +27,7 @@ class SystemBreakdownService
     public static function ensureTableExists(): bool
     {
         try {
-            if (!Schema::hasTable('system_breakdown_logs')) {
+            if (! Schema::hasTable('system_breakdown_logs')) {
                 Schema::create('system_breakdown_logs', function (Blueprint $table) {
                     $table->id();
                     $table->string('error_hash', 64)->index();
@@ -52,11 +56,13 @@ class SystemBreakdownService
                     $table->timestamps();
                 });
             }
+
             return true;
         } catch (Throwable $schemaEx) {
             return false;
         }
     }
+
     /**
      * Capture and record any system exception.
      */
@@ -67,7 +73,7 @@ class SystemBreakdownService
 
             $message = trim((string) $e->getMessage());
             if ($message === '') {
-                $message = get_class($e) . ' occurred with no message.';
+                $message = get_class($e).' occurred with no message.';
             }
 
             $file = (string) $e->getFile();
@@ -75,9 +81,9 @@ class SystemBreakdownService
             $exceptionClass = get_class($e);
 
             // Don't record standard validation or 404 not found exceptions
-            if ($e instanceof \Illuminate\Validation\ValidationException ||
-                $e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException ||
-                $e instanceof \Illuminate\Auth\AuthenticationException) {
+            if ($e instanceof ValidationException ||
+                $e instanceof NotFoundHttpException ||
+                $e instanceof AuthenticationException) {
                 return null;
             }
 
@@ -102,7 +108,7 @@ class SystemBreakdownService
 
                 if ($user) {
                     $userId = $user->id;
-                    $userName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: ($user->name ?? 'User #' . $user->id);
+                    $userName = trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: ($user->name ?? 'User #'.$user->id);
                     $userEmail = $user->email ?? null;
                     $userRole = $user->role->role_name ?? ($user->role_id ?? ($user->role ?? 'Staff'));
                 }
@@ -117,7 +123,7 @@ class SystemBreakdownService
                     $rawInput = $request->except(['password', 'password_confirmation', 'secret', 'token', '_token', 'credit_card', 'api_key', 'authorization']);
                     $payload = self::sanitizeArray($rawInput);
                 } catch (Throwable $payloadEx) {
-                    $payload = ['_error' => 'Could not serialize request payload: ' . $payloadEx->getMessage()];
+                    $payload = ['_error' => 'Could not serialize request payload: '.$payloadEx->getMessage()];
                 }
             }
 
@@ -133,7 +139,7 @@ class SystemBreakdownService
             }
 
             // Grouping hash: based on exception class, file, line, and core message
-            $errorHash = md5($exceptionClass . '|' . $file . '|' . $line . '|' . substr($message, 0, 150));
+            $errorHash = md5($exceptionClass.'|'.$file.'|'.$line.'|'.substr($message, 0, 150));
 
             // Check if active open record exists for grouping
             $existing = SystemBreakdownLog::where('error_hash', $errorHash)
@@ -154,6 +160,7 @@ class SystemBreakdownService
                 $existing->http_method = $method;
                 $existing->request_payload = $payload;
                 $existing->save();
+
                 return $existing;
             }
 
@@ -197,6 +204,7 @@ class SystemBreakdownService
             } catch (Throwable $fileEx) {
                 // Absorb error to avoid infinite loops
             }
+
             return null;
         }
     }
@@ -250,8 +258,7 @@ class SystemBreakdownService
      * Get real-time active users and recent session activity.
      * Integrates database sessions, file sessions, recent activities, and login logs.
      *
-     * @param int $thresholdMinutes Sliding window for active status (e.g. 5, 15, 30, 60 mins)
-     * @return array
+     * @param  int  $thresholdMinutes  Sliding window for active status (e.g. 5, 15, 30, 60 mins)
      */
     public function getActiveUsersData(int $thresholdMinutes = 30): array
     {
@@ -273,7 +280,7 @@ class SystemBreakdownService
                     $uid = (int) $row->user_id;
                     $act = (int) $row->last_activity;
                     $ip = $row->ip_address ?? null;
-                    if (!isset($activeUserMap[$uid]) || $activeUserMap[$uid]['last_activity'] < $act) {
+                    if (! isset($activeUserMap[$uid]) || $activeUserMap[$uid]['last_activity'] < $act) {
                         $activeUserMap[$uid] = [
                             'last_activity' => $act,
                             'source' => 'Database Session',
@@ -282,7 +289,8 @@ class SystemBreakdownService
                     }
                 }
             }
-        } catch (Throwable $e) {}
+        } catch (Throwable $e) {
+        }
 
         // 2. File Sessions in storage/framework/sessions (standard Laravel file session storage)
         try {
@@ -290,8 +298,10 @@ class SystemBreakdownService
             if (is_dir($sessionDir)) {
                 $sessionFiles = scandir($sessionDir);
                 foreach ($sessionFiles as $sFile) {
-                    if ($sFile === '.' || $sFile === '..' || $sFile === '.gitignore') continue;
-                    $fullPath = $sessionDir . DIRECTORY_SEPARATOR . $sFile;
+                    if ($sFile === '.' || $sFile === '..' || $sFile === '.gitignore') {
+                        continue;
+                    }
+                    $fullPath = $sessionDir.DIRECTORY_SEPARATOR.$sFile;
                     $mtime = @filemtime($fullPath);
                     if ($mtime && $mtime >= $thresholdTimestamp) {
                         $raw = @file_get_contents($fullPath);
@@ -303,7 +313,7 @@ class SystemBreakdownService
                                 $userId = (int) $m[1];
                             }
                             if ($userId) {
-                                if (!isset($activeUserMap[$userId]) || $activeUserMap[$userId]['last_activity'] < $mtime) {
+                                if (! isset($activeUserMap[$userId]) || $activeUserMap[$userId]['last_activity'] < $mtime) {
                                     $activeUserMap[$userId] = [
                                         'last_activity' => $mtime,
                                         'source' => 'Active Web Session',
@@ -315,7 +325,8 @@ class SystemBreakdownService
                     }
                 }
             }
-        } catch (Throwable $e) {}
+        } catch (Throwable $e) {
+        }
 
         // 3. Activity Logs (activities_logs table)
         try {
@@ -329,7 +340,7 @@ class SystemBreakdownService
                 foreach ($recentActions as $ra) {
                     $uid = (int) $ra->created_by;
                     $act = strtotime((string) $ra->last_action);
-                    if (!isset($activeUserMap[$uid]) || $activeUserMap[$uid]['last_activity'] < $act) {
+                    if (! isset($activeUserMap[$uid]) || $activeUserMap[$uid]['last_activity'] < $act) {
                         $activeUserMap[$uid] = [
                             'last_activity' => $act,
                             'source' => 'Recent Operation',
@@ -338,7 +349,8 @@ class SystemBreakdownService
                     }
                 }
             }
-        } catch (Throwable $e) {}
+        } catch (Throwable $e) {
+        }
 
         // 4. Staff Login Logs (staff_login_logs table)
         try {
@@ -353,7 +365,7 @@ class SystemBreakdownService
                 foreach ($recentLogins as $rl) {
                     $uid = (int) $rl->user_id;
                     $act = strtotime((string) $rl->last_action);
-                    if (!isset($activeUserMap[$uid]) || $activeUserMap[$uid]['last_activity'] < $act) {
+                    if (! isset($activeUserMap[$uid]) || $activeUserMap[$uid]['last_activity'] < $act) {
                         $activeUserMap[$uid] = [
                             'last_activity' => $act,
                             'source' => 'Recent Login',
@@ -379,7 +391,8 @@ class SystemBreakdownService
                     ];
                 }
             }
-        } catch (Throwable $e) {}
+        } catch (Throwable $e) {
+        }
 
         // Hydrate staff records
         $allUserIds = array_unique(array_merge(array_keys($activeUserMap), array_keys($todayUserMap)));
@@ -414,11 +427,13 @@ class SystemBreakdownService
         }
 
         // Sort by most recently active
-        usort($activeList, fn($a, $b) => $b['last_activity_timestamp'] <=> $a['last_activity_timestamp']);
+        usort($activeList, fn ($a, $b) => $b['last_activity_timestamp'] <=> $a['last_activity_timestamp']);
 
         $todayList = [];
         foreach ($todayUserMap as $uid => $meta) {
-            if (isset($activeUserMap[$uid])) continue; // already in activeList
+            if (isset($activeUserMap[$uid])) {
+                continue;
+            } // already in activeList
             $staff = $staffList->get($uid);
             $name = $staff ? trim("{$staff->first_name} {$staff->last_name}") : "Staff #{$uid}";
             if (empty($name)) {
@@ -444,7 +459,7 @@ class SystemBreakdownService
                 'is_online' => false,
             ];
         }
-        usort($todayList, fn($a, $b) => $b['last_activity_timestamp'] <=> $a['last_activity_timestamp']);
+        usort($todayList, fn ($a, $b) => $b['last_activity_timestamp'] <=> $a['last_activity_timestamp']);
 
         $totalStaffCount = Staff::where('status', 1)->count();
 
@@ -485,12 +500,12 @@ class SystemBreakdownService
 
             // Exception type filter
             if ($request->filled('type')) {
-                $query->where('exception_class', 'like', '%' . $request->input('type') . '%');
+                $query->where('exception_class', 'like', '%'.$request->input('type').'%');
             }
 
             // User filter
             if ($request->filled('user')) {
-                $query->where('user_email', 'like', '%' . $request->input('user') . '%');
+                $query->where('user_email', 'like', '%'.$request->input('user').'%');
             }
 
             // Date range
@@ -503,7 +518,7 @@ class SystemBreakdownService
 
             return $query->orderBy('last_seen_at', 'desc')->paginate(20)->withQueryString();
         } catch (Throwable $e) {
-            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
+            return new LengthAwarePaginator([], 0, 20);
         }
     }
 
@@ -516,7 +531,7 @@ class SystemBreakdownService
     public function getAllLogFiles(): array
     {
         $logDir = storage_path('logs');
-        if (!File::isDirectory($logDir)) {
+        if (! File::isDirectory($logDir)) {
             return [];
         }
 
@@ -534,7 +549,7 @@ class SystemBreakdownService
 
         foreach ($allFiles as $file) {
             $ext = strtolower($file->getExtension());
-            if (!in_array($ext, ['log', 'htm', 'html', 'txt'])) {
+            if (! in_array($ext, ['log', 'htm', 'html', 'txt'])) {
                 continue;
             }
 
@@ -570,8 +585,8 @@ class SystemBreakdownService
 
             $sizeBytes = $file->getSize();
             $sizeFormatted = $sizeBytes >= 1048576
-                ? round($sizeBytes / 1048576, 2) . ' MB'
-                : round($sizeBytes / 1024, 1) . ' KB';
+                ? round($sizeBytes / 1048576, 2).' MB'
+                : round($sizeBytes / 1024, 1).' KB';
 
             // Quick error estimate by scanning line markers
             $errorCount = 0;
@@ -607,7 +622,7 @@ class SystemBreakdownService
         }
 
         // Sort by last modified descending
-        uasort($result, fn($a, $b) => $b['last_modified_timestamp'] <=> $a['last_modified_timestamp']);
+        uasort($result, fn ($a, $b) => $b['last_modified_timestamp'] <=> $a['last_modified_timestamp']);
 
         return $result;
     }
@@ -619,9 +634,9 @@ class SystemBreakdownService
     {
         $logDir = storage_path('logs');
         $cleanPath = str_replace(['..', "\0"], '', $relativePath);
-        $fullPath = $logDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
+        $fullPath = $logDir.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
 
-        if (!File::exists($fullPath) || !File::isFile($fullPath)) {
+        if (! File::exists($fullPath) || ! File::isFile($fullPath)) {
             return [];
         }
 
@@ -647,7 +662,7 @@ class SystemBreakdownService
 
                 // Level filtering
                 if ($levelFilter && $levelFilter !== 'all') {
-                    if ($levelFilter === 'errors' && !in_array($level, ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'])) {
+                    if ($levelFilter === 'errors' && ! in_array($level, ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'])) {
                         continue;
                     }
                     if ($levelFilter !== 'errors' && $level !== strtoupper($levelFilter)) {
@@ -656,7 +671,7 @@ class SystemBreakdownService
                 }
 
                 // Search filtering
-                if ($search && !str_contains(strtolower($body), strtolower($search)) && !str_contains($timestamp, $search)) {
+                if ($search && ! str_contains(strtolower($body), strtolower($search)) && ! str_contains($timestamp, $search)) {
                     continue;
                 }
 
@@ -680,7 +695,7 @@ class SystemBreakdownService
                     }
                 }
 
-                if (!$stack && count($lines) > 1) {
+                if (! $stack && count($lines) > 1) {
                     $stack = implode("\n", array_slice($lines, 1, 30));
                 }
 
@@ -699,41 +714,92 @@ class SystemBreakdownService
                 }
             }
         } else {
-            // Fallback for non-standard line-based logs (e.g. db_restore.log)
-            $lines = array_reverse(array_filter(explode("\n", $content)));
-            $count = 0;
-            foreach ($lines as $line) {
-                $trimmed = trim($line);
-                if (empty($trimmed)) continue;
+            $entries = array_merge(
+                $entries,
+                $this->parsePlainLogLines($content, $limit, $levelFilter, $search, $cleanPath)
+            );
+        }
 
-                if ($search && !str_contains(strtolower($trimmed), strtolower($search))) {
-                    continue;
-                }
+        return $entries;
+    }
 
-                $level = 'INFO';
+    /**
+     * Fallback parser for line-based logs (cron appendOutputTo files, db_restore.log, etc.).
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function parsePlainLogLines(
+        string $content,
+        int $limit,
+        ?string $levelFilter,
+        ?string $search,
+        string $relativePath
+    ): array {
+        $lines = array_filter(explode("\n", $content));
+        $entries = [];
+        $carryTimestamp = null;
+        $isInboxCronCapture = str_contains($relativePath, 'email-inbox-sync');
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $timestamp = 'N/A';
+            $env = 'log';
+            $level = 'INFO';
+            $title = $trimmed;
+            $parsedStructuredLine = false;
+
+            if (preg_match(
+                '/^\[(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[\+-]\d{2}:\d{2})?)\]\s+(?:([a-zA-Z0-9_\-]+)\.)?([A-Z]+):\s+(.*)$/',
+                $trimmed,
+                $match
+            )) {
+                $timestamp = $match[1];
+                $env = $match[2] ?: 'cron';
+                $level = strtoupper($match[3]);
+                $title = $match[4];
+                $carryTimestamp = $timestamp;
+                $parsedStructuredLine = true;
+            } elseif ($isInboxCronCapture && $carryTimestamp !== null) {
+                $timestamp = $carryTimestamp;
+            }
+
+            if ($search
+                && ! str_contains(strtolower($trimmed), strtolower($search))
+                && ! str_contains($timestamp, $search)) {
+                continue;
+            }
+
+            if (! $parsedStructuredLine) {
                 if (stripos($trimmed, 'error') !== false || stripos($trimmed, 'fatal') !== false || stripos($trimmed, 'failed') !== false) {
                     $level = 'ERROR';
                 } elseif (stripos($trimmed, 'warn') !== false) {
                     $level = 'WARNING';
                 }
-
-                if ($levelFilter && $levelFilter === 'errors' && $level !== 'ERROR') {
-                    continue;
-                }
-
-                $entries[] = [
-                    'timestamp' => 'N/A',
-                    'env' => 'log',
-                    'level' => $level,
-                    'title' => $trimmed,
-                    'json_context' => null,
-                    'stack' => '',
-                    'full_body' => $trimmed,
-                ];
-
-                $count++;
-                if ($count >= $limit) break;
             }
+
+            if ($levelFilter && $levelFilter === 'errors' && $level !== 'ERROR') {
+                continue;
+            }
+
+            $entries[] = [
+                'timestamp' => $timestamp,
+                'env' => $env,
+                'level' => $level,
+                'title' => $title,
+                'json_context' => null,
+                'stack' => '',
+                'full_body' => $trimmed,
+            ];
+        }
+
+        $entries = array_reverse($entries);
+
+        if ($limit > 0 && count($entries) > $limit) {
+            $entries = array_slice($entries, 0, $limit);
         }
 
         return $entries;
@@ -746,9 +812,9 @@ class SystemBreakdownService
     {
         $logDir = storage_path('logs');
         $cleanPath = str_replace(['..', "\0"], '', $relativePath);
-        $fullPath = $logDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
+        $fullPath = $logDir.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
 
-        if (!File::exists($fullPath) || !File::isFile($fullPath)) {
+        if (! File::exists($fullPath) || ! File::isFile($fullPath)) {
             return 'File not found.';
         }
 
@@ -758,7 +824,8 @@ class SystemBreakdownService
             fseek($handle, -$maxBytes, SEEK_END);
             $content = fread($handle, $maxBytes);
             fclose($handle);
-            return "[Showing last " . round($maxBytes / 1024) . " KB of " . round($size / 1024) . " KB]\n...\n" . $content;
+
+            return '[Showing last '.round($maxBytes / 1024).' KB of '.round($size / 1024)." KB]\n...\n".$content;
         }
 
         return File::get($fullPath);
@@ -770,13 +837,14 @@ class SystemBreakdownService
     public function resolveError(int $id, string $notes = ''): bool
     {
         $log = SystemBreakdownLog::find($id);
-        if (!$log) {
+        if (! $log) {
             return false;
         }
 
         $log->status = 'resolved';
         $log->resolution_notes = $notes;
         $log->resolved_at = Carbon::now('Australia/Melbourne');
+
         return $log->save();
     }
 
@@ -786,7 +854,7 @@ class SystemBreakdownService
     public function updateStatus(int $id, string $status, string $notes = ''): bool
     {
         $log = SystemBreakdownLog::find($id);
-        if (!$log) {
+        if (! $log) {
             return false;
         }
 
@@ -799,6 +867,7 @@ class SystemBreakdownService
         } else {
             $log->resolved_at = null;
         }
+
         return $log->save();
     }
 
@@ -822,7 +891,7 @@ class SystemBreakdownService
         $trace = $e->getTrace();
         $formatted = [];
 
-        $formatted[] = sprintf("#0 %s:%d", $e->getFile(), $e->getLine());
+        $formatted[] = sprintf('#0 %s:%d', $e->getFile(), $e->getLine());
 
         $i = 1;
         foreach ($trace as $frame) {
@@ -832,16 +901,16 @@ class SystemBreakdownService
             $type = $frame['type'] ?? '';
             $function = $frame['function'] ?? '';
 
-            $call = $class ? ($class . $type . $function . '()') : ($function . '()');
-            $lineStr = $line ? (':' . $line) : '';
+            $call = $class ? ($class.$type.$function.'()') : ($function.'()');
+            $lineStr = $line ? (':'.$line) : '';
 
-            $isApp = str_contains($file, 'app' . DIRECTORY_SEPARATOR) || str_contains($file, 'resources' . DIRECTORY_SEPARATOR);
+            $isApp = str_contains($file, 'app'.DIRECTORY_SEPARATOR) || str_contains($file, 'resources'.DIRECTORY_SEPARATOR);
             $marker = $isApp ? ' [APP CODE]' : '';
 
-            $formatted[] = sprintf("#%d %s%s %s%s", $i, $file, $lineStr, $call, $marker);
+            $formatted[] = sprintf('#%d %s%s %s%s', $i, $file, $lineStr, $call, $marker);
             $i++;
             if ($i > 35) {
-                $formatted[] = "... [additional frames omitted for performance] ...";
+                $formatted[] = '... [additional frames omitted for performance] ...';
                 break;
             }
         }
@@ -869,6 +938,7 @@ class SystemBreakdownService
                     $result[$key] = self::sanitizeArray($val, $depth + 1);
                 }
             }
+
             return $result;
         }
 
