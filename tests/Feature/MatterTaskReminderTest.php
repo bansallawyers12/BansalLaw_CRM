@@ -38,6 +38,11 @@ class MatterTaskReminderTest extends TestCase
         return [$client, $matter];
     }
 
+    private function futureDueDate(int $daysAhead = 14): string
+    {
+        return now()->addDays($daysAhead)->toDateString();
+    }
+
     #[Test]
     public function staff_with_calendar_access_can_add_reminder_from_tasks_tab(): void
     {
@@ -48,11 +53,13 @@ class MatterTaskReminderTest extends TestCase
         ]);
         $this->actingAs($staff, 'admin');
 
+        $reminderDue = $this->futureDueDate(10);
+
         $response = $this->postJson(route('clients.matterTask.store'), [
             'client_id' => $client->id,
             'matter_id' => $matter->id,
             'title' => 'Call Vantage Legal',
-            'due_date' => '2026-09-28',
+            'due_date' => $reminderDue,
             'kind' => 'reminder',
         ]);
 
@@ -77,12 +84,15 @@ class MatterTaskReminderTest extends TestCase
             ->where('created_by_staff_id', $staff->id)
             ->value('id');
 
+        $rangeStart = \Carbon\Carbon::parse($reminderDue)->startOfMonth()->toIso8601String();
+        $rangeEnd = \Carbon\Carbon::parse($reminderDue)->endOfMonth()->toIso8601String();
+
         $this->getJson(route('booking.api.appointments', [
             'format' => 'calendar',
             'type' => 'personal',
             'staff_id' => $staff->id,
-            'start' => '2026-09-01T00:00:00+10:00',
-            'end' => '2026-09-30T00:00:00+10:00',
+            'start' => $rangeStart,
+            'end' => $rangeEnd,
         ]))->assertOk()
             ->assertJsonFragment(['id' => 'staff-cal-' . $eventId]);
     }
@@ -132,7 +142,7 @@ class MatterTaskReminderTest extends TestCase
         $this->postJson(route('clients.matterTask.store'), [
             'client_id' => $lead->id,
             'title' => 'Follow up lead call',
-            'due_date' => '2026-10-05',
+            'due_date' => $this->futureDueDate(12),
             'kind' => 'reminder',
         ])->assertOk()->assertJson([
             'status' => true,
@@ -174,7 +184,7 @@ class MatterTaskReminderTest extends TestCase
             'client_id' => $client->id,
             'matter_id' => $matter->id,
             'title' => 'Allowed reminder',
-            'due_date' => '2026-10-05',
+            'due_date' => $this->futureDueDate(12),
             'kind' => 'reminder',
         ])->assertOk()
             ->assertJsonPath('status', true);
@@ -220,11 +230,14 @@ class MatterTaskReminderTest extends TestCase
         ]);
         $this->actingAs($staff, 'admin');
 
+        $futureSaturday = now()->addDays(7)->next(\Carbon\Carbon::SATURDAY)->toDateString();
+        $futureSunday = \Carbon\Carbon::parse($futureSaturday)->addDay()->toDateString();
+
         $this->postJson(route('clients.matterTask.store'), [
             'client_id' => $client->id,
             'matter_id' => $matter->id,
             'title' => 'Weekend task',
-            'due_date' => '2026-09-26',
+            'due_date' => $futureSaturday,
             'kind' => 'task',
         ])->assertOk()->assertJsonPath('status', true);
 
@@ -232,13 +245,13 @@ class MatterTaskReminderTest extends TestCase
             'client_id' => $client->id,
             'matter_id' => $matter->id,
             'title' => 'Weekend reminder',
-            'due_date' => '2026-09-27',
+            'due_date' => $futureSunday,
             'kind' => 'reminder',
         ])->assertOk()->assertJsonPath('status', true);
 
         $this->assertDatabaseHas('client_matter_tasks', [
             'title' => 'Weekend task',
-            'due_date' => '2026-09-26',
+            'due_date' => $futureSaturday,
         ]);
         $this->assertDatabaseHas('staff_calendar_events', [
             'title' => 'Weekend reminder',

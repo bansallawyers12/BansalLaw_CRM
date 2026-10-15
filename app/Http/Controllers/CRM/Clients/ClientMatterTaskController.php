@@ -255,6 +255,12 @@ class ClientMatterTaskController extends Controller
         }
 
         $dueYmd = $this->normalizeDueDateYmd($validated['due_date'] ?? null);
+        if ($dueYmd !== '' && $this->isDueDateInPast($dueYmd)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Due date cannot be in the past. Choose today or a future date.',
+            ], 422);
+        }
 
         if ($matter) {
             $maxSort = (int) ClientMatterTask::where('client_matter_id', $matter->id)->max('sort_order');
@@ -313,6 +319,12 @@ class ClientMatterTaskController extends Controller
         $dueYmd = $this->normalizeDueDateYmd($validated['due_date'] ?? null);
         if ($dueYmd === '') {
             return response()->json(['status' => false, 'message' => 'Choose a reminder date.'], 422);
+        }
+        if ($this->isDueDateInPast($dueYmd)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Due date cannot be in the past. Choose today or a future date.',
+            ], 422);
         }
 
         $tz = (string) config('app.timezone');
@@ -389,6 +401,12 @@ class ClientMatterTaskController extends Controller
             $newDue = ($rawDue !== null && trim((string) $rawDue) !== '') ? $rawDue : null;
             $oldDue = $task->due_date ? $task->due_date->format('Y-m-d') : '';
             $newDueStr = $this->normalizeDueDateYmd($newDue);
+            if ($newDueStr !== '' && $this->isDueDateInPast($newDueStr)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Due date cannot be in the past. Choose today or a future date.',
+                ], 422);
+            }
             if ($oldDue !== $newDueStr) {
                 $timelineChanges['Due date'] = [
                     'old' => $oldDue !== '' ? date('d/m/Y', strtotime($oldDue)) : '',
@@ -632,5 +650,18 @@ class ClientMatterTaskController extends Controller
             ->value('type');
 
         return strtolower((string) $type) === 'lead';
+    }
+
+    private function isDueDateInPast(string $ymd): bool
+    {
+        if ($ymd === '') {
+            return false;
+        }
+
+        try {
+            return Carbon::parse($ymd)->startOfDay()->lt(Carbon::today());
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

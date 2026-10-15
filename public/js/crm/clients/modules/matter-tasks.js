@@ -355,6 +355,20 @@
         return (n < 10 ? '0' : '') + n;
     }
 
+    function todayYmdLocal() {
+        var t = new Date();
+        return t.getFullYear() + '-' + pad2(t.getMonth() + 1) + '-' + pad2(t.getDate());
+    }
+
+    function isPastDateYmd(ymd) {
+        if (!ymd || typeof ymd !== 'string') {
+            return false;
+        }
+        return ymd < todayYmdLocal();
+    }
+
+    var PAST_DUE_DATE_MESSAGE = 'Due date cannot be in the past. Choose today or a future date.';
+
     /**
      * Parse typed due date (optional). Empty is allowed.
      * Accepts d/m/Y, d-m-Y, or Y-m-d.
@@ -459,6 +473,18 @@
             return '';
         }
 
+        if (isPastDateYmd(parsed.value)) {
+            markFieldInvalid($visible);
+            if (fp && typeof fp.clear === 'function') {
+                fp.clear();
+            } else {
+                $due.val('');
+            }
+            notifyError(PAST_DUE_DATE_MESSAGE);
+            $visible.trigger('focus');
+            return null;
+        }
+
         if (fp && typeof fp.setDate === 'function') {
             try {
                 fp.setDate(parsed.value, false, 'Y-m-d');
@@ -515,6 +541,7 @@
         var fp = flatpickr(el, {
             // Single visible input (d/m/Y) — avoids altInput + hidden field CSS races
             dateFormat: 'd/m/Y',
+            minDate: 'today',
             allowInput: true,
             clickOpens: true,
             closeOnSelect: true,
@@ -549,6 +576,13 @@
                             var parsed = parseDueDateInput(typed);
                             if (!parsed.ok) {
                                 markFieldInvalid($(instance.input));
+                                notifyError(parsed.message || 'Please enter a valid due date (DD/MM/YYYY).');
+                                return;
+                            }
+                            if (!parsed.empty && isPastDateYmd(parsed.value)) {
+                                markFieldInvalid($(instance.input));
+                                instance.clear();
+                                notifyError(PAST_DUE_DATE_MESSAGE);
                                 return;
                             }
                             clearFieldInvalid($(instance.input));
