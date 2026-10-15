@@ -212,8 +212,19 @@
         if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.error === 'function') {
             window.crmNotify.error({ message: msg });
         } else if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-            iziToast.error({ message: msg, position: 'topRight' });
+            iziToast.error({ title: 'Failed', message: msg, position: 'topRight' });
         } else {
+            crmAlert(msg);
+        }
+    }
+
+    function notifySuccess(message) {
+        var msg = message || 'Saved successfully.';
+        if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.success === 'function') {
+            window.crmNotify.success({ message: msg });
+        } else if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+            iziToast.success({ title: 'Success', message: msg, position: 'topRight' });
+        } else if (typeof crmAlert === 'function') {
             crmAlert(msg);
         }
     }
@@ -1395,6 +1406,8 @@
                 data: storeData,
                 success: function (res) {
                     if (res && res.status) {
+                        var addedLabel = kind === 'reminder' ? 'Reminder' : 'Task';
+                        notifySuccess(addedLabel + ' added successfully.');
                         $inp.val('');
                         clearFieldInvalid($inp);
                         clearDueDateInput();
@@ -1403,7 +1416,10 @@
                             $inp.trigger('focus');
                         }, 0);
                     } else {
-                        notifyError(res && res.message ? res.message : null);
+                        var failMsg =
+                            (res && res.message) ||
+                            (kind === 'reminder' ? 'Failed to add reminder.' : 'Failed to add task.');
+                        notifyError(failMsg);
                     }
                 },
                 error: function (xhr) {
@@ -1418,6 +1434,9 @@
                                 msg = first[k][0];
                             }
                         }
+                    }
+                    if (!msg) {
+                        msg = kind === 'reminder' ? 'Failed to add reminder.' : 'Failed to add task.';
                     }
                     notifyError(msg);
                 },
