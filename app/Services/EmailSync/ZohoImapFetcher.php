@@ -35,6 +35,35 @@ class ZohoImapFetcher
         ?ImapSyncKnownMessageFilter $knownMessageFilter = null,
         string $mailBodyType = 'inbox'
     ): array {
+        return $this->withFolderSession(
+            $mailbox,
+            $folders,
+            fn (Client $client, mixed $folder): array => $this->fetchFolderPage(
+                $client,
+                $folder,
+                $mailbox,
+                $afterUid,
+                $limit,
+                $since,
+                $knownMessageFilter,
+                $mailBodyType
+            )
+        );
+    }
+
+    /**
+     * Open one IMAP session for a folder namespace and run a callback across batches.
+     *
+     * INBOX and Sent must use separate sessions so UID watermarks stay isolated.
+     *
+     * @template T
+     *
+     * @param  list<string>  $folders
+     * @param  callable(Client, mixed, Email): T  $callback
+     * @return T
+     */
+    public function withFolderSession(Email $mailbox, array $folders, callable $callback): mixed
+    {
         $password = $this->resolvePassword($mailbox);
         if ($password === '') {
             throw new \RuntimeException('Zoho app password is missing for '.$mailbox->email);
@@ -52,32 +81,48 @@ class ZohoImapFetcher
                 );
             }
 
-            if ($this->shouldPrefetchKnownDuplicates($knownMessageFilter)) {
-                return $this->fetchFromFolderWithPrefetch(
-                    $client,
-                    $folder,
-                    $mailbox,
-                    $afterUid,
-                    $limit,
-                    $since,
-                    $knownMessageFilter,
-                    $mailBodyType
-                );
-            }
-
-            return $this->fetchFromFolderWithFullBodies(
-                $client,
-                $folder,
-                $afterUid,
-                $limit,
-                $since
-            );
+            return $callback($client, $folder, $mailbox);
         } finally {
             try {
                 $client->disconnect();
             } catch (Throwable) {
             }
         }
+    }
+
+    /**
+     * @return list<array{uid: int, raw_eml: string, subject: string, is_seen: bool, prefetch_skip?: bool}>
+     */
+    public function fetchFolderPage(
+        Client $client,
+        mixed $folder,
+        Email $mailbox,
+        int $afterUid,
+        int $limit,
+        ?\DateTimeInterface $since = null,
+        ?ImapSyncKnownMessageFilter $knownMessageFilter = null,
+        string $mailBodyType = 'inbox'
+    ): array {
+        if ($this->shouldPrefetchKnownDuplicates($knownMessageFilter)) {
+            return $this->fetchFromFolderWithPrefetch(
+                $client,
+                $folder,
+                $mailbox,
+                $afterUid,
+                $limit,
+                $since,
+                $knownMessageFilter,
+                $mailBodyType
+            );
+        }
+
+        return $this->fetchFromFolderWithFullBodies(
+            $client,
+            $folder,
+            $afterUid,
+            $limit,
+            $since
+        );
     }
 
     protected function shouldPrefetchKnownDuplicates(?ImapSyncKnownMessageFilter $knownMessageFilter): bool

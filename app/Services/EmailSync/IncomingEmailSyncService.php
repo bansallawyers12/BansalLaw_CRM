@@ -467,109 +467,139 @@ class IncomingEmailSyncService
         $cursorUid = $since !== null ? 0 : $afterUid;
         $maxUid = $afterUid;
         $lowestFailedUid = null;
-        $emptyResponseRetry = ImapEmptyResponseRetry::fromConfig();
+        $imapFetchRetry = ImapEmptyResponseRetry::fromConfig();
 
-        for ($batch = 0; $batch < $maxBatches; $batch++) {
-            try {
-                $messages = $emptyResponseRetry->fetchOrEmptyPage(
-                    fn (): array => $this->imapFetcher->fetchFromFolders(
-                        $mailbox,
-                        $cursorUid,
-                        $limit,
-                        $folders,
-                        $since,
-                        $this->knownMessageFilter,
-                        $defaultMailType
-                    ),
-                    [
-                        'mailbox' => $mailbox->email,
-                        'folder_type' => $defaultMailType,
-                        'batch' => $batch + 1,
-                    ]
-                );
-            } catch (Throwable $e) {
-                $result['errors'][] = strtoupper($defaultMailType).': '.$e->getMessage();
-                InboxSyncLogger::error('IMAP sync failed', [
-                    'mailbox' => $mailbox->email,
-                    'folder_type' => $defaultMailType,
-                    'batch' => $batch + 1,
-                    'error' => $e->getMessage(),
-                ], $e);
+        try {
+            $this->imapFetcher->withFolderSession(
+                $mailbox,
+                $folders,
+                function ($client, $folder) use (
+                    $mailbox,
+                    $staffUserId,
+                    $afterUid,
+                    $since,
+                    $defaultMailType,
+                    $maxBatches,
+                    $limit,
+                    $imapFetchRetry,
+                    &$result,
+                    &$cursorUid,
+                    &$maxUid,
+                    &$lowestFailedUid,
+                ): void {
+                    for ($batch = 0; $batch < $maxBatches; $batch++) {
+                        try {
+                            $messages = $imapFetchRetry->fetchOrEmptyPage(
+                                fn (): array => $this->imapFetcher->fetchFolderPage(
+                                    $client,
+                                    $folder,
+                                    $mailbox,
+                                    $cursorUid,
+                                    $limit,
+                                    $since,
+                                    $this->knownMessageFilter,
+                                    $defaultMailType
+                                ),
+                                [
+                                    'mailbox' => $mailbox->email,
+                                    'folder_type' => $defaultMailType,
+                                    'batch' => $batch + 1,
+                                ]
+                            );
+                        } catch (Throwable $e) {
+                            $result['errors'][] = strtoupper($defaultMailType).': '.$e->getMessage();
+                            InboxSyncLogger::error('IMAP sync failed', [
+                                'mailbox' => $mailbox->email,
+                                'folder_type' => $defaultMailType,
+                                'batch' => $batch + 1,
+                                'error' => $e->getMessage(),
+                            ], $e);
 
-                break;
-            }
+                            break;
+                        }
 
-            if ($messages === []) {
-                break;
-            }
+                        if ($messages === []) {
+                            break;
+                        }
 
-            $batchHighestUid = $cursorUid;
+                        $batchHighestUid = $cursorUid;
 
-            foreach ($messages as $message) {
-                $uid = (int) $message['uid'];
+                        foreach ($messages as $message) {
+                            $uid = (int) $message['uid'];
 
-                if (! empty($message['prefetch_skip'])) {
-                    $result['skipped']++;
-                    $batchHighestUid = max($batchHighestUid, $uid);
-                    $maxUid = max($maxUid, $uid);
+                            if (! empty($message['prefetch_skip'])) {
+                                $result['skipped']++;
+                                $batchHighestUid = max($batchHighestUid, $uid);
+                                $maxUid = max($maxUid, $uid);
 
-                    continue;
-                }
+                                continue;
+                            }
 
-                try {
-                    $importResult = $this->importMessage(
-                        $mailbox,
-                        $staffUserId,
-                        $message['raw_eml'],
-                        $uid,
-                        $message['subject'] ?? '',
-                        $defaultMailType
-                    );
+                            try {
+                                $importResult = $this->importMessage(
+                                    $mailbox,
+                                    $staffUserId,
+                                    $message['raw_eml'],
+                                    $uid,
+                                    $message['subject'] ?? '',
+                                    $defaultMailType
+                                );
 
-                    if (! empty($importResult['skipped'])) {
-                        $result['skipped']++;
-                        $batchHighestUid = max($batchHighestUid, $uid);
-                        $maxUid = max($maxUid, $uid);
-                    } elseif (! empty($importResult['success'])) {
-                        $result['imported']++;
-                        $batchHighestUid = max($batchHighestUid, $uid);
-                        $maxUid = max($maxUid, $uid);
-                    } else {
-                        $result['failed']++;
-                        $result['errors'][] = $importResult['error'] ?? ('Import failed for UID '.$uid);
-                        $lowestFailedUid = $lowestFailedUid === null ? $uid : min($lowestFailedUid, $uid);
+                                if (! empty($importResult['skipped'])) {
+                                    $result['skipped']++;
+                                    $batchHighestUid = max($batchHighestUid, $uid);
+                                    $maxUid = max($maxUid, $uid);
+                                } elseif (! empty($importResult['success'])) {
+                                    $result['imported']++;
+                                    $batchHighestUid = max($batchHighestUid, $uid);
+                                    $maxUid = max($maxUid, $uid);
+                                } else {
+                                    $result['failed']++;
+                                    $result['errors'][] = $importResult['error'] ?? ('Import failed for UID '.$uid);
+                                    $lowestFailedUid = $lowestFailedUid === null ? $uid : min($lowestFailedUid, $uid);
+                                }
+                            } catch (Throwable $e) {
+                                $result['failed']++;
+                                $result['errors'][] = 'UID '.$uid.': '.$e->getMessage();
+                                $lowestFailedUid = $lowestFailedUid === null ? $uid : min($lowestFailedUid, $uid);
+                                InboxSyncLogger::error('Synced email import failed', [
+                                    'mailbox' => $mailbox->email,
+                                    'uid' => $uid,
+                                    'error' => $e->getMessage(),
+                                ], $e);
+                            }
+
+                            unset($message);
+                        }
+
+                        $fetchedCount = count($messages);
+                        unset($messages);
+
+                        if ($lowestFailedUid !== null) {
+                            $cap = max($afterUid, $lowestFailedUid - 1);
+                            $batchHighestUid = min($batchHighestUid, $cap);
+                            $maxUid = min($maxUid, $cap);
+                        }
+
+                        if ($batchHighestUid <= $cursorUid) {
+                            break;
+                        }
+                        $cursorUid = $batchHighestUid;
+
+                        if ($fetchedCount < $limit) {
+                            break;
+                        }
                     }
-                } catch (Throwable $e) {
-                    $result['failed']++;
-                    $result['errors'][] = 'UID '.$uid.': '.$e->getMessage();
-                    $lowestFailedUid = $lowestFailedUid === null ? $uid : min($lowestFailedUid, $uid);
-                    InboxSyncLogger::error('Synced email import failed', [
-                        'mailbox' => $mailbox->email,
-                        'uid' => $uid,
-                        'error' => $e->getMessage(),
-                    ], $e);
                 }
-
-                unset($message);
-            }
-
-            $fetchedCount = count($messages);
-            unset($messages);
-
-            if ($lowestFailedUid !== null) {
-                $cap = max($afterUid, $lowestFailedUid - 1);
-                $batchHighestUid = min($batchHighestUid, $cap);
-                $maxUid = min($maxUid, $cap);
-            }
-
-            if ($batchHighestUid <= $cursorUid) {
-                break;
-            }
-            $cursorUid = $batchHighestUid;
-
-            if ($fetchedCount < $limit) {
-                break;
-            }
+            );
+        } catch (Throwable $e) {
+            $result['errors'][] = strtoupper($defaultMailType).': '.$e->getMessage();
+            InboxSyncLogger::error('IMAP sync failed', [
+                'mailbox' => $mailbox->email,
+                'folder_type' => $defaultMailType,
+                'batch' => 1,
+                'error' => $e->getMessage(),
+            ], $e);
         }
 
         $result['last_uid'] = self::clampImapWatermarkAfterFailures($afterUid, $maxUid, $lowestFailedUid);

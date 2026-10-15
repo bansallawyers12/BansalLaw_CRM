@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use ReflectionMethod;
 use RuntimeException;
 use Tests\TestCase;
+use Webklex\PHPIMAP\Client;
 use Webklex\PHPIMAP\Exceptions\GetMessagesFailedException;
 
 class IncomingEmailSyncEmptyResponseTest extends TestCase
@@ -21,6 +22,8 @@ class IncomingEmailSyncEmptyResponseTest extends TestCase
         config([
             'imap_sync.empty_response_retries' => 2,
             'imap_sync.empty_response_retry_sleep_ms' => 0,
+            'imap_sync.connection_failed_retries' => 2,
+            'imap_sync.connection_failed_retry_sleep_ms' => 0,
             'imap_sync.max_messages_per_mailbox' => 10,
             'imap_sync.max_incremental_batches' => 3,
         ]);
@@ -29,8 +32,8 @@ class IncomingEmailSyncEmptyResponseTest extends TestCase
     #[Test]
     public function empty_response_after_retries_does_not_advance_uid_or_record_folder_error(): void
     {
-        $fetcher = Mockery::mock(ZohoImapFetcher::class);
-        $fetcher->shouldReceive('fetchFromFolders')
+        $fetcher = $this->mockFolderSessionFetcher();
+        $fetcher->shouldReceive('fetchFolderPage')
             ->times(3)
             ->andThrow(new GetMessagesFailedException('empty response', 0, new RuntimeException('empty response')));
         $this->app->instance(ZohoImapFetcher::class, $fetcher);
@@ -47,8 +50,8 @@ class IncomingEmailSyncEmptyResponseTest extends TestCase
     #[Test]
     public function other_imap_failures_still_record_folder_error_without_advancing_uid(): void
     {
-        $fetcher = Mockery::mock(ZohoImapFetcher::class);
-        $fetcher->shouldReceive('fetchFromFolders')
+        $fetcher = $this->mockFolderSessionFetcher();
+        $fetcher->shouldReceive('fetchFolderPage')
             ->once()
             ->andThrow(new RuntimeException('IMAP folder not found (tried: Sent)'));
         $this->app->instance(ZohoImapFetcher::class, $fetcher);
@@ -87,5 +90,21 @@ class IncomingEmailSyncEmptyResponseTest extends TestCase
         $mailbox->email = 'michael@bansallawyers.com.au';
 
         return $mailbox;
+    }
+
+    protected function mockFolderSessionFetcher(): ZohoImapFetcher
+    {
+        $fetcher = Mockery::mock(ZohoImapFetcher::class);
+        $fetcher->shouldReceive('withFolderSession')
+            ->once()
+            ->andReturnUsing(function ($mailbox, $folders, $callback) {
+                return $callback(
+                    Mockery::mock(Client::class),
+                    new \stdClass,
+                    $mailbox
+                );
+            });
+
+        return $fetcher;
     }
 }

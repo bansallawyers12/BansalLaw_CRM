@@ -7,6 +7,7 @@ use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Tests\TestCase;
 use Throwable;
+use Webklex\PHPIMAP\Exceptions\ConnectionFailedException;
 use Webklex\PHPIMAP\Exceptions\GetMessagesFailedException;
 
 class ImapEmptyResponseRetryTest extends TestCase
@@ -29,6 +30,14 @@ class ImapEmptyResponseRetryTest extends TestCase
         );
 
         $this->assertTrue(ImapEmptyResponseRetry::isRetryable($exception));
+    }
+
+    #[Test]
+    public function connection_failed_exception_is_retryable(): void
+    {
+        $this->assertTrue(ImapEmptyResponseRetry::isRetryable(
+            new ConnectionFailedException('connection failed')
+        ));
     }
 
     #[Test]
@@ -92,6 +101,45 @@ class ImapEmptyResponseRetryTest extends TestCase
 
         $this->assertSame(3, $calls);
         $this->assertSame([], $result);
+    }
+
+    #[Test]
+    public function connection_failure_is_retried_and_later_page_is_returned(): void
+    {
+        $retry = new ImapEmptyResponseRetry(retries: 2, sleepMs: 0, connectionRetries: 2, connectionSleepMs: 0);
+        $calls = 0;
+        $page = [['uid' => 21, 'raw_eml' => 'x', 'subject' => 'Hello', 'is_seen' => false]];
+
+        $result = $retry->fetchOrEmptyPage(function () use (&$calls, $page): array {
+            $calls++;
+            if ($calls === 1) {
+                throw new ConnectionFailedException('connection failed');
+            }
+
+            return $page;
+        });
+
+        $this->assertSame(2, $calls);
+        $this->assertSame($page, $result);
+    }
+
+    #[Test]
+    public function exhausted_connection_retries_still_throw(): void
+    {
+        $retry = new ImapEmptyResponseRetry(retries: 2, sleepMs: 0, connectionRetries: 2, connectionSleepMs: 0);
+        $calls = 0;
+
+        try {
+            $retry->fetchOrEmptyPage(function () use (&$calls): array {
+                $calls++;
+                throw new ConnectionFailedException('connection failed');
+            });
+            $this->fail('Connection failures must still throw after retries.');
+        } catch (Throwable $e) {
+            $this->assertInstanceOf(ConnectionFailedException::class, $e);
+        }
+
+        $this->assertSame(3, $calls);
     }
 
     #[Test]

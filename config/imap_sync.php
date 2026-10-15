@@ -40,6 +40,17 @@ return [
 
     'empty_response_retry_sleep_ms' => (int) env('MAIL_SYNC_EMPTY_RESPONSE_RETRY_SLEEP_MS', 500),
 
+    /*
+    |--------------------------------------------------------------------------
+    | IMAP connection failed (Webklex ConnectionFailedException)
+    |--------------------------------------------------------------------------
+    | Retry transient connect/handshake failures during paging. If still failing,
+    | the folder sync stops without advancing the UID cursor.
+    */
+    'connection_failed_retries' => (int) env('MAIL_SYNC_CONNECTION_FAILED_RETRIES', 2),
+
+    'connection_failed_retry_sleep_ms' => (int) env('MAIL_SYNC_CONNECTION_FAILED_RETRY_SLEEP_MS', 1000),
+
     'folders' => array_values(array_filter(array_map(
         'trim',
         explode(',', (string) env('MAIL_SYNC_FOLDERS', 'INBOX'))
