@@ -61,7 +61,7 @@ class ClientEmailUploadDuplicateServiceTest extends TestCase
         $this->assertNull($block);
     }
 
-    public function test_production_still_blocks_unassigned_synced_match(): void
+    public function test_production_allows_unassigned_synced_match_when_upload_targets_a_client(): void
     {
         $this->app->detectEnvironment(fn () => 'production');
 
@@ -78,7 +78,35 @@ class ClientEmailUploadDuplicateServiceTest extends TestCase
         $service = app(ClientEmailUploadDuplicateService::class);
         $block = $service->buildManualUploadBlockResponse(
             10,
-            20,
+            null,
+            [
+                'subject' => 'Thread subject',
+                'sender_email' => 'sender@example.com',
+            ],
+            ''
+        );
+
+        $this->assertNull($block);
+    }
+
+    public function test_production_still_blocks_unassigned_synced_match_without_client_context(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        EmailLog::query()->create([
+            'subject' => 'Thread subject',
+            'from_mail' => 'sender@example.com',
+            'sync_assignment_status' => 'unassigned',
+            'synced_email_id' => 57,
+            'mail_body_type' => 'inbox',
+            'type' => 'client',
+            'mail_type' => 1,
+        ]);
+
+        $service = app(ClientEmailUploadDuplicateService::class);
+        $block = $service->buildManualUploadBlockResponse(
+            0,
+            null,
             [
                 'subject' => 'Thread subject',
                 'sender_email' => 'sender@example.com',

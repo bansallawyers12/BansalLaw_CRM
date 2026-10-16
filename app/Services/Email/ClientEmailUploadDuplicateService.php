@@ -9,8 +9,8 @@ use App\Services\EmailSync\UnassignedEmailUploadMatchService;
 use Carbon\Carbon;
 
 /**
- * Block manual .msg/.eml uploads when the same message already exists
- * in Unassigned Mail or on the client matter (Inbox or Sent).
+ * Block manual .msg/.eml uploads when the same message already exists on the client
+ * (Inbox or Sent). Unassigned Mail is only checked when there is no target client.
  */
 class ClientEmailUploadDuplicateService
 {
@@ -31,28 +31,13 @@ class ClientEmailUploadDuplicateService
         string $mailType = 'inbox'
     ): ?array {
         $mailType = $mailType === 'sent' ? 'sent' : 'inbox';
-        $unassigned = $this->unassignedMatchService->findMatchAcrossMailFolders($parsedData, $fileHash);
-        if ($unassigned instanceof EmailLog) {
-            if ($this->shouldAllowDuplicateManualUploadInSyncQueue($unassigned)) {
-                return null;
-            }
-
-            $summary = $this->unassignedMatchService->summarizeMatch($unassigned);
-            $summary['location'] = $this->locationKey($unassigned);
-            $summary['location_label'] = $this->locationLabel($unassigned);
-
-            return [
-                'success' => false,
-                'error_code' => 'unassigned_match',
-                'duplicate' => true,
-                'block_force_upload' => true,
-                'error' => 'This email is already in '.$summary['location_label'].'. Open it there instead of uploading again.',
-                'unassigned_match' => $summary,
-                'existing_match' => $summary,
-            ];
-        }
 
         if ($clientId <= 0) {
+            $unassignedBlock = $this->buildUnassignedMailDuplicateBlock($parsedData, $fileHash);
+            if ($unassignedBlock !== null) {
+                return $unassignedBlock;
+            }
+
             return null;
         }
 
@@ -75,6 +60,36 @@ class ClientEmailUploadDuplicateService
             'error' => $this->buildUserMessage($existing, $match),
             'existing' => $match,
             'existing_match' => $match,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $parsedData
+     * @return array<string, mixed>|null
+     */
+    protected function buildUnassignedMailDuplicateBlock(array $parsedData, string $fileHash): ?array
+    {
+        $unassigned = $this->unassignedMatchService->findMatchAcrossMailFolders($parsedData, $fileHash);
+        if (! $unassigned instanceof EmailLog) {
+            return null;
+        }
+
+        if ($this->shouldAllowDuplicateManualUploadInSyncQueue($unassigned)) {
+            return null;
+        }
+
+        $summary = $this->unassignedMatchService->summarizeMatch($unassigned);
+        $summary['location'] = $this->locationKey($unassigned);
+        $summary['location_label'] = $this->locationLabel($unassigned);
+
+        return [
+            'success' => false,
+            'error_code' => 'unassigned_match',
+            'duplicate' => true,
+            'block_force_upload' => true,
+            'error' => 'This email is already in '.$summary['location_label'].'. Open it there instead of uploading again.',
+            'unassigned_match' => $summary,
+            'existing_match' => $summary,
         ];
     }
 
