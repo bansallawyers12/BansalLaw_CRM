@@ -847,19 +847,19 @@ class Area8SecurityTest extends TestCase
     }
 
     #[Test]
-    public function unauthorized_staff_cannot_complete_or_extend_action_idor(): void
+    public function logged_in_staff_may_complete_and_extend_tasks_without_assignee_checks(): void
     {
         \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
             ['id' => 14],
             ['name' => 'Agent', 'created_at' => now(), 'updated_at' => now()]
         );
 
-        $unassignedStaff = new Staff();
-        $unassignedStaff->email = 'staff960@bansallawyers.com.au';
-        $unassignedStaff->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $unassignedStaff->role = 14;
-        $unassignedStaff->status = 1;
-        $unassignedStaff->save();
+        $staff = new Staff();
+        $staff->email = 'staff960@bansallawyers.com.au';
+        $staff->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $staff->role = 14;
+        $staff->status = 1;
+        $staff->save();
 
         $note = new \App\Models\Note();
         $note->client_id = 9999;
@@ -869,30 +869,33 @@ class Area8SecurityTest extends TestCase
         $note->description = 'Original action description';
         $note->note_deadline = now()->addDays(5)->format('Y-m-d');
         $note->status = 0;
+        $note->is_action = 1;
+        $note->type = 'client';
         $note->save();
 
-        $this->actingAs($unassignedStaff, 'admin');
+        $this->actingAs($staff, 'admin');
 
-        // 1. Unauthorized action completion attempt
         $responseComplete = $this->postJson('/dashboard/tasks/complete', [
             'id' => $note->id,
             'unique_group_id' => 'group_960',
-            'completion_notes' => 'Attempted IDOR completion'
+            'completion_notes' => 'Completed by colleague',
         ]);
 
-        $responseComplete->assertStatus(403);
-        $this->assertEquals(0, (int)$note->fresh()->status);
+        $responseComplete->assertOk();
+        $this->assertEquals(1, (int) $note->fresh()->status);
 
-        // 2. Unauthorized action deadline extension attempt
+        $note->status = 0;
+        $note->save();
+
         $responseExtend = $this->postJson('/dashboard/extend-deadline', [
             'note_id' => $note->id,
             'unique_group_id' => 'group_960',
             'description' => 'Extended description',
-            'note_deadline' => now()->addDays(10)->format('Y-m-d')
+            'note_deadline' => now()->addDays(10)->format('Y-m-d'),
         ]);
 
-        $responseExtend->assertStatus(403);
-        $this->assertEquals('Original action description', $note->fresh()->description);
+        $responseExtend->assertOk();
+        $this->assertEquals('Extended description', $note->fresh()->description);
     }
 
     #[Test]

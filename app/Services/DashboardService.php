@@ -770,17 +770,6 @@ class DashboardService
                 return ['success' => false, 'message' => 'No notes found with the provided criteria'];
             }
 
-            if ($user && !$this->viewerSeesAllMattersAndTasks($user)) {
-                $uid = (int) $user->id;
-                foreach ($notes as $note) {
-                    $isOwnerOrAssignee = ((int)$note->assigned_to === $uid || (int)$note->user_id === $uid);
-                    $hasClientAccess = $note->client_id ? StaffClientVisibility::canAccessClientOrLead((int) $note->client_id, $user) : false;
-                    if (!$isOwnerOrAssignee && !$hasClientAccess) {
-                        return ['success' => false, 'message' => 'Unauthorized deadline extension.'];
-                    }
-                }
-            }
-
             if ($uniqueGroupId !== '') {
                 $updated = Note::where('unique_group_id', $uniqueGroupId)
                     ->where('unique_group_id', '!=', '')
@@ -829,28 +818,6 @@ class DashboardService
 
         if (!$noteData) {
             return ['success' => false, 'message' => 'Task not found'];
-        }
-
-        if ($user && !$this->viewerSeesAllMattersAndTasks($user)) {
-            $uid = (int) $user->id;
-            $notesToCheck = collect([$noteData]);
-            $groupId = trim((string) ($uniqueGroupId ?? ''));
-            if ($groupId !== '') {
-                $groupNotes = Note::where('unique_group_id', $groupId)->whereNotNull('unique_group_id')->get();
-                if ($groupNotes->isNotEmpty()) {
-                    $notesToCheck = $groupNotes;
-                }
-            }
-
-            foreach ($notesToCheck as $checkNote) {
-                $isOwnerOrAssignee = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
-                if (!$isOwnerOrAssignee) {
-                    return ['success' => false, 'message' => 'Unauthorized task completion.'];
-                }
-                if ($checkNote->client_id && !StaffClientVisibility::canAccessClientOrLead((int) $checkNote->client_id, $user)) {
-                    return ['success' => false, 'message' => 'Unauthorized task completion.'];
-                }
-            }
         }
 
         // Update all notes in the group (matches Action tab behavior), or single note if no group

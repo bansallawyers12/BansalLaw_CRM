@@ -215,30 +215,6 @@ class AssigneeController extends Controller
             return response()->json(['status' => false, 'message' => 'Task not found']);
         }
 
-        if ($user && !app(\App\Services\DashboardService::class)->viewerSeesAllMattersAndTasks($user)) {
-            $uid = (int) $user->id;
-            $notesToCheck = collect([$noteData]);
-            if ($uniqueGroupId !== '') {
-                $groupNotes = Note::where('unique_group_id', $uniqueGroupId)
-                    ->where('unique_group_id', '!=', '')
-                    ->whereNotNull('unique_group_id')
-                    ->get();
-                if ($groupNotes->isNotEmpty()) {
-                    $notesToCheck = $groupNotes;
-                }
-            }
-
-            foreach ($notesToCheck as $checkNote) {
-                $isAssigneeOrOwner = ((int)$checkNote->assigned_to === $uid || (int)$checkNote->user_id === $uid);
-                if (!$isAssigneeOrOwner) {
-                    return response()->json(['status' => false, 'message' => 'Unauthorized task modification.'], 403);
-                }
-                if ($checkNote->client_id && !\App\Support\StaffClientVisibility::canAccessClientOrLead((int)$checkNote->client_id, $user)) {
-                    return response()->json(['status' => false, 'message' => 'Unauthorized task modification.'], 403);
-                }
-            }
-        }
-
         $updated = 0;
         if ($uniqueGroupId !== '') {
             $updated = Note::where('unique_group_id', $uniqueGroupId)
