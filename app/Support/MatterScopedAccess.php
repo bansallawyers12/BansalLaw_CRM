@@ -626,6 +626,8 @@ final class MatterScopedAccess
      * Keep rows that belong to a matter the viewer may open, plus rows with no matter
      * (personal documents, general notes, client-wide account lines).
      *
+     * Values are bound as parameters, so this works for both bigint and varchar matter-id columns.
+     *
      * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
      */
     public static function scopeColumnToViewerMatters($query, string $column, int $clientAdminId, bool $includeRowsWithoutMatter = true): void
@@ -652,6 +654,27 @@ final class MatterScopedAccess
                 $q->whereRaw('1 = 0');
             }
         });
+    }
+
+    /**
+     * SQL expression that yields the matter id of a row as text, for joins against client_matters.id.
+     * documents.client_matter_id is varchar on some databases and bigint on others.
+     */
+    public static function matterIdColumnAsTextSql(string $table, string $column): string
+    {
+        static $cache = [];
+        $key = $table.'.'.$column;
+        if (! array_key_exists($key, $cache)) {
+            $type = '';
+            try {
+                $type = strtolower((string) Schema::getColumnType($table, $column));
+            } catch (\Throwable) {
+                $type = '';
+            }
+            $cache[$key] = in_array($type, ['string', 'varchar', 'character varying', 'text', 'char', 'bpchar'], true);
+        }
+
+        return $cache[$key] ? "TRIM({$key})" : "CAST({$key} AS TEXT)";
     }
 
     /**

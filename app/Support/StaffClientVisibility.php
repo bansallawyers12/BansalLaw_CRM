@@ -24,7 +24,8 @@ use Illuminate\Support\Facades\Schema;
  * are Legal Practitioner, Person Responsible, or Person Assisting, plus an active matter_temp grant
  * on that same row. Client ownership and a grant on a different matter of the same client do not
  * reveal the rest of that client's matters.
- * Lead listing keeps its own role rules (leadFullAccessRoleIds, strict mode) in restrictLeadListQuery / userMaySeeByAllocation.
+ * Lead listing, bookings, documents, and the global search all use seesAllClientMatters() for the
+ * full-visibility group and matter assignment for everyone else.
  *
  * Cross-access grants and strict allocation are controlled by config/crm_access.php
  * (CRM_ACCESS_ALLOCATION_ENABLED, CRM_ACCESS_STRICT_ALLOCATION, exempt roles, approvers, quick access).
@@ -223,7 +224,7 @@ final class StaffClientVisibility
      */
     public static function crossAccessUiFlags(?Authenticatable $user): array
     {
-        if (! self::isAllocationEnforcementEnabled() || ! $user || self::isExemptFromAllocation($user)) {
+        if (! self::isAllocationEnforcementEnabled() || ! $user || self::seesAllClientMatters($user)) {
             return ['show_quick' => false, 'show_supervisor' => false];
         }
 
@@ -610,11 +611,7 @@ final class StaffClientVisibility
         }
 
         if (self::seesAllClientMatters($user)) {
-            return true;
-        }
-
-        if (self::isExemptFromAllocation($user) && self::seesAllClientMatters($user)) {
-            if ($user instanceof Staff) {
+            if ($user instanceof Staff && self::isExemptFromAllocation($user)) {
                 self::logExemptAccessIfNeeded((int) $user->id, $adminId, (string) ($row->type ?? 'client'));
             }
 
@@ -720,17 +717,32 @@ final class StaffClientVisibility
             }
         });
 
-        $query->where(function (Builder $matterDoc) use ($staffId, $table) {
+        // documents.client_matter_id may be varchar; compare as text so PostgreSQL does not reject bigint = varchar.
+        $matterIdText = MatterScopedAccess::matterIdColumnAsTextSql($table, 'client_matter_id');
+        $query->where(function (Builder $matterDoc) use ($staffId, $table, $matterIdText) {
             $matterDoc->whereNull("{$table}.client_matter_id")
-                ->orWhere("{$table}.client_matter_id", '<=', 0)
-                ->orWhereExists(function ($sub) use ($staffId, $table) {
+                ->orWhereRaw("{$matterIdText} IN ('', '0')")
+                ->orWhereExists(function ($sub) use ($staffId, $matterIdText) {
                     $sub->select(DB::raw('1'))
                         ->from('client_matters')
-                        ->whereColumn('client_matters.id', "{$table}.client_matter_id")
+                        ->whereRaw("CAST(client_matters.id AS TEXT) = {$matterIdText}")
                         ->where(function ($w) use ($staffId) {
                             $w->where('client_matters.sel_legal_practitioner', $staffId)
                                 ->orWhere('client_matters.sel_person_responsible', $staffId)
                                 ->orWhere('client_matters.sel_person_assisting', $staffId);
+                        });
+                })
+                ->orWhereExists(function ($sub) use ($staffId, $matterIdText) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_access_grants')
+                        ->where('client_access_grants.staff_id', $staffId)
+                        ->where('client_access_grants.grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                        ->where('client_access_grants.status', 'active')
+                        ->whereNotNull('client_access_grants.ends_at')
+                        ->whereRaw('client_access_grants.ends_at > NOW()')
+                        ->where(function ($note) use ($matterIdText) {
+                            $note->whereRaw("client_access_grants.requester_note = CONCAT('matter_id:', {$matterIdText})")
+                                ->orWhereRaw("client_access_grants.requester_note LIKE CONCAT('matter_id:', {$matterIdText}, ';role:%')");
                         });
                 });
         });
@@ -905,7 +917,7 @@ final class StaffClientVisibility
     public static function restrictEloquentQueryByClientIdColumn(Builder $query, string $clientIdColumn = 'client_id', ?Authenticatable $user = null): void
     {
         $user = self::currentStaff($user);
-        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
             return;
         }
 

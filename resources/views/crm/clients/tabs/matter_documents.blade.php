@@ -7,7 +7,7 @@
                     $allowedMatterIds = \App\Support\MatterScopedAccess::accessibleMatterIdsForClient((int) $fetchedData->id);
                     $limitMatterDocs = \App\Support\MatterScopedAccess::isEnabled()
                         && ! \App\Support\MatterScopedAccess::bypassesMatterTeamEnforcement()
-                        && ! \App\Support\StaffClientVisibility::seesAllClientMatters();
+                        && ! \App\Support\StaffClientVisibility::seesAllClientMatters(auth()->guard('admin')->user());
                     $matterIdLimit = $allowedMatterIds !== [] ? $allowedMatterIds : [0];
                     if( $matter_cnt >0 ) {
                         //if client unique reference id is present in url
