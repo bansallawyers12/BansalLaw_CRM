@@ -310,9 +310,9 @@
                                     <div class="cdn-ov-block__head">
                                         <p class="cdn-ov-section-label"><i class="fa-solid fa-users-gear"></i> Assigned Team</p>
                                     </div>
-                                    <div class="cdn-ov-team-list">
+                                    <div class="cdn-ov-team-list cdn-ov-team-list--matter">
                                         @foreach($matterTeamOverview['team'] as $slot)
-                                            <div class="cdn-ov-member-card{{ $slot['status'] !== 'assigned' ? ' is-empty' : '' }}">
+                                            <div class="cdn-ov-member-card cdn-ov-member-card--matter{{ $slot['status'] !== 'assigned' ? ' is-empty' : '' }}" title="{{ $slot['role_title'] }}">
                                                 <div class="cdn-ov-member-avatar cdn-ov-member-avatar--{{ $slot['avatar_variant'] }}{{ $slot['status'] !== 'assigned' ? ' is-empty' : '' }}" title="{{ $slot['role_title'] }}">
                                                     @if(! empty($slot['is_office']))
                                                         <i class="fa-solid fa-building" style="font-size: 0.75rem;" aria-hidden="true"></i>
@@ -323,7 +323,7 @@
                                                     @endif
                                                 </div>
                                                 <div class="cdn-ov-member-info">
-                                                    <span class="cdn-ov-member-role" title="{{ $slot['role_title'] }}">{{ $slot['role'] }}</span>
+                                                    <span class="cdn-ov-member-role">{{ $slot['role'] }}</span>
                                                     @if($slot['status'] === 'assigned')
                                                         <strong class="cdn-ov-member-name">{{ $slot['name'] }}</strong>
                                                     @elseif($slot['status'] === 'missing')
@@ -360,6 +360,8 @@
                                         <p class="cdn-ov-empty">No case details yet. Use <strong>Edit details</strong> to add role, subtype, dates, or notes.</p>
                                     @endif
                                 </section>
+
+                                @include('crm.clients.partials.matter-temporary-access', ['matterTeamOverview' => $matterTeamOverview])
                             </div>
                         </article>
                     @endif

@@ -40,6 +40,9 @@
     $canGrantFinalInvoiceEdit = \App\Models\Staff::canGrantFinalInvoiceEditPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
+    $canGrantMatterTeamAccess = \App\Models\Staff::canGrantManageMatterTeamAccessPermission(
+        $actor instanceof \App\Models\Staff ? $actor : null
+    );
     $permissionArr = [];
     if ($isEdit && $fetchedData && !empty($fetchedData->permission)) {
         $permissionArr = strpos($fetchedData->permission, ',') !== false
@@ -304,6 +307,18 @@
                 @endif
 
                 @include('AdminConsole.staff.partials.default-calendar-type')
+
+                @if($canGrantMatterTeamAccess && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_manage_matter_team_access'))
+                <div class="form-group">
+                    <input type="hidden" name="can_manage_matter_team_access" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="can_manage_matter_team_access" value="1"
+                            @checked(old('can_manage_matter_team_access', $isEdit ? ($fetchedData->can_manage_matter_team_access ?? false) : false))>
+                        <span>Can manage matter team access</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Shows the Matter team access panel on client detail so this staff member can grant temporary access, assign LP/PR/PA, and remove staff from matters. Super Admin always has this; only Super Admin can turn it on for others.</small>
+                </div>
+                @endif
 
                 @if($canGrantCloseDiscontinue && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_close_discontinue_matter'))
                 <div class="form-group">

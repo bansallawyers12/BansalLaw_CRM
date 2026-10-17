@@ -4,9 +4,11 @@ namespace App\Services\CrmAccess;
 
 use App\Models\Branch;
 use App\Models\ClientAccessGrant;
+use App\Models\ClientMatter;
 use App\Models\Notification;
 use App\Models\Staff;
 use App\Models\Team;
+use App\Support\MatterScopedAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -400,6 +402,218 @@ class CrmAccessService
                 Log::warning('access_request notification failed', ['e' => $e->getMessage()]);
             }
         }
+    }
+
+    /**
+     * Super Admin / authorisation user: grant temporary access to one matter for one staff member.
+     *
+     * @throws CrmAccessDeniedException
+     */
+    public function grantTemporaryMatterAccess(
+        Staff $actor,
+        int $targetStaffId,
+        int $clientMatterId,
+        string $durationKey,
+        string $matterRoleKey
+    ): ?ClientAccessGrant {
+        if (! MatterScopedAccess::canManageTemporaryGrants($actor)) {
+            throw new CrmAccessDeniedException('Only Super Admin or authorised users may grant temporary matter access.');
+        }
+
+        if (! MatterScopedAccess::isValidMatterTeamRoleKey($matterRoleKey)) {
+            throw new CrmAccessDeniedException('Please select a valid matter position.');
+        }
+
+        if (! in_array($durationKey, MatterScopedAccess::allowedMatterDurationKeys(), true)) {
+            throw new CrmAccessDeniedException('Invalid access duration.');
+        }
+
+        $matter = ClientMatter::query()->where('id', $clientMatterId)->first(['id', 'client_id']);
+        if (! $matter) {
+            throw new CrmAccessDeniedException('Matter not found.');
+        }
+
+        $target = Staff::query()->where('id', $targetStaffId)->where('status', 1)->first();
+        if (! $target) {
+            throw new CrmAccessDeniedException('Staff member not found or inactive.');
+        }
+
+        if (MatterScopedAccess::isPermanentDuration($durationKey)) {
+            $this->assignPermanentMatterTeamRole($actor, $target, $matter, $matterRoleKey);
+
+            return null;
+        }
+
+        $durations = config('crm_access.matter_temp_duration_minutes', []);
+        $minutes = max(1, (int) $durations[$durationKey]);
+        $starts = Carbon::now('UTC');
+        $ends = $starts->copy()->addMinutes($minutes);
+        $matterId = (int) $matter->id;
+        $grantNote = MatterScopedAccess::matterGrantNote($matterId, $matterRoleKey);
+
+        return DB::transaction(function () use ($actor, $target, $matter, $starts, $ends, $durationKey, $matterId, $matterRoleKey, $grantNote) {
+            $revokeRoleQuery = ClientAccessGrant::query()
+                ->where('admin_id', (int) $matter->client_id)
+                ->where('grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                ->where('status', 'active');
+            MatterScopedAccess::applyMatterGrantNoteFilter($revokeRoleQuery, $matterId, $matterRoleKey);
+            $revokeRoleQuery->update([
+                'status' => 'revoked',
+                'revoked_at' => Carbon::now('UTC'),
+                'revoke_reason' => 'Replaced by new temporary matter grant for this position',
+            ]);
+
+            $revokeStaffQuery = ClientAccessGrant::query()
+                ->where('staff_id', (int) $target->id)
+                ->where('admin_id', (int) $matter->client_id)
+                ->where('grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                ->where('status', 'active');
+            MatterScopedAccess::applyMatterGrantNoteFilter($revokeStaffQuery, $matterId);
+            $revokeStaffQuery->update([
+                'status' => 'revoked',
+                'revoked_at' => Carbon::now('UTC'),
+                'revoke_reason' => 'Replaced by new temporary matter grant',
+            ]);
+
+            MatterScopedAccess::assignMatterTeamRole($matterId, $matterRoleKey, (int) $target->id);
+
+            return ClientAccessGrant::query()->create([
+                'staff_id' => (int) $target->id,
+                'admin_id' => (int) $matter->client_id,
+                'record_type' => 'client',
+                'grant_type' => MatterScopedAccess::GRANT_TYPE_MATTER_TEMP,
+                'access_type' => MatterScopedAccess::ACCESS_TYPE_MATTER,
+                'status' => 'active',
+                'requester_note' => $grantNote,
+                'quick_reason_code' => $durationKey,
+                'requested_at' => $starts,
+                'approved_at' => $starts,
+                'approved_by_staff_id' => (int) $actor->id,
+                'starts_at' => $starts,
+                'ends_at' => $ends,
+            ]);
+        });
+    }
+
+    /**
+     * Assign staff to a matter position with no expiry (standing team; no temp grant row).
+     *
+     * @throws CrmAccessDeniedException
+     */
+    public function assignPermanentMatterTeamRole(
+        Staff $actor,
+        Staff $target,
+        ClientMatter $matter,
+        string $matterRoleKey
+    ): void {
+        if (! MatterScopedAccess::canManageTemporaryGrants($actor)) {
+            throw new CrmAccessDeniedException('Only Super Admin or authorised users may assign matter team roles.');
+        }
+
+        $matterId = (int) $matter->id;
+
+        DB::transaction(function () use ($matter, $matterId, $matterRoleKey, $target) {
+            $revokeRoleQuery = ClientAccessGrant::query()
+                ->where('admin_id', (int) $matter->client_id)
+                ->where('grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                ->where('status', 'active');
+            MatterScopedAccess::applyMatterGrantNoteFilter($revokeRoleQuery, $matterId, $matterRoleKey);
+            $revokeRoleQuery->update([
+                'status' => 'revoked',
+                'revoked_at' => Carbon::now('UTC'),
+                'revoke_reason' => 'Replaced by permanent matter team assignment',
+            ]);
+
+            MatterScopedAccess::assignMatterTeamRole($matterId, $matterRoleKey, (int) $target->id);
+        });
+    }
+
+    /**
+     * @throws CrmAccessDeniedException
+     */
+    public function revokeTemporaryMatterAccess(Staff $actor, int $grantId): ClientAccessGrant
+    {
+        if (! MatterScopedAccess::canManageTemporaryGrants($actor)) {
+            throw new CrmAccessDeniedException('Only Super Admin or authorised users may revoke temporary matter access.');
+        }
+
+        $grant = ClientAccessGrant::query()->where('id', $grantId)->first();
+        if (! $grant || $grant->grant_type !== MatterScopedAccess::GRANT_TYPE_MATTER_TEMP) {
+            throw new CrmAccessDeniedException('Temporary matter grant not found.');
+        }
+
+        if ($grant->status !== 'active') {
+            throw new CrmAccessDeniedException('This grant is no longer active.');
+        }
+
+        $matterId = MatterScopedAccess::parseMatterIdFromGrantNote($grant->requester_note);
+        if ($matterId === null || ! ClientMatter::query()->where('id', $matterId)->exists()) {
+            throw new CrmAccessDeniedException('Invalid matter grant.');
+        }
+
+        $grant->update([
+            'status' => 'revoked',
+            'revoked_at' => Carbon::now('UTC'),
+            'revoke_reason' => 'Revoked manually by ' . trim($actor->first_name . ' ' . $actor->last_name),
+        ]);
+
+        $roleKey = MatterScopedAccess::parseRoleFromGrantNote($grant->requester_note);
+        if ($matterId !== null && $roleKey !== null) {
+            MatterScopedAccess::clearMatterTeamRoleIfStaff($matterId, $roleKey, (int) $grant->staff_id);
+        }
+
+        return $grant->fresh();
+    }
+
+    /**
+     * Revoke active temporary grants for a staff member on one matter and position.
+     *
+     * @throws CrmAccessDeniedException
+     */
+    public function revokeTemporaryMatterAccessForStaffOnMatter(
+        Staff $actor,
+        int $staffId,
+        int $clientMatterId,
+        string $matterRoleKey,
+        string $removalMode = 'temporary'
+    ): int {
+        if (! MatterScopedAccess::canManageTemporaryGrants($actor)) {
+            throw new CrmAccessDeniedException('Only Super Admin or authorised users may revoke temporary matter access.');
+        }
+
+        if (! MatterScopedAccess::isValidMatterTeamRoleKey($matterRoleKey)) {
+            throw new CrmAccessDeniedException('Please select a valid matter position.');
+        }
+
+        if (! in_array($removalMode, ['temporary', 'permanent'], true)) {
+            throw new CrmAccessDeniedException('Invalid removal type.');
+        }
+
+        if (! ClientMatter::query()->where('id', $clientMatterId)->exists()) {
+            throw new CrmAccessDeniedException('Matter not found.');
+        }
+
+        if (! Staff::query()->where('id', $staffId)->exists()) {
+            throw new CrmAccessDeniedException('Staff member not found.');
+        }
+
+        $label = trim($actor->first_name . ' ' . $actor->last_name);
+        $reason = $removalMode === 'permanent'
+            ? 'Removed permanently from matter position by ' . ($label !== '' ? $label : 'staff #' . $actor->id)
+            : 'Revoked manually by ' . ($label !== '' ? $label : 'staff #' . $actor->id);
+
+        if ($removalMode === 'permanent') {
+            MatterScopedAccess::purgeStaffFromMatter($clientMatterId, $staffId, $reason);
+
+            return 1;
+        }
+
+        return MatterScopedAccess::revokeActiveTemporaryGrantsForStaffRoleOnMatter(
+            $staffId,
+            $clientMatterId,
+            $matterRoleKey,
+            $reason
+        );
     }
 
     protected function notifyRequesterGrantProcessed(ClientAccessGrant $grant, string $verb): void

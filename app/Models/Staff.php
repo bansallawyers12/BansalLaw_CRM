@@ -68,6 +68,7 @@ class Staff extends Authenticatable
         'default_calendar_type',
         'can_close_discontinue_matter',
         'can_edit_final_invoice',
+        'can_manage_matter_team_access',
     ];
 
     /**
@@ -97,6 +98,7 @@ class Staff extends Authenticatable
         'can_access_personal_calendar' => 'boolean',
         'can_close_discontinue_matter' => 'boolean',
         'can_edit_final_invoice' => 'boolean',
+        'can_manage_matter_team_access' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -675,6 +677,46 @@ class Staff extends Authenticatable
         $ids = config('crm.close_discontinue_role_ids', [1, 16, 17]);
 
         return is_array($ids) ? array_values(array_map('intval', $ids)) : [1, 16, 17];
+    }
+
+    /**
+     * Role IDs that may manage matter team / temporary access grants (default: Super Admin only).
+     *
+     * @return list<int>
+     */
+    public static function matterTeamAccessManagerRoleIds(): array
+    {
+        $ids = config('crm_access.matter_temp_manager_role_ids', [1]);
+
+        return is_array($ids) ? array_values(array_map('intval', (array) $ids)) : [1];
+    }
+
+    /**
+     * Whether the actor may grant {@see canManageMatterTeamAccess()} on staff profiles.
+     */
+    public static function canGrantManageMatterTeamAccessPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self || (int) ($actor->status ?? 0) !== 1) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::matterTeamAccessManagerRoleIds(), true);
+    }
+
+    /**
+     * Whether this staff member may grant/revoke matter team access on client detail (Super Admin or delegated).
+     */
+    public function canManageMatterTeamAccess(): bool
+    {
+        if ((int) ($this->status ?? 0) !== 1) {
+            return false;
+        }
+
+        if (in_array((int) ($this->role ?? 0), self::matterTeamAccessManagerRoleIds(), true)) {
+            return true;
+        }
+
+        return (bool) ($this->can_manage_matter_team_access ?? false);
     }
 
     /**

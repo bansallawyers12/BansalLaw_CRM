@@ -10,6 +10,7 @@ use App\Models\ClientAccessGrant;
 use App\Models\Team;
 use App\Services\CrmAccess\CrmAccessDeniedException;
 use App\Services\CrmAccess\CrmAccessService;
+use App\Support\MatterScopedAccess;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -25,6 +26,109 @@ class AccessGrantController extends Controller
     public function __construct(
         protected CrmAccessService $crmAccess
     ) {}
+
+    public function matterTemporary(Request $request): JsonResponse
+    {
+        $user = $this->requireStaff();
+
+        if (! MatterScopedAccess::canManageTemporaryGrants($user)) {
+            return response()->json(['message' => 'You are not allowed to manage matter team access.'], 403);
+        }
+
+        $data = $request->validate([
+            'client_matter_id' => ['required', 'integer', 'min:1'],
+            'staff_id' => ['required', 'integer', 'min:1'],
+            'matter_role' => ['required', 'string', Rule::in(array_keys(MatterScopedAccess::matterTeamRoleLabels()))],
+            'duration' => ['required', 'string', Rule::in(MatterScopedAccess::allowedMatterDurationKeys())],
+        ]);
+
+        try {
+            $grant = $this->crmAccess->grantTemporaryMatterAccess(
+                $user,
+                (int) $data['staff_id'],
+                (int) $data['client_matter_id'],
+                (string) $data['duration'],
+                (string) $data['matter_role']
+            );
+        } catch (CrmAccessDeniedException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        if ($grant === null) {
+            return response()->json([
+                'message' => 'Staff assigned to this position permanently.',
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Temporary matter access granted.',
+            'grant' => $grant,
+            'ends_at' => $grant->ends_at?->toIso8601String(),
+        ]);
+    }
+
+    public function matterTemporaryRevoke(Request $request): JsonResponse
+    {
+        $user = $this->requireStaff();
+
+        if (! MatterScopedAccess::canManageTemporaryGrants($user)) {
+            return response()->json(['message' => 'You are not allowed to manage matter team access.'], 403);
+        }
+
+        $data = $request->validate([
+            'grant_id' => ['required', 'integer', 'min:1'],
+        ]);
+
+        try {
+            $grant = $this->crmAccess->revokeTemporaryMatterAccess($user, (int) $data['grant_id']);
+        } catch (CrmAccessDeniedException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'message' => 'Temporary matter access removed.',
+            'grant_id' => (int) $grant->id,
+        ]);
+    }
+
+    public function matterTemporaryRevokeByStaff(Request $request): JsonResponse
+    {
+        $user = $this->requireStaff();
+
+        if (! MatterScopedAccess::canManageTemporaryGrants($user)) {
+            return response()->json(['message' => 'You are not allowed to manage matter team access.'], 403);
+        }
+
+        $data = $request->validate([
+            'client_matter_id' => ['required', 'integer', 'min:1'],
+            'staff_id' => ['required', 'integer', 'min:1'],
+            'matter_role' => ['required', 'string', Rule::in(array_keys(MatterScopedAccess::matterTeamRoleLabels()))],
+            'removal_mode' => ['required', 'string', Rule::in(['temporary', 'permanent'])],
+        ]);
+
+        try {
+            $count = $this->crmAccess->revokeTemporaryMatterAccessForStaffOnMatter(
+                $user,
+                (int) $data['staff_id'],
+                (int) $data['client_matter_id'],
+                (string) $data['matter_role'],
+                (string) $data['removal_mode']
+            );
+        } catch (CrmAccessDeniedException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        $permanent = (string) $data['removal_mode'] === 'permanent';
+
+        return response()->json([
+            'message' => $permanent
+                ? 'Removed from this position permanently.'
+                : ($count > 0
+                    ? 'Temporary matter access removed.'
+                    : 'Position cleared for the selected staff member.'),
+            'revoked_count' => $count,
+        ]);
+    }
 
     public function meta(): JsonResponse
     {

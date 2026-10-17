@@ -325,6 +325,7 @@ Route::get('/get-client-matters/{clientId}', [ClientsController::class, 'getClie
 Route::post('/clients/store-lead-matter', [ClientsController::class, 'storeLeadMatterFromEdit'])->name('clients.storeLeadMatterFromEdit');
 Route::post('/clients/fetchClientMatterAssignee', [ClientPersonalDetailsController::class, 'fetchClientMatterAssignee']);
 Route::post('/clients/updateClientMatterAssignee', [ClientPersonalDetailsController::class, 'updateClientMatterAssignee']);
+Route::post('/clients/clearMatterTeamAssignee', [ClientPersonalDetailsController::class, 'clearMatterTeamAssignee'])->name('clients.clearMatterTeamAssignee');
 
 //matter checklist
 Route::get('/upload-checklists', [UploadChecklistController::class, 'index'])->name('upload_checklists.index');
@@ -365,6 +366,9 @@ Route::prefix('crm/access')->name('crm.access.')->group(function () {
     Route::get('/meta', [AccessGrantController::class, 'meta'])->name('meta');
     Route::post('/quick', [AccessGrantController::class, 'quick'])->middleware('throttle:30,1')->name('quick');
     Route::post('/supervisor', [AccessGrantController::class, 'supervisor'])->middleware('throttle:10,1')->name('supervisor');
+    Route::post('/matter-temporary', [AccessGrantController::class, 'matterTemporary'])->middleware('throttle:30,1')->name('matter-temporary');
+    Route::post('/matter-temporary/revoke', [AccessGrantController::class, 'matterTemporaryRevoke'])->middleware('throttle:30,1')->name('matter-temporary.revoke');
+    Route::post('/matter-temporary/revoke-staff', [AccessGrantController::class, 'matterTemporaryRevokeByStaff'])->middleware('throttle:30,1')->name('matter-temporary.revoke-staff');
     Route::get('/queue', [AccessGrantController::class, 'queuePage'])->name('queue');
     Route::get('/queue/data', [AccessGrantController::class, 'queueData'])->name('queue.data');
     Route::post('/{grant}/approve', [AccessGrantController::class, 'approve'])->whereNumber('grant')->name('approve');

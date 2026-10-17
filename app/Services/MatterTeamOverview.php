@@ -26,7 +26,8 @@ final class MatterTeamOverview
      *         name: string|null,
      *         initials: string|null,
      *         avatar_variant: string,
-     *         is_office: bool
+     *         is_office: bool,
+     *         staff_id: int|null
      *     }>,
      *     case_details: list<array{label: string, value: string, kind: string}>
      * }|null
@@ -82,7 +83,8 @@ final class MatterTeamOverview
      *         name: string|null,
      *         initials: string|null,
      *         avatar_variant: string,
-     *         is_office: bool
+     *         is_office: bool,
+     *         staff_id: int|null
      *     }>,
      *     case_details: list<array{label: string, value: string, kind: string}>
      * }
@@ -170,7 +172,8 @@ final class MatterTeamOverview
      *     name: string|null,
      *     initials: string|null,
      *     avatar_variant: string,
-     *     is_office: bool
+     *     is_office: bool,
+     *     staff_id: int|null
      * }
      */
     private static function staffSlot(
@@ -191,6 +194,7 @@ final class MatterTeamOverview
                 'initials' => null,
                 'avatar_variant' => $avatarVariant,
                 'is_office' => false,
+                'staff_id' => null,
             ];
         }
 
@@ -204,6 +208,7 @@ final class MatterTeamOverview
                 'initials' => null,
                 'avatar_variant' => $avatarVariant,
                 'is_office' => false,
+                'staff_id' => null,
             ];
         }
 
@@ -220,6 +225,7 @@ final class MatterTeamOverview
                 'initials' => null,
                 'avatar_variant' => $avatarVariant,
                 'is_office' => false,
+                'staff_id' => null,
             ];
         }
 
@@ -232,6 +238,7 @@ final class MatterTeamOverview
             'initials' => self::initials($first, $last),
             'avatar_variant' => $avatarVariant,
             'is_office' => false,
+            'staff_id' => (int) $staff->id,
         ];
     }
 

@@ -16,12 +16,15 @@
             ->orderByDesc('client_matters.id')
             ->get();
 
+        $clientMattersList = \App\Support\MatterScopedAccess::filterMattersForViewer($clientMattersList);
+
         if ($clientMattersList->isEmpty()) {
             $closedMattersList = \App\Models\ClientMatter::query()
                 ->closedForClientPicker($clientIdForMatters)
                 ->with($with)
                 ->orderByDesc('client_matters.id')
                 ->get();
+            $closedMattersList = \App\Support\MatterScopedAccess::filterMattersForViewer($closedMattersList);
         }
     }
 

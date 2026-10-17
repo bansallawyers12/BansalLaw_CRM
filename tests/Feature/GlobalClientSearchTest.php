@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Admin;
+use App\Models\ClientAccessGrant;
 use App\Models\ClientContact;
 use App\Models\ClientEmail;
 use App\Models\ClientMatter;
 use App\Models\Staff;
+use App\Support\MatterScopedAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -163,5 +165,67 @@ class GlobalClientSearchTest extends TestCase
         $cacheControl = strtolower((string) $response->headers->get('Cache-Control'));
         $this->assertStringContainsString('no-store', $cacheControl);
         $this->assertStringContainsString('private', $cacheControl);
+    }
+
+    #[Test]
+    public function global_search_hides_client_after_temporary_matter_access_is_revoked(): void
+    {
+        config([
+            'crm_access.allocation_enabled' => true,
+            'crm_access.matter_scoped_access_enabled' => true,
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
+            ['id' => 14, 'name' => 'Calling', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $lp = Staff::factory()->create(['status' => 1, 'role' => 14]);
+        $visitor = Staff::factory()->create(['status' => 1, 'role' => 14]);
+        $this->actingAs($visitor, 'admin');
+
+        $client = Admin::factory()->create([
+            'first_name' => 'Gurkirat',
+            'last_name' => 'Singh',
+            'email' => 'gurkirat1967@gmail.com',
+            'client_id' => 'GURK2600001',
+            'type' => 'client',
+            'is_archived' => 0,
+            'user_id' => $lp->id,
+        ]);
+
+        $matter = ClientMatter::query()->create([
+            'client_id' => $client->id,
+            'client_unique_matter_no' => 'MERITS_1',
+            'matter_status' => 1,
+            'workflow_stage_id' => 1,
+            'sel_legal_practitioner' => $lp->id,
+        ]);
+
+        ClientAccessGrant::query()->create([
+            'staff_id' => $visitor->id,
+            'admin_id' => $client->id,
+            'record_type' => 'client',
+            'grant_type' => MatterScopedAccess::GRANT_TYPE_MATTER_TEMP,
+            'access_type' => MatterScopedAccess::ACCESS_TYPE_MATTER,
+            'status' => 'active',
+            'requester_note' => MatterScopedAccess::matterGrantNote((int) $matter->id, 'person_responsible'),
+            'requested_at' => now(),
+            'starts_at' => now(),
+            'ends_at' => now()->addDay(),
+        ]);
+
+        $withGrant = $this->getJson('/clients/get-allclients?q=MERITS_1');
+        $withGrant->assertOk();
+        $this->assertContains($client->id, collect($withGrant->json('items'))->pluck('cid')->map(fn ($id) => (int) $id)->all());
+
+        MatterScopedAccess::purgeStaffFromMatter((int) $matter->id, (int) $visitor->id, 'test revoke');
+
+        $afterRevoke = $this->getJson('/clients/get-allclients?q=MERITS_1');
+        $afterRevoke->assertOk();
+        $this->assertNotContains($client->id, collect($afterRevoke->json('items'))->pluck('cid')->map(fn ($id) => (int) $id)->all());
+
+        $byName = $this->getJson('/clients/get-allclients?q=gurkirat');
+        $byName->assertOk();
+        $this->assertNotContains($client->id, collect($byName->json('items'))->pluck('cid')->map(fn ($id) => (int) $id)->all());
     }
 }

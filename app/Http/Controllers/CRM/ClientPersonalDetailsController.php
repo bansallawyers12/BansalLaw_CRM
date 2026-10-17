@@ -27,6 +27,7 @@ use App\Models\ConflictPartyContact;
 use App\Models\ConflictPartyEmail;
 use App\Models\ClientConflictCheck;
 use App\Models\Matter;
+use App\Support\MatterScopedAccess;
 use App\Support\MatterStreamHelper;
 use App\Models\Company;
 use App\Services\ConflictCheckService;
@@ -736,6 +737,7 @@ class ClientPersonalDetailsController extends Controller
         }
 
         $obj = ClientMatter::find($requstData['selectedMatterLM']);
+        $previousStaffOnMatter = MatterScopedAccess::staffIdsOnMatterRow($obj);
         $postedClientId = (int) ($requstData['client_id'] ?? 0);
         if ((int) $obj->client_id !== $postedClientId) {
             return response()->json([
@@ -817,9 +819,13 @@ class ClientPersonalDetailsController extends Controller
             }
         }
 
+        $newStaffOnMatter = MatterScopedAccess::staffIdsOnMatterRow($obj);
+        $removedStaffOnMatter = array_values(array_diff($previousStaffOnMatter, $newStaffOnMatter));
+        $matterIdForPurge = (int) $obj->id;
+
         $saved = false;
         try {
-            DB::transaction(function () use ($obj, $decodedOpposing, $postedClientId) {
+            DB::transaction(function () use ($obj, $decodedOpposing, $postedClientId, $removedStaffOnMatter, $matterIdForPurge) {
                 $obj->save();
                 \App\Support\OpposingPartyHelper::syncForMatter((int) $obj->id, $decodedOpposing);
                 \App\Support\MatterOtherPartiesHelper::syncConflictPartiesAfterMatterSave(
@@ -827,6 +833,14 @@ class ClientPersonalDetailsController extends Controller
                     (int) $obj->id,
                     $decodedOpposing
                 );
+
+                foreach ($removedStaffOnMatter as $removedStaffId) {
+                    MatterScopedAccess::purgeStaffFromMatter(
+                        $matterIdForPurge,
+                        (int) $removedStaffId,
+                        'Removed from matter team via edit'
+                    );
+                }
             });
             $saved = true;
         } catch (\Throwable $e) {
@@ -871,6 +885,80 @@ class ClientPersonalDetailsController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    public function clearMatterTeamAssignee(Request $request)
+    {
+        $data = $request->validate([
+            'client_id' => ['required', 'integer', 'min:1'],
+            'client_matter_id' => ['required', 'integer', 'min:1'],
+            'role' => ['required', 'string', Rule::in([
+                'legal_practitioner',
+                'person_responsible',
+                'person_assisting',
+            ])],
+        ]);
+
+        $clientId = (int) $data['client_id'];
+        $matterId = (int) $data['client_matter_id'];
+        $role = (string) $data['role'];
+
+        $this->ensureCrmRecordAccess($clientId);
+
+        $matter = ClientMatter::query()->where('id', $matterId)->first();
+        if (! $matter || (int) $matter->client_id !== $clientId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Matter not found for this client.',
+            ], 404);
+        }
+
+        if (MatterScopedAccess::isEnabled() && ! MatterScopedAccess::canAccessClientMatter($matterId)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You do not have access to change this matter team.',
+            ], 403);
+        }
+
+        $columnMap = [
+            'legal_practitioner' => 'sel_legal_practitioner',
+            'person_responsible' => 'sel_person_responsible',
+            'person_assisting' => 'sel_person_assisting',
+        ];
+        $column = $columnMap[$role];
+        if (! Schema::hasColumn('client_matters', $column)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This role cannot be updated.',
+            ], 422);
+        }
+
+        $removedStaffId = (int) ($matter->{$column} ?? 0);
+        if ($removedStaffId <= 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No one is assigned to that role.',
+            ], 422);
+        }
+
+        $matter->{$column} = null;
+        $matter->save();
+
+        MatterScopedAccess::purgeStaffFromMatter($matterId, $removedStaffId, 'Removed from matter team');
+
+        $objs = new ActivitiesLog;
+        $objs->client_id = $clientId;
+        $objs->created_by = Auth::user()->id;
+        $objs->description = 'Removed ' . str_replace('_', ' ', $role) . ' from matter team';
+        $objs->subject = 'updated client matter details';
+        $objs->task_status = 0;
+        $objs->pin = 0;
+        $objs->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Team member removed from this matter.',
+        ]);
     }
 
     /**

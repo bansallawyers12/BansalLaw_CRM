@@ -62,6 +62,22 @@ return [
     // Set true to restore allocation filtering and the quick/supervisor grant flow.
     'allocation_enabled' => filter_var(env('CRM_ACCESS_ALLOCATION_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
+    // When true, matter URLs and matter-scoped data require LP/PR/PA on that matter (or a matter_temp grant).
+    'matter_scoped_access_enabled' => filter_var(env('CRM_ACCESS_MATTER_SCOPED', true), FILTER_VALIDATE_BOOLEAN),
+
+    // Roles that may open any matter without LP/PR/PA (default: Super Admin role 1 only).
+    'matter_scope_bypass_role_ids' => $intList('CRM_ACCESS_MATTER_SCOPE_BYPASS_ROLE_IDS', '1', [1]),
+
+    // Staff roles that may grant/revoke matter team access on the client detail card (default: Super Admin only).
+    'matter_temp_manager_role_ids' => $intList('CRM_ACCESS_MATTER_TEMP_MANAGER_ROLE_IDS', '1', [1]),
+
+    // Keys are form values; values are duration in minutes.
+    'matter_temp_duration_minutes' => [
+        '1_hour' => 60,
+        '1_day' => 24 * 60,
+        '1_week' => 7 * 24 * 60,
+    ],
+
     'max_pending_supervisor_requests' => max(1, (int) env('CRM_ACCESS_MAX_PENDING_SUPERVISOR_REQUESTS', 5)),
 
     // Days after which un-actioned pending supervisor requests are auto-expired by the scheduled job.

@@ -420,6 +420,59 @@ final class StaffClientVisibility
     }
 
     /**
+     * Allocation + active grants (incl. matter_temp) for joined admins rows (global search, raw queries).
+     *
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     */
+    public static function applyAllocatedClientVisibilityOnAdminJoin($query, string $adminsAlias = 'admins', ?Authenticatable $user = null): void
+    {
+        $user = self::currentStaff($user);
+        if (! $user || ! self::isAllocationEnforcementEnabled()) {
+            return;
+        }
+
+        if (MatterScopedAccess::isEnabled() && MatterScopedAccess::bypassesMatterTeamEnforcement($user)) {
+            return;
+        }
+
+        if (self::isExemptFromAllocation($user) && ! MatterScopedAccess::isEnabled()) {
+            return;
+        }
+
+        $staffId = (int) $user->id;
+        $adminIdCol = $adminsAlias . '.id';
+        $userIdCol = $adminsAlias . '.user_id';
+
+        $query->where(function ($q) use ($staffId, $adminIdCol, $userIdCol) {
+            $q->whereExists(function ($sub) use ($staffId, $adminIdCol) {
+                $sub->select(DB::raw('1'))
+                    ->from('client_matters')
+                    ->whereColumn('client_matters.client_id', $adminIdCol);
+                self::whereClientMatterRowAssignedToStaff($sub, $staffId);
+            })->orWhere($userIdCol, $staffId)
+                ->orWhereExists(function ($sub) use ($staffId, $adminIdCol) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_access_grants')
+                        ->whereColumn('client_access_grants.admin_id', $adminIdCol)
+                        ->where('client_access_grants.staff_id', $staffId)
+                        ->where('client_access_grants.status', 'active')
+                        ->whereNotNull('client_access_grants.ends_at')
+                        ->whereRaw('client_access_grants.ends_at > NOW()');
+                })
+                ->orWhereExists(function ($sub) use ($staffId, $adminIdCol) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_access_grants')
+                        ->whereColumn('client_access_grants.admin_id', $adminIdCol)
+                        ->where('client_access_grants.staff_id', $staffId)
+                        ->where('client_access_grants.grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                        ->where('client_access_grants.status', 'active')
+                        ->whereNotNull('client_access_grants.ends_at')
+                        ->whereRaw('client_access_grants.ends_at > NOW()');
+                });
+        });
+    }
+
+    /**
      * @param  Builder<\App\Models\Admin>  $query
      */
     public static function restrictAdminEloquentQuery(Builder $query): void
@@ -427,31 +480,55 @@ final class StaffClientVisibility
         $user = self::currentStaff();
         self::excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, $user);
 
-        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
-            return;
+        self::applyAllocatedClientVisibilityOnAdminJoin($query, 'admins', $user);
+    }
+
+    /**
+     * Drop global-search hits the viewer may not open (matter-scoped + allocation).
+     *
+     * @param  list<array<string, mixed>>  $results
+     * @return list<array<string, mixed>>
+     */
+    public static function filterGlobalSearchResultsForViewer(array $results, ?Authenticatable $user = null): array
+    {
+        $user = self::currentStaff($user);
+        if ($results === [] || ! $user) {
+            return $results;
         }
 
-        $staffId = (int) $user->id;
+        if (! self::isAllocationEnforcementEnabled()) {
+            return $results;
+        }
 
-        $query->where(function (Builder $q) use ($staffId) {
-            // Allocated by matter (LP / PR / PA) or user_id
-            $q->whereExists(function ($sub) use ($staffId) {
-                $sub->select(DB::raw('1'))
-                    ->from('client_matters')
-                    ->whereColumn('client_matters.client_id', 'admins.id');
-                self::whereClientMatterRowAssignedToStaff($sub, $staffId);
-            })->orWhere('admins.user_id', $staffId)
-              // OR has an active cross-access grant
-              ->orWhereExists(function ($sub) use ($staffId) {
-                  $sub->select(DB::raw('1'))
-                      ->from('client_access_grants')
-                      ->whereColumn('client_access_grants.admin_id', 'admins.id')
-                      ->where('client_access_grants.staff_id', $staffId)
-                      ->where('client_access_grants.status', 'active')
-                      ->whereNotNull('client_access_grants.ends_at')
-                      ->whereRaw('client_access_grants.ends_at > NOW()');
-              });
-        });
+        if (MatterScopedAccess::isEnabled()) {
+            if (MatterScopedAccess::bypassesMatterTeamEnforcement($user)) {
+                return $results;
+            }
+        } elseif (self::isExemptFromAllocation($user)) {
+            return $results;
+        }
+
+        return array_values(array_filter($results, static function (array $item) use ($user): bool {
+            $cid = (int) ($item['cid'] ?? 0);
+            if ($cid <= 0) {
+                return false;
+            }
+
+            $encodedId = (string) ($item['id'] ?? '');
+            if (preg_match('#/Matter/([^/]+)$#', $encodedId, $matches) === 1) {
+                $matterRef = trim((string) ($matches[1] ?? ''));
+                if ($matterRef === '') {
+                    return false;
+                }
+                if (MatterScopedAccess::isEnabled()) {
+                    return MatterScopedAccess::canAccessMatterByReference($cid, $matterRef, $user);
+                }
+
+                return self::canAccessClientOrLead($cid, $user);
+            }
+
+            return self::canAccessClientOrLead($cid, $user);
+        }));
     }
 
     public static function canAccessClientOrLead(int $adminId, ?Authenticatable $user = null): bool
@@ -490,6 +567,10 @@ final class StaffClientVisibility
         if ($user instanceof Staff) {
             $svc = app(CrmAccessService::class);
             if ($svc->hasActiveGrant($user, $adminId)) {
+                return true;
+            }
+
+            if (MatterScopedAccess::staffHasActiveMatterTempGrantForClient((int) $user->id, $adminId)) {
                 return true;
             }
         }
@@ -609,6 +690,10 @@ final class StaffClientVisibility
             return true;
         }
 
+        if (! empty($document->client_matter_id) && \App\Support\MatterScopedAccess::isEnabled()) {
+            return \App\Support\MatterScopedAccess::canAccessClientMatter((int) $document->client_matter_id, $user);
+        }
+
         if ($document->exists) {
             $query = Document::query()->whereKey($document->getKey());
             self::restrictDocumentEloquentQuery($query, $user);
@@ -722,9 +807,14 @@ final class StaffClientVisibility
             return (int) ($row->user_id ?? 0) === $staffId;
         }
 
-        // CRM client (type client): same rule strict or non-strict — LP / PR / PA on any matter or record owner.
+        // CRM client (type client): LP / PR / PA on any matter, matter temp grant, or record owner.
         $staffId = (int) $user->id;
         if (self::clientHasAllocatingMatter($adminId, $staffId)) {
+            return true;
+        }
+
+        if (MatterScopedAccess::isEnabled()
+            && MatterScopedAccess::staffHasActiveMatterTempGrantForClient($staffId, $adminId)) {
             return true;
         }
 

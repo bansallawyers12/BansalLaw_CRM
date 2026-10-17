@@ -1720,6 +1720,23 @@ class ClientsController extends Controller
             $activeTab = $resolved['activeTab'];
             $id1 = $resolved['matterRef'];
 
+            if ($id1 && \App\Support\MatterScopedAccess::isEnabled()) {
+                if (! \App\Support\MatterScopedAccess::canAccessMatterByReference((int) $id, (string) $id1, Auth::user())) {
+                    $displayName = trim((string) (($targetRecord->first_name ?? '') . ' ' . ($targetRecord->last_name ?? '')));
+                    if ($displayName === '') {
+                        $displayName = (string) ($targetRecord->client_id ?? ('#' . (int) $id));
+                    }
+
+                    return view('crm.access.detail-gate', [
+                        'displayName' => $displayName . ' — ' . $id1,
+                        'recordType' => (string) ($targetRecord->type ?? 'client'),
+                        'canRequestAccess' => false,
+                        'accessModalPayload' => null,
+                        'gateMessage' => 'You are not on the matter team for this file. Ask a Super Admin to grant you access to this matter.',
+                    ]);
+                }
+            }
+
             if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
                 $fetchedData = $detailService->loadClientRecord((int) $id);
 
@@ -2372,6 +2389,7 @@ class ClientsController extends Controller
                         ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
                         ->tap(function ($q) {
                             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
+                            StaffClientVisibility::applyAllocatedClientVisibilityOnAdminJoin($q, 'admins');
                         })
                         ->select(
                             'admins.id as client_id',
@@ -2423,6 +2441,7 @@ class ClientsController extends Controller
                             })
                             ->tap(function ($q) {
                                 StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
+                                StaffClientVisibility::applyAllocatedClientVisibilityOnAdminJoin($q, 'admins');
                             })
                             ->select(
                                 'admins.id as client_id',
@@ -2460,6 +2479,7 @@ class ClientsController extends Controller
                 ->where('admins.is_archived', 0)
                 ->tap(function ($q) {
                     StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
+                    StaffClientVisibility::applyAllocatedClientVisibilityOnAdminJoin($q, 'admins');
                 })
                 ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', [$likeMatterOnly])
                 ->select(
@@ -2600,7 +2620,7 @@ class ClientsController extends Controller
                     }
                 });
             $clientsQuery->tap(function ($q) {
-                StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q);
+                StaffClientVisibility::restrictAdminEloquentQuery($q);
             });
             $clientsQuery = $clientsQuery
                 ->select('admins.*')
@@ -2759,6 +2779,8 @@ class ClientsController extends Controller
             $results = array_values(array_filter($results, function($r) use ($contactPersonIdsToExclude) {
                 return !in_array($r['cid'], $contactPersonIdsToExclude);
             }));
+
+            $results = StaffClientVisibility::filterGlobalSearchResultsForViewer($results, Auth::user());
 
             $results = $this->enrichGlobalSearchResultRefs($results);
 
