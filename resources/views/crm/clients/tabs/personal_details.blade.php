@@ -323,7 +323,7 @@
                                                     @endif
                                                 </div>
                                                 <div class="cdn-ov-member-info">
-                                                    <span class="cdn-ov-member-role">{{ $slot['role'] }}</span>
+                                                    <span class="cdn-ov-member-role" title="{{ $slot['role_title'] }}">{{ $slot['role'] }}</span>
                                                     @if($slot['status'] === 'assigned')
                                                         <strong class="cdn-ov-member-name">{{ $slot['name'] }}</strong>
                                                     @elseif($slot['status'] === 'missing')
@@ -351,7 +351,7 @@
                                                     @if(($mdRow['kind'] ?? '') === 'role')
                                                         <span class="cdn-ov-role-pill"><i class="fa-solid fa-user-tag"></i> {{ $mdRow['value'] }}</span>
                                                     @else
-                                                        <span class="cdn-ov-case-item__value">{{ $mdRow['value'] }}</span>
+                                                        <span class="cdn-ov-case-item__value{{ ($mdRow['kind'] ?? '') === 'full' ? ' cdn-ov-case-item__value--pre' : '' }}">{{ $mdRow['value'] }}</span>
                                                     @endif
                                                 </div>
                                             @endforeach

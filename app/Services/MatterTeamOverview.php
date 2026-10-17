@@ -46,6 +46,31 @@ final class MatterTeamOverview
     }
 
     /**
+     * @return list<string>
+     */
+    private static function relationsToLoad(): array
+    {
+        $with = [];
+        if (Schema::hasColumn('client_matters', 'sel_legal_practitioner')) {
+            $with[] = 'legalPractitioner';
+        }
+        if (Schema::hasColumn('client_matters', 'sel_person_responsible')) {
+            $with[] = 'personResponsible';
+        }
+        if (Schema::hasColumn('client_matters', 'sel_person_assisting')) {
+            $with[] = 'personAssisting';
+        }
+        if (Schema::hasColumn('client_matters', 'office_id')) {
+            $with[] = 'office';
+        }
+        if (Schema::hasColumn('client_matters', 'sel_matter_id')) {
+            $with[] = 'matter';
+        }
+
+        return $with;
+    }
+
+    /**
      * @return array{
      *     client_matter_id: int,
      *     matter_reference: string|null,
@@ -64,9 +89,16 @@ final class MatterTeamOverview
      */
     public static function buildFromMatter(ClientMatter $matter): array
     {
-        $matter->loadMissing(['legalPractitioner', 'personResponsible', 'personAssisting', 'office', 'matter']);
+        $relations = self::relationsToLoad();
+        if ($relations !== []) {
+            $matter->loadMissing($relations);
+        }
 
         $ref = trim((string) ($matter->client_unique_matter_no ?? ''));
+        $hasLegalPractitioner = Schema::hasColumn('client_matters', 'sel_legal_practitioner');
+        $hasPersonResponsible = Schema::hasColumn('client_matters', 'sel_person_responsible');
+        $hasPersonAssisting = Schema::hasColumn('client_matters', 'sel_person_assisting');
+        $hasOffice = Schema::hasColumn('client_matters', 'office_id');
 
         return [
             'client_matter_id' => (int) $matter->id,
@@ -77,26 +109,29 @@ final class MatterTeamOverview
                     'Legal practitioner',
                     'Legal Practitioner',
                     'navy',
-                    $matter->sel_legal_practitioner ?? null,
-                    $matter->legalPractitioner
+                    $hasLegalPractitioner ? ($matter->sel_legal_practitioner ?? null) : null,
+                    $hasLegalPractitioner ? $matter->legalPractitioner : null
                 ),
                 self::staffSlot(
                     'person_responsible',
                     'Person responsible',
                     'Person Responsible',
                     'blue',
-                    $matter->sel_person_responsible ?? null,
-                    $matter->personResponsible
+                    $hasPersonResponsible ? ($matter->sel_person_responsible ?? null) : null,
+                    $hasPersonResponsible ? $matter->personResponsible : null
                 ),
                 self::staffSlot(
                     'person_assisting',
                     'Person assisting',
                     'Person Assisting',
                     'teal',
-                    $matter->sel_person_assisting ?? null,
-                    $matter->personAssisting
+                    $hasPersonAssisting ? ($matter->sel_person_assisting ?? null) : null,
+                    $hasPersonAssisting ? $matter->personAssisting : null
                 ),
-                self::officeSlot($matter->office_id ?? null, $matter->office),
+                self::officeSlot(
+                    $hasOffice ? ($matter->office_id ?? null) : null,
+                    $hasOffice ? $matter->office : null
+                ),
             ],
             'case_details' => self::buildCaseDetails($matter),
         ];
@@ -104,7 +139,7 @@ final class MatterTeamOverview
 
     private static function resolveMatter(int $clientId, ?string $matterRef): ?ClientMatter
     {
-        $with = ['legalPractitioner', 'personResponsible', 'personAssisting', 'office', 'matter'];
+        $with = self::relationsToLoad();
 
         $ref = $matterRef !== null ? trim($matterRef) : '';
         if ($ref !== '') {
@@ -175,13 +210,25 @@ final class MatterTeamOverview
         $first = trim((string) ($staff->first_name ?? ''));
         $last = trim((string) ($staff->last_name ?? ''));
         $name = trim($first . ' ' . $last);
+        if ($name === '') {
+            return [
+                'key' => $key,
+                'role' => $role,
+                'role_title' => $roleTitle,
+                'status' => 'missing',
+                'name' => null,
+                'initials' => null,
+                'avatar_variant' => $avatarVariant,
+                'is_office' => false,
+            ];
+        }
 
         return [
             'key' => $key,
             'role' => $role,
             'role_title' => $roleTitle,
             'status' => 'assigned',
-            'name' => $name !== '' ? $name : null,
+            'name' => $name,
             'initials' => self::initials($first, $last),
             'avatar_variant' => $avatarVariant,
             'is_office' => false,

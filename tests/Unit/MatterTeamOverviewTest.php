@@ -124,6 +124,28 @@ class MatterTeamOverviewTest extends TestCase
     }
 
     #[Test]
+    public function staff_with_blank_name_is_not_shown_as_assigned(): void
+    {
+        if (! Schema::hasTable('client_matters')) {
+            $this->markTestSkipped('client_matters table not available');
+        }
+
+        $client = Admin::factory()->create(['type' => 'client', 'is_archived' => 0]);
+        $lp = Staff::factory()->create(['first_name' => '   ', 'last_name' => '']);
+        $matter = ClientMatter::create([
+            'client_id' => $client->id,
+            'matter_status' => 1,
+            'client_unique_matter_no' => 'CIV_BLANK',
+            'sel_legal_practitioner' => $lp->id,
+        ]);
+
+        $payload = MatterTeamOverview::buildFromMatter($matter->fresh());
+
+        $this->assertSame('missing', $payload['team'][0]['status']);
+        $this->assertNull($payload['team'][0]['name']);
+    }
+
+    #[Test]
     public function case_detail_with_colon_stays_one_block(): void
     {
         if (! Schema::hasTable('client_matters') || ! Schema::hasColumn('client_matters', 'case_detail')) {
