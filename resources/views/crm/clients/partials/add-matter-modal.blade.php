@@ -9,7 +9,7 @@
         $__addMatterSubjectName = trim(($fetchedData->first_name ?? '') . ' ' . ($fetchedData->last_name ?? ''));
     }
 @endphp
-<div class="modal fade custom_modal add-matter-modal" id="addMatterModal" tabindex="-1" role="dialog" aria-labelledby="addMatterModalTitle" aria-hidden="true">
+<div class="modal fade custom_modal add-matter-modal crm-closed-matter-allow" id="addMatterModal" tabindex="-1" role="dialog" aria-labelledby="addMatterModalTitle" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">

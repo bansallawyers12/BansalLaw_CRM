@@ -263,7 +263,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                 <div class="crm-closed-matter-banner" role="status" id="crmClosedMatterBanner">
                     <i class="fa-solid fa-lock" aria-hidden="true"></i>
                     <div class="crm-closed-matter-banner__body">
-                        <strong>This matter is closed. You can view details but cannot make changes.</strong>
+                        <strong>This matter is closed. You can view details but cannot change this file — you can still add a new matter.</strong>
                         @if(!empty($cdnReopenRequestedByName))
                             <span class="crm-closed-matter-banner__requester">
                                 <i class="fa-solid fa-hand-paper" aria-hidden="true"></i>

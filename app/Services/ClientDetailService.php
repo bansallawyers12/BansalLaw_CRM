@@ -94,37 +94,6 @@ class ClientDetailService
         ];
     }
 
-    /**
-     * When the client has no open matters, a URL matter segment that points at a closed matter
-     * should not bind the detail view (same UX as a client without any matter).
-     */
-    public function stripClosedOnlyMatterRef(int $clientId, ?string $matterRef): ?string
-    {
-        $matterRef = ($matterRef !== null && $matterRef !== '') ? trim((string) $matterRef) : null;
-        if ($matterRef === null) {
-            return null;
-        }
-
-        if (in_array(strtolower($matterRef), array_map('strtolower', self::RESERVED_URL_SEGMENTS), true)) {
-            return $matterRef;
-        }
-
-        if ($this->clientHasActiveMatters($clientId)) {
-            return $matterRef;
-        }
-
-        $row = ClientMatter::query()
-            ->where('client_id', $clientId)
-            ->where('client_unique_matter_no', $matterRef)
-            ->first();
-
-        if ($row && ClientMatter::isClosed($row)) {
-            return null;
-        }
-
-        return $matterRef;
-    }
-
     public function clientHasActiveMatters(int $clientId): bool
     {
         return ClientMatter::query()
@@ -164,17 +133,6 @@ class ClientDetailService
             && strtolower(trim((string) ($fetchedData->lead_status ?? ''))) === 'converted';
 
         $matterRef = ($matterRef !== null && $matterRef !== '') ? (string) $matterRef : null;
-        if ($matterRef !== null
-            && ! in_array(strtolower($matterRef), array_map('strtolower', self::RESERVED_URL_SEGMENTS), true)
-            && ! $this->clientHasActiveMatters($clientId)) {
-            $closedOnly = ClientMatter::query()
-                ->where('client_id', $clientId)
-                ->where('client_unique_matter_no', $matterRef)
-                ->first();
-            if ($closedOnly && ClientMatter::isClosed($closedOnly)) {
-                $matterRef = null;
-            }
-        }
 
         $isMatterIdInUrl = $matterRef !== null
             && ! in_array(strtolower($matterRef), array_map('strtolower', self::RESERVED_URL_SEGMENTS), true);
@@ -185,7 +143,19 @@ class ClientDetailService
         $showMatterDocumentsTab = ($isMatterIdInUrl || $matterCnt > 0 || $showMatterDocsForConvertedLead)
             && ! $hideMatterDocumentsForBankMatter;
 
-        $showMatterBundleTabs = $isMatterIdInUrl || $matterCnt > 0 || $showMatterDocsForConvertedLead;
+        $hasClosedMatterInUrl = false;
+        if ($isMatterIdInUrl && $matterRef !== null) {
+            $urlMatter = ClientMatter::query()
+                ->where('client_id', $clientId)
+                ->where('client_unique_matter_no', $matterRef)
+                ->first();
+            $hasClosedMatterInUrl = $urlMatter && ClientMatter::isClosed($urlMatter);
+        }
+
+        // Full matter tabs only for an active matter in the URL, or when the client still has open matters.
+        $showMatterBundleTabs = $matterCnt > 0
+            || $showMatterDocsForConvertedLead
+            || ($hasClosedMatterInUrl && $isMatterIdInUrl);
 
         return [
             'matter_cnt' => $matterCnt,
@@ -284,10 +254,6 @@ class ClientDetailService
                 ->first();
             if ($selectedClientMatter) {
                 $isClosedMatterView = ClientMatter::isClosed($selectedClientMatter);
-                if ($isClosedMatterView && ! $this->clientHasActiveMatters($clientId)) {
-                    $selectedClientMatter = null;
-                    $isClosedMatterView = false;
-                }
             }
         }
 

@@ -15,7 +15,7 @@ class ClientDetailClosedOnlyMatterTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function strip_closed_matter_ref_when_client_has_no_active_matters(): void
+    public function closed_matter_ref_keeps_closed_view_when_no_active_matters(): void
     {
         $client = Admin::factory()->create(['type' => 'client']);
 
@@ -28,12 +28,74 @@ class ClientDetailClosedOnlyMatterTest extends TestCase
 
         $service = app(ClientDetailService::class);
 
-        $this->assertNull($service->stripClosedOnlyMatterRef((int) $client->id, 'CIV_1'));
         $this->assertFalse($service->clientHasActiveMatters((int) $client->id));
+
+        $payload = $service->buildViewPayload(
+            (int) $client->id,
+            'CIV_1',
+            'personaldetails',
+            $client
+        );
+
+        $this->assertTrue($payload['isClosedMatterView']);
+        $this->assertSame('CIV_1', $payload['selectedClientMatter']?->client_unique_matter_no);
     }
 
     #[Test]
-    public function detail_redirects_away_from_closed_only_matter_ref_in_url(): void
+    public function client_scope_url_is_not_closed_matter_view(): void
+    {
+        $client = Admin::factory()->create(['type' => 'client', 'client_id' => 'AIRI2600184']);
+
+        ClientMatter::query()->create([
+            'client_id' => $client->id,
+            'matter_status' => 0,
+            'client_unique_matter_no' => 'CIV_1',
+            'sel_matter_id' => 1,
+        ]);
+
+        $payload = app(ClientDetailService::class)->buildViewPayload(
+            (int) $client->id,
+            null,
+            'personaldetails',
+            $client
+        );
+
+        $this->assertFalse($payload['isClosedMatterView']);
+        $this->assertNull($payload['selectedClientMatter']);
+    }
+
+    #[Test]
+    public function client_scope_detail_shows_record_and_closed_matter_rows(): void
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
+            ['id' => 1, 'name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $staff = Staff::factory()->create(['role' => 1]);
+        $client = Admin::factory()->create(['type' => 'client', 'client_id' => 'AIRI2600184']);
+
+        ClientMatter::query()->create([
+            'client_id' => $client->id,
+            'matter_status' => 0,
+            'client_unique_matter_no' => 'CIV_1',
+            'sel_matter_id' => 1,
+        ]);
+
+        $encodeId = base64_encode(convert_uuencode((string) $client->id));
+
+        $this->actingAs($staff, 'admin');
+
+        $response = $this->get('/clients/detail/' . $encodeId . '/personaldetails');
+
+        $response->assertOk();
+        $response->assertSee('AIRI2600184', false);
+        $response->assertSee('CIV_1', false);
+        $response->assertSee('Add new matter', false);
+        $response->assertDontSee('This matter is closed', false);
+    }
+
+    #[Test]
+    public function closed_matter_url_shows_read_only_banner(): void
     {
         \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
             ['id' => 1, 'name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
@@ -55,7 +117,8 @@ class ClientDetailClosedOnlyMatterTest extends TestCase
 
         $response = $this->get('/clients/detail/' . $encodeId . '/CIV_1/personaldetails');
 
-        $response->assertRedirect();
-        $this->assertStringNotContainsString('CIV_1', (string) $response->headers->get('Location'));
+        $response->assertOk();
+        $response->assertSee('This matter is closed', false);
+        $response->assertSee('Add', false);
     }
 }

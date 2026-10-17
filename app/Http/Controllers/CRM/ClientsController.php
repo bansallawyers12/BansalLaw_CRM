@@ -1720,15 +1720,6 @@ class ClientsController extends Controller
             $activeTab = $resolved['activeTab'];
             $id1 = $resolved['matterRef'];
 
-            $strippedMatterRef = $detailService->stripClosedOnlyMatterRef((int) $id, $id1);
-            if ($strippedMatterRef !== $id1) {
-                return redirect()->route('clients.detail', [
-                    'client_id' => $encodeId,
-                    'client_unique_matter_ref_no' => $activeTab,
-                ]);
-            }
-            $id1 = $strippedMatterRef;
-
             if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
                 $fetchedData = $detailService->loadClientRecord((int) $id);
 
@@ -2703,6 +2694,22 @@ class ClientsController extends Controller
                     $clientMatters = $allClientMatters->get($client->id, collect());
 
                     if ($clientMatters->isNotEmpty()) {
+                        $hasActiveMatter = $clientMatters->contains(
+                            static fn ($matterRow) => ! ClientMatter::isClosedRow($matterRow)
+                        );
+                        if (! $hasActiveMatter) {
+                            $results[] = StaffClientVisibility::enrichGlobalSearchItem([
+                                'id' => base64_encode(convert_uuencode($client->id)) . '/Client',
+                                'name' => $client->company_name_or_personal_name,
+                                'email' => $client->email,
+                                'status' => $client->is_archived ? 'Archived' : $client->type,
+                                'cid' => $client->id,
+                                'phones' => $allPhones,
+                                'emails' => $allEmails,
+                                'is_company' => (bool) $client->is_company,
+                                'record_type' => $client->type,
+                            ], (string) $client->type);
+                        }
                         foreach ($clientMatters as $matterRow) {
                             $item = $this->mapGlobalSearchMatterRow($matterRow);
                             $item['phones'] = $allPhones;

@@ -1,24 +1,41 @@
 @php
     $__sch = \Illuminate\Support\Facades\Schema::class;
     $clientMattersList = collect();
+    $closedMattersList = collect();
     if ($__sch::hasTable('client_matters')) {
         $with = ['matter'];
         if ($__sch::hasTable('client_matter_opposing_parties')) {
             $with[] = 'opposingParties';
         }
 
+        $clientIdForMatters = (int) $fetchedData->id;
+
         $clientMattersList = \App\Models\ClientMatter::query()
-            ->activeForClientPicker((int) $fetchedData->id)
+            ->activeForClientPicker($clientIdForMatters)
             ->with($with)
             ->orderByDesc('client_matters.id')
             ->get();
+
+        if ($clientMattersList->isEmpty()) {
+            $closedMattersList = \App\Models\ClientMatter::query()
+                ->closedForClientPicker($clientIdForMatters)
+                ->with($with)
+                ->orderByDesc('client_matters.id')
+                ->get();
+        }
     }
 
+    $displayingClosedMatters = $clientMattersList->isEmpty() && $closedMattersList->isNotEmpty();
+    $activeMatterCount = $clientMattersList->count();
+    $closedMatterCount = $closedMattersList->count();
+
     $matterRefInUrl = trim((string) ($matterRefInUrl ?? ''));
+    $recordScopeInUrl = empty($isClosedMatterView) && $matterRefInUrl === '';
+
     $currentMatterRef = (string) (($selectedClientMatter ?? null)?->client_unique_matter_no ?? '');
-    if ($currentMatterRef === '' && $matterRefInUrl !== '') {
+    if ($currentMatterRef === '' && $matterRefInUrl !== '' && ! empty($isClosedMatterView)) {
         $currentMatterRef = $matterRefInUrl;
-    } elseif ($currentMatterRef === '' && $clientMattersList->isNotEmpty()) {
+    } elseif ($currentMatterRef === '' && ! $recordScopeInUrl && $clientMattersList->isNotEmpty()) {
         $currentMatterRef = (string) ($clientMattersList->first()->client_unique_matter_no ?? '');
     }
 
@@ -29,13 +46,25 @@
 
     $clientDetailEncodeId = $encodeId ?? base64_encode(convert_uuencode($fetchedData->id));
 
-    $canAddClientMatter = is_array($matterFormForLead ?? null) && empty($isClosedMatterView);
+    $typeRaw = $fetchedData->type ?? null;
+    $typeStr = $typeRaw === null ? '' : trim((string) $typeRaw);
+    $isLeadRecord = ($typeRaw === 1)
+        || in_array(strtolower($typeStr), ['lead', 'l', '1'], true);
+    $recordScopeLabel = $isLeadRecord ? 'Lead' : 'Client';
+    $recordScopeRef = trim((string) ($fetchedData->client_id ?? ''));
+    if ($recordScopeRef === '') {
+        $recordScopeRef = '#' . (int) $fetchedData->id;
+    }
+    $recordScopeUrl = route('clients.detail', [$clientDetailEncodeId, $clientDetailTab]);
+    $showRecordScopeRow = $activeMatterCount === 0;
+
+    $canAddClientMatter = is_array($matterFormForLead ?? null);
 
     $viewer = \Illuminate\Support\Facades\Auth::guard('admin')->user();
     $canCloseClientMatter = empty($isClosedMatterView)
         && ($viewer instanceof \App\Models\Staff && $viewer->canCloseDiscontinueMatter());
 
-    $matterCount = $clientMattersList->count();
+    $listRowCount = $activeMatterCount + ($showRecordScopeRow ? 1 : 0) + ($displayingClosedMatters ? $closedMatterCount : 0);
 @endphp
 
 <div class="card cdn-ov-card" id="clientMattersListCard">
@@ -43,13 +72,13 @@
         <div class="cdn-ov-card__title">
             <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-folder-open"></i></span>
             <h3>Client Matters</h3>
-            @if($matterCount > 0)
-                <span class="cdn-ov-count" title="Active matters">{{ $matterCount }}</span>
+            @if($listRowCount > 0)
+                <span class="cdn-ov-count" title="Entries in this list">{{ $listRowCount }}</span>
             @endif
         </div>
         @if($canAddClientMatter)
             <button type="button"
-                    class="cdn-ov-card__action client-matter-list-add-btn"
+                    class="cdn-ov-card__action client-matter-list-add-btn crm-closed-matter-allow"
                     title="Add a new matter"
                     aria-label="Add a new matter"
                     onclick="event.stopPropagation(); if (typeof window.openAddMatterModal === 'function') { window.openAddMatterModal(); }">
@@ -59,139 +88,160 @@
     </header>
 
     <div class="cdn-ov-card__body cdn-ov-card__body--scroll">
-    @if($matterCount === 0)
+    @if($listRowCount === 0)
         <div class="cdn-ov-matters-empty-state">
-            <p class="cdn-ov-matters-empty-state__text">No active matters on this client.</p>
+            <p class="cdn-ov-matters-empty-state__text">No matters on this {{ strtolower($recordScopeLabel) }}.</p>
             @if($canAddClientMatter)
                 <p class="cdn-ov-matters-empty-state__hint">Use <strong>Add</strong> to open a new matter.</p>
             @endif
         </div>
-    @endif
-    @if($matterCount > 0)
-    @if($matterCount > 1)
-    <p class="cdn-ov-matters-hint">Select a row to switch the active matter.</p>
-    @endif
+    @else
+        @if($showRecordScopeRow && $displayingClosedMatters)
+            <p class="cdn-ov-matters-hint">Select <strong>{{ $recordScopeLabel }}</strong> to add a new matter, or a <strong>closed</strong> row to view read-only.</p>
+        @elseif($activeMatterCount > 1)
+            <p class="cdn-ov-matters-hint">Select a row to switch the active matter.</p>
+        @endif
 
-    <div class="cdn-ov-scroll cdn-ov-scroll--matters" tabindex="0" role="region" aria-label="Client matters">
-    <ul class="cdn-ov-matter-list" role="list">
-    @foreach($clientMattersList as $cmRow)
+        <div class="cdn-ov-scroll cdn-ov-scroll--matters" tabindex="0" role="region" aria-label="Client matters">
+        <ul class="cdn-ov-matter-list" role="list">
+        @if($showRecordScopeRow)
+            <li class="cdn-ov-matter-row cdn-ov-matter-row--record-scope{{ $recordScopeInUrl ? ' is-current' : '' }}{{ $recordScopeInUrl ? '' : ' is-switchable' }}"
+                @if($recordScopeInUrl) aria-current="true" @endif
+                @if(! $recordScopeInUrl)
+                role="button"
+                tabindex="0"
+                data-matter-url="{{ $recordScopeUrl }}"
+                data-skip-confirm="1"
+                @endif>
+                <div class="cdn-ov-matter-card-inner">
+                    <div class="cdn-ov-matter-card-top">
+                        <div class="cdn-ov-matter-badge-group">
+                            <span class="cdn-ov-matter-code">{{ $recordScopeRef }}</span>
+                            @if($recordScopeInUrl)
+                                <span class="cdn-ov-active-matter-pill"><span class="cdn-ov-pulse-dot"></span> Current</span>
+                            @else
+                                <span class="cdn-ov-matter-scope-pill"><i class="fa-solid fa-user"></i> {{ $recordScopeLabel }}</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="cdn-ov-matter-card-meta">
+                        <span class="cdn-ov-matter-stream-tag"><i class="fa-solid fa-circle-plus"></i> Add new matter</span>
+                    </div>
+                </div>
+            </li>
+        @endif
+
         @php
-            $matterNo = trim((string) ($cmRow->client_unique_matter_no ?? ''));
-            $matterRefLabel = $matterNo !== '' ? $matterNo : ('Matter #' . (int) ($cmRow->id ?? 0));
-            $stream = (string) ($cmRow->matter?->stream ?? 'general');
-            if ($stream === '') {
-                $stream = 'general';
-            }
-            $roleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($stream);
-
-            $parties = ($__sch::hasTable('client_matter_opposing_parties') && $cmRow->relationLoaded('opposingParties'))
-                ? $cmRow->opposingParties
-                    ->sortBy([
-                        fn ($party) => (int) ($party->sort_order ?? 0),
-                        fn ($party) => (int) ($party->id ?? 0),
-                    ])
-                    ->map(function ($party) use ($roleLabels) {
-                        $name = trim((string) ($party->name ?? ''));
-                        $roleRaw = trim((string) ($party->party_role ?? ''));
-
-                        return [
-                            'name' => $name !== '' ? $name : 'Unnamed party',
-                            'role' => $roleRaw !== '' ? ($roleLabels[$roleRaw] ?? $roleRaw) : '',
-                        ];
-                    })
-                    ->values()
-                : collect();
-
-            $isCurrent = $matterNo !== '' && $matterNo === $currentMatterRef;
-            $matterUrl = $matterNo !== ''
-                ? route('clients.detail', [$clientDetailEncodeId, $matterNo, $clientDetailTab])
-                : null;
-            $ourRole = '';
-            if ($__sch::hasColumn('client_matters', 'our_party_role')) {
-                $ourRoleRaw = trim((string) ($cmRow->our_party_role ?? ''));
-                if ($ourRoleRaw !== '') {
-                    $ourRole = $roleLabels[$ourRoleRaw] ?? $ourRoleRaw;
-                }
-            }
-            $partySummary = $parties->map(function ($party) {
-                $label = (string) ($party['name'] ?? '');
-                $role = trim((string) ($party['role'] ?? ''));
-                if ($role !== '') {
-                    $label .= ' · ' . $role;
-                }
-
-                return $label;
-            })->filter()->values();
+            $rowsToRender = $displayingClosedMatters ? $closedMattersList : $clientMattersList;
         @endphp
+        @foreach($rowsToRender as $cmRow)
+            @php
+                $matterNo = trim((string) ($cmRow->client_unique_matter_no ?? ''));
+                $matterRefLabel = $matterNo !== '' ? $matterNo : ('Matter #' . (int) ($cmRow->id ?? 0));
+                $stream = (string) ($cmRow->matter?->stream ?? 'general');
+                if ($stream === '') {
+                    $stream = 'general';
+                }
+                $roleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($stream);
 
-        <li class="cdn-ov-matter-row{{ $isCurrent ? ' is-current' : '' }}{{ ($matterUrl && ! $isCurrent) ? ' is-switchable' : '' }}"
-            @if($isCurrent) aria-current="true" @endif
-            @if($matterUrl && ! $isCurrent)
-            role="button"
-            tabindex="0"
-            data-matter-url="{{ $matterUrl }}"
-            @endif>
-            <div class="cdn-ov-matter-card-inner">
-                <div class="cdn-ov-matter-card-top">
-                    <div class="cdn-ov-matter-badge-group">
-                        <span class="cdn-ov-matter-code">{{ $matterRefLabel }}</span>
-                        @if($isCurrent)
-                            <span class="cdn-ov-active-matter-pill"><span class="cdn-ov-pulse-dot"></span> Current</span>
+                $parties = ($__sch::hasTable('client_matter_opposing_parties') && $cmRow->relationLoaded('opposingParties'))
+                    ? $cmRow->opposingParties
+                        ->sortBy([
+                            fn ($party) => (int) ($party->sort_order ?? 0),
+                            fn ($party) => (int) ($party->id ?? 0),
+                        ])
+                        ->map(function ($party) use ($roleLabels) {
+                            $name = trim((string) ($party->name ?? ''));
+                            $roleRaw = trim((string) ($party->party_role ?? ''));
+
+                            return [
+                                'name' => $name !== '' ? $name : 'Unnamed party',
+                                'role' => $roleRaw !== '' ? ($roleLabels[$roleRaw] ?? $roleRaw) : '',
+                            ];
+                        })
+                        ->values()
+                    : collect();
+
+                $isCurrent = $matterNo !== '' && $matterNo === $currentMatterRef;
+                $matterUrl = $matterNo !== ''
+                    ? route('clients.detail', [$clientDetailEncodeId, $matterNo, $clientDetailTab])
+                    : null;
+                $ourRole = '';
+                if ($__sch::hasColumn('client_matters', 'our_party_role')) {
+                    $ourRoleRaw = trim((string) ($cmRow->our_party_role ?? ''));
+                    if ($ourRoleRaw !== '') {
+                        $ourRole = $roleLabels[$ourRoleRaw] ?? $ourRoleRaw;
+                    }
+                }
+                $partySummary = $parties->map(function ($party) {
+                    $label = (string) ($party['name'] ?? '');
+                    $role = trim((string) ($party['role'] ?? ''));
+                    if ($role !== '') {
+                        $label .= ' · ' . $role;
+                    }
+
+                    return $label;
+                })->filter()->values();
+            @endphp
+
+            <li class="cdn-ov-matter-row{{ $isCurrent ? ' is-current' : '' }}{{ ($matterUrl && ! $isCurrent) ? ' is-switchable' : '' }}"
+                @if($isCurrent) aria-current="true" @endif
+                @if($matterUrl && ! $isCurrent)
+                role="button"
+                tabindex="0"
+                data-matter-url="{{ $matterUrl }}"
+                @endif>
+                <div class="cdn-ov-matter-card-inner">
+                    <div class="cdn-ov-matter-card-top">
+                        <div class="cdn-ov-matter-badge-group">
+                            <span class="cdn-ov-matter-code">{{ $matterRefLabel }}</span>
+                            @if($displayingClosedMatters)
+                                <span class="cdn-ov-matter-closed-pill"><i class="fa-solid fa-box-archive"></i> Closed</span>
+                            @elseif($isCurrent)
+                                <span class="cdn-ov-active-matter-pill"><span class="cdn-ov-pulse-dot"></span> Current</span>
+                            @else
+                                <span class="cdn-ov-matter-switch-pill"><i class="fa-solid fa-arrow-right-arrow-left"></i> Switch</span>
+                            @endif
+                        </div>
+                        <div class="cdn-ov-matter-actions">
+                            @if($isCurrent && $canCloseClientMatter && ! $displayingClosedMatters)
+                                <button type="button"
+                                        class="client-matter-list-close-btn cdn-ov-matter-close-btn"
+                                        title="Close this matter"
+                                        aria-label="Close this matter"
+                                        data-matter-id="{{ $cmRow->id }}"
+                                        onclick="event.stopPropagation(); if (typeof window.openCloseMatterModal === 'function') { window.openCloseMatterModal(this); }">
+                                    <i class="fa-solid fa-ban"></i> Close
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="cdn-ov-matter-card-meta">
+                        @if($ourRole !== '')
+                            <span class="cdn-ov-matter-role-tag"><i class="fa-solid fa-user-shield"></i> {{ $ourRole }}</span>
+                        @endif
+                        <span class="cdn-ov-matter-stream-tag"><i class="fa-solid fa-scale-balanced"></i> {{ ucfirst($stream) }}</span>
+                    </div>
+
+                    <div class="cdn-ov-matter-card-parties">
+                        @if($partySummary->isNotEmpty())
+                            <div class="cdn-ov-party-summary-line">
+                                <i class="fa-solid fa-users"></i>
+                                <span>{{ $partySummary->implode(' · ') }}</span>
+                            </div>
                         @else
-                            <span class="cdn-ov-matter-switch-pill"><i class="fa-solid fa-arrow-right-arrow-left"></i> Switch</span>
-                        @endif
-                    </div>
-                    <div class="cdn-ov-matter-actions">
-                        @if($isCurrent && $canCloseClientMatter)
-                            <button type="button"
-                                    class="client-matter-list-close-btn cdn-ov-matter-close-btn"
-                                    title="Close this matter"
-                                    aria-label="Close this matter"
-                                    data-matter-id="{{ $cmRow->id }}"
-                                    onclick="event.stopPropagation(); if (typeof window.openCloseMatterModal === 'function') { window.openCloseMatterModal(this); }">
-                                <i class="fa-solid fa-ban"></i> Close
-                            </button>
+                            <div class="cdn-ov-party-summary-line is-empty">
+                                <i class="fa-regular fa-circle-dot"></i>
+                                <span>No other parties linked</span>
+                            </div>
                         @endif
                     </div>
                 </div>
-
-                <div class="cdn-ov-matter-card-meta">
-                    @if($ourRole !== '')
-                        <span class="cdn-ov-matter-role-tag"><i class="fa-solid fa-user-shield"></i> {{ $ourRole }}</span>
-                    @endif
-                    <span class="cdn-ov-matter-stream-tag"><i class="fa-solid fa-scale-balanced"></i> {{ ucfirst($stream) }}</span>
-                </div>
-
-                <div class="cdn-ov-matter-card-parties">
-                    @if($partySummary->isNotEmpty())
-                        <div class="cdn-ov-party-summary-line">
-                            <i class="fa-solid fa-users"></i>
-                            <span>{{ $partySummary->implode(' · ') }}</span>
-                        </div>
-                    @else
-                        <div class="cdn-ov-party-summary-line is-empty">
-                            <i class="fa-regular fa-circle-dot"></i>
-                            <span>No other parties linked</span>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </li>
-    @endforeach
-    </ul>
-    </div>
-    @if($matterCount === 1)
-        <div class="cdn-ov-matter-quick-status">
-            <div class="cdn-ov-mqs-item">
-                <span class="cdn-ov-mqs-label">Active Matter</span>
-                <strong class="cdn-ov-mqs-val">{{ $currentMatterRef }}</strong>
-            </div>
-            <div class="cdn-ov-mqs-item">
-                <span class="cdn-ov-mqs-label">Status</span>
-                <strong class="cdn-ov-mqs-val text-success"><i class="fa-solid fa-circle-check"></i> Open &amp; Active</strong>
-            </div>
+            </li>
+        @endforeach
+        </ul>
         </div>
-    @endif
     @endif
     </div>
 </div>
@@ -240,6 +290,32 @@
     #clientMattersListCard .cdn-ov-matters-empty-state__hint {
         margin: 0;
     }
+    #clientMattersListCard .cdn-ov-matter-closed-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #64748b;
+        background: #f1f5f9;
+        border-radius: 999px;
+        padding: 0.15rem 0.5rem;
+    }
+    #clientMattersListCard .cdn-ov-matter-scope-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #1d4ed8;
+        background: #eff6ff;
+        border-radius: 999px;
+        padding: 0.15rem 0.5rem;
+    }
+    #clientMattersListCard .cdn-ov-matter-row--record-scope .cdn-ov-matter-card-inner {
+        border-color: #c7d7fa;
+        background: linear-gradient(180deg, #f8fbff 0%, #fff 100%);
+    }
 </style>
 
 <script>
@@ -249,11 +325,11 @@
         return;
     }
 
-    function switchClientMatter(url) {
+    function switchClientMatter(url, skipConfirm) {
         if (!url) {
             return;
         }
-        if (window.confirm('Do you want to change the matter?')) {
+        if (skipConfirm || window.confirm('Do you want to change the matter?')) {
             window.location.href = url;
         }
     }
@@ -266,7 +342,7 @@
         if (!row) {
             return;
         }
-        switchClientMatter(row.getAttribute('data-matter-url'));
+        switchClientMatter(row.getAttribute('data-matter-url'), row.getAttribute('data-skip-confirm') === '1');
     });
 
     card.addEventListener('keydown', function (event) {
@@ -281,7 +357,7 @@
             return;
         }
         event.preventDefault();
-        switchClientMatter(row.getAttribute('data-matter-url'));
+        switchClientMatter(row.getAttribute('data-matter-url'), row.getAttribute('data-skip-confirm') === '1');
     });
 })();
 </script>

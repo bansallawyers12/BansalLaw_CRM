@@ -80,6 +80,12 @@
         if (el.matches('[data-crm-reopen-matter], .matter-detail-reopen-btn') || el.closest('[data-crm-reopen-matter], .matter-detail-reopen-btn')) {
             return true;
         }
+        if (el.matches('.client-matter-list-add-btn') || el.closest('.client-matter-list-add-btn')) {
+            return true;
+        }
+        if (el.closest('#addMatterModal')) {
+            return true;
+        }
         if (isDocumentReadOnlyAllowed(el)) {
             return true;
         }

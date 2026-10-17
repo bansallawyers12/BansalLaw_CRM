@@ -181,6 +181,9 @@
         matterRef = fromValue;
       }
       if (encoded && matterRef) {
+        if (item.matter_closed) {
+          return clientDetailPrefix + '/' + encoded + '/personaldetails';
+        }
         return clientDetailPrefix + '/' + encoded + '/' + matterRef;
       }
       if (encoded) {

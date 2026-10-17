@@ -74,6 +74,25 @@ class ClientMatter extends Model
     }
 
     /**
+     * Closed/discontinued matters for the client detail matters card (when no active matters remain).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<ClientMatter>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<ClientMatter>
+     */
+    public function scopeClosedForClientPicker($query, int $clientRecordId)
+    {
+        return $query
+            ->where('client_matters.client_id', $clientRecordId)
+            ->where(function ($q) {
+                $q->where('client_matters.matter_status', 0)
+                    ->orWhere('client_matters.matter_status', '0');
+            })
+            ->whereNotNull('client_matters.sel_matter_id')
+            ->whereNotNull('client_matters.client_unique_matter_no')
+            ->where('client_matters.client_unique_matter_no', '!=', '');
+    }
+
+    /**
      * Get the client that owns the matter.
      */
     public function client()
