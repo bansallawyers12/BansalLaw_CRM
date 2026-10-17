@@ -4,6 +4,11 @@
                     <?php
                     $client_selected_matter_id1 = null;
                     $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
+                    $allowedMatterIds = \App\Support\MatterScopedAccess::accessibleMatterIdsForClient((int) $fetchedData->id);
+                    $limitMatterDocs = \App\Support\MatterScopedAccess::isEnabled()
+                        && ! \App\Support\MatterScopedAccess::bypassesMatterTeamEnforcement()
+                        && ! \App\Support\StaffClientVisibility::seesAllClientMatters();
+                    $matterIdLimit = $allowedMatterIds !== [] ? $allowedMatterIds : [0];
                     if( $matter_cnt >0 ) {
                         //if client unique reference id is present in url
                         if( isset($id1) && $id1 != "") {
@@ -13,12 +18,14 @@
                                 ->where('client_id',$fetchedData->id)
                                 ->where('client_unique_matter_no',$id1)
                                 ->where('matter_status', 1)
+                                ->when($limitMatterDocs, fn ($q) => $q->whereIn('id', $matterIdLimit))
                                 ->first();
-                            // Fall back to latest active matter if the ref belongs to a discontinued one
+                            // Fall back to the latest active matter this viewer may open.
                             if (!$matter_get_id) {
                                 $matter_get_id = \App\Models\ClientMatter::select('id')
                                     ->where('client_id', $fetchedData->id)
                                     ->where('matter_status', 1)
+                                    ->when($limitMatterDocs, fn ($q) => $q->whereIn('id', $matterIdLimit))
                                     ->orderBy('id', 'desc')
                                     ->first();
                             }
@@ -26,6 +33,7 @@
                             $matter_get_id = \App\Models\ClientMatter::select('id')
                                 ->where('client_id', $fetchedData->id)
                                 ->where('matter_status', 1)
+                                ->when($limitMatterDocs, fn ($q) => $q->whereIn('id', $matterIdLimit))
                                 ->orderBy('id', 'desc')
                                 ->first();
                         }
@@ -179,9 +187,9 @@
                                                         ->whereNull('not_used_doc')
                                                         ->whereIn('doc_type', ['matter', 'visa'])
                                                         ->where('folder_name', $folderName)
-                                                        ->where('type', 'client')
-                                                        ->orderBy('created_at', 'DESC')
-                                                        ->get();
+                                                        ->where('type', 'client');
+                                                    \App\Support\MatterScopedAccess::scopeColumnToViewerMatters($documents, 'client_matter_id', (int) $fetchedData->id, true);
+                                                    $documents = $documents->orderBy('created_at', 'DESC')->get();
                                                 }
                                                 $parentDocs = $documents->filter(fn ($d) => ! str_ends_with($d->checklist ?? '', '_signed'));
                                                 $signedByParent = $documents->filter(fn ($d) => str_ends_with($d->checklist ?? '', '_signed'))
@@ -376,9 +384,9 @@
                                                     ->whereNull('not_used_doc')
                                                     ->whereIn('doc_type', ['matter', 'visa'])
                                                     ->where('folder_name', $id)
-                                                    ->where('type', 'client')
-                                                    ->orderBy('updated_at', 'DESC')
-                                                    ->get();
+                                                    ->where('type', 'client');
+                                                \App\Support\MatterScopedAccess::scopeColumnToViewerMatters($documents, 'client_matter_id', (int) $fetchedData->id, true);
+                                                $documents = $documents->orderBy('updated_at', 'DESC')->get();
                                             }
                                             foreach ($documents as $fetch):
                                                 if ($fetch->myfile):

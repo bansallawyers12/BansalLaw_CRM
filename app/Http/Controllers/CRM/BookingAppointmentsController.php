@@ -1000,7 +1000,9 @@ class BookingAppointmentsController extends Controller
         $query = BookingAppointment::query()->with(['client', 'consultant']);
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
 
-        if ($request->filled('type')) {
+        // format=list never applied calendar type. Callers that omit format used to,
+        // via the old DataTables query.
+        if ($request->filled('type') && $request->get('format') !== 'list') {
             $this->applyBookingCalendarTypeScope($query, (string) $request->type);
         }
 
@@ -1257,82 +1259,39 @@ class BookingAppointmentsController extends Controller
             ], $request));
         }
 
-        $query = BookingAppointment::with(['client', 'consultant']);
-        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
-
-        // Filter by calendar type (consultant type), or explicit consultant_id for local-only calendars (e.g. ajay → id 2)
-        if ($request->filled('type')) {
-            $this->applyBookingCalendarTypeScope($query, (string) $request->type);
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by consultant
-        if ($request->filled('consultant_id')) {
-            $query->where('consultant_id', $request->consultant_id);
-        }
-
-        // Filter by date range
-        if ($request->filled('date_from')) {
-            $query->whereDate('appointment_datetime', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('appointment_datetime', '<=', $request->date_to);
-        }
-
-        // Check if calendar format is requested
         if ($request->get('format') === 'calendar') {
+            $query = BookingAppointment::with(['client', 'consultant']);
+            StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
+
+            // Filter by calendar type (consultant type), or explicit consultant_id for local-only calendars (e.g. ajay → id 2)
+            if ($request->filled('type')) {
+                $this->applyBookingCalendarTypeScope($query, (string) $request->type);
+            }
+
+            // Filter by status
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Filter by consultant
+            if ($request->filled('consultant_id')) {
+                $query->where('consultant_id', $request->consultant_id);
+            }
+
+            // Filter by date range
+            if ($request->filled('date_from')) {
+                $query->whereDate('appointment_datetime', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('appointment_datetime', '<=', $request->date_to);
+            }
+
             return response()->json($this->buildCalendarFeedResponse($request, $query));
         }
 
-        // Default: Return DataTables format ordered by ID (descending - newest first)
-        $query->orderByDesc('id');
-
-        return DataTables::of($query)
-            ->addColumn('client_info', function ($appointment) {
-                if ($appointment->client_id) {
-                    $clientLink = route('clients.detail', base64_encode(convert_uuencode($appointment->client_id)));
-
-                    return '<a href="' . $clientLink . '" target="_blank">' .
-                        '<strong>' . e($appointment->client_name) . '</strong><br>' .
-                        '<small>' . e($appointment->client_email) . '</small>' .
-                        '</a>';
-                }
-
-                return '<strong>' . e($appointment->client_name) . '</strong><br>' .
-                    '<small>' . e($appointment->client_email) . '</small>';
-            })
-            ->addColumn('appointment_info', function ($appointment) {
-                return '<strong>' . $appointment->appointment_datetime->format('d/m/Y') . '</strong><br>' .
-                    '<small>' . e($appointment->appointment_datetime->format('h:i A')) . '</small>';
-            })
-            ->addColumn('consultant_info', function ($appointment) {
-                return $appointment->consultant
-                    ? '<span class="badge bg-info text-dark">' . e($appointment->consultant->name) . '</span>'
-                    : '<span class="badge bg-secondary">Unassigned</span>';
-            })
-            ->addColumn('status_badge', function ($appointment) {
-                $color = $appointment->status_badge;
-                $label = ucfirst(str_replace('_', ' ', $appointment->status));
-                return '<span class="badge bg-' . $color . '">' . $label . '</span>';
-            })
-            ->addColumn('payment_info', function ($appointment) {
-                if ($appointment->is_paid) {
-                    return '<span class="badge bg-success">Paid</span><br>' .
-                        '<small>$' . number_format($appointment->final_amount, 2) . '</small>';
-                }
-                return '<span class="badge bg-secondary">Free</span>';
-            })
-            ->addColumn('actions', function ($appointment) {
-                return '<a href="' . route('booking.appointments.show', $appointment->id) . '" class="btn btn-sm btn-primary">' .
-                    '<i class="fa-solid fa-eye"></i> View' .
-                    '</a>';
-            })
-            ->rawColumns(['client_info', 'appointment_info', 'consultant_info', 'status_badge', 'payment_info', 'actions'])
-            ->make(true);
+        // Same JSON as format=list. The appointments page always sends format=list;
+        // this covers callers that omit it.
+        return $this->crmBookingsListFromDatabase($request);
     }
 
     /**

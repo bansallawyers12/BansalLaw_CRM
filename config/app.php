@@ -196,7 +196,6 @@ return [
         App\Providers\AuthServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\AppointmentSyncServiceProvider::class,
-        Yajra\DataTables\DataTablesServiceProvider::class,
 
     ],
 
@@ -252,7 +251,6 @@ return [
 	'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
 	'Settings' => App\Helpers\Settings::class,
         'Helper' => App\Helpers\Helper::class,
-        'DataTables' => Yajra\DataTables\Facades\DataTables::class,
 
     ],
     'debug_blacklist' => [

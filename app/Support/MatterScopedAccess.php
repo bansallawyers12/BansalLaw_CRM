@@ -623,6 +623,38 @@ final class MatterScopedAccess
     }
 
     /**
+     * Keep rows that belong to a matter the viewer may open, plus rows with no matter
+     * (personal documents, general notes, client-wide account lines).
+     *
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     */
+    public static function scopeColumnToViewerMatters($query, string $column, int $clientAdminId, bool $includeRowsWithoutMatter = true): void
+    {
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
+            return;
+        }
+
+        $ids = self::accessibleMatterIdsForClient($clientAdminId, $user);
+        $query->where(function ($q) use ($column, $ids, $includeRowsWithoutMatter) {
+            $started = false;
+            if ($includeRowsWithoutMatter) {
+                $q->whereNull($column)->orWhere($column, 0);
+                $started = true;
+            }
+            if ($ids !== []) {
+                if ($started) {
+                    $q->orWhereIn($column, $ids);
+                } else {
+                    $q->whereIn($column, $ids);
+                }
+            } elseif (! $includeRowsWithoutMatter) {
+                $q->whereRaw('1 = 0');
+            }
+        });
+    }
+
+    /**
      * Revoke active temporary matter grants for one staff member on one matter.
      */
     public static function revokeActiveTemporaryGrantsForStaffOnMatter(

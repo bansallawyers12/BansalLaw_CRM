@@ -492,14 +492,41 @@ class ClientAccountTabService
                 ', [$clientMatterId, $clientId]);
             }
         } else {
-            // Multi-matter client with no matter filter: show all invoices for the client.
-            $rows = DB::select('
-                SELECT DISTINCT ON (receipt_id) *
-                FROM account_client_receipts
-                WHERE client_id = ?
-                AND receipt_type = 3
-                ORDER BY receipt_id, id DESC
-            ', [$clientId]);
+            $viewer = Auth::guard('admin')->user();
+            $showEveryMatter = ! MatterScopedAccess::isEnabled()
+                || MatterScopedAccess::bypassesMatterTeamEnforcement($viewer)
+                || StaffClientVisibility::seesAllClientMatters($viewer);
+            if ($showEveryMatter) {
+                $rows = DB::select('
+                    SELECT DISTINCT ON (receipt_id) *
+                    FROM account_client_receipts
+                    WHERE client_id = ?
+                    AND receipt_type = 3
+                    ORDER BY receipt_id, id DESC
+                ', [$clientId]);
+            } else {
+                $allowedIds = MatterScopedAccess::accessibleMatterIdsForClient($clientId, $viewer);
+                if ($allowedIds === []) {
+                    $rows = DB::select('
+                        SELECT DISTINCT ON (receipt_id) *
+                        FROM account_client_receipts
+                        WHERE client_id = ?
+                        AND receipt_type = 3
+                        AND client_matter_id IS NULL
+                        ORDER BY receipt_id, id DESC
+                    ', [$clientId]);
+                } else {
+                    $placeholders = implode(',', array_fill(0, count($allowedIds), '?'));
+                    $rows = DB::select('
+                        SELECT DISTINCT ON (receipt_id) *
+                        FROM account_client_receipts
+                        WHERE client_id = ?
+                        AND receipt_type = 3
+                        AND (client_matter_id IS NULL OR client_matter_id IN ('.$placeholders.'))
+                        ORDER BY receipt_id, id DESC
+                    ', array_merge([$clientId], $allowedIds));
+                }
+            }
         }
 
         $collection = collect($rows)->sortByDesc('id')->values();
@@ -522,7 +549,7 @@ class ClientAccountTabService
             ->orderByRaw("CASE WHEN invoice_no IS NULL OR invoice_no = '' THEN 0 ELSE 1 END")
             ->orderByDesc('id');
 
-        $this->applyMatterScope($q, $clientMatterId, $includeLeadPreMatter);
+        $this->applyMatterScope($q, $clientId, $clientMatterId, $includeLeadPreMatter);
 
         $total = (clone $q)->count();
         $hasMore = $limit > 0 && $total > $limit;
@@ -539,12 +566,12 @@ class ClientAccountTabService
             ->where('client_id', $clientId)
             ->where('receipt_type', AccountClientReceipt::RECEIPT_TYPE_TRUST_LEDGER);
 
-        $this->applyMatterScope($q, $clientMatterId, $includeLeadPreMatter);
+        $this->applyMatterScope($q, $clientId, $clientMatterId, $includeLeadPreMatter);
 
         return $q;
     }
 
-    protected function applyMatterScope($query, $clientMatterId, bool $includeLeadPreMatter = false): void
+    protected function applyMatterScope($query, int $clientId, $clientMatterId, bool $includeLeadPreMatter = false): void
     {
         if ($clientMatterId !== null && $clientMatterId !== '') {
             if ($includeLeadPreMatter) {
@@ -556,6 +583,7 @@ class ClientAccountTabService
                 $query->where('client_matter_id', $clientMatterId);
             }
         }
-        // No matter filter: include all matters for this client (do not force IS NULL).
+
+        MatterScopedAccess::scopeColumnToViewerMatters($query, 'client_matter_id', $clientId, true);
     }
 }

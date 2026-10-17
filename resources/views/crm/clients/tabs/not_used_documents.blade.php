@@ -16,9 +16,9 @@
                             ->where(function ($query) {
                                 $query->orWhere('doc_type', 'personal')
                                     ->orWhereIn('doc_type', ['matter', 'visa']);
-                            })
-                            ->orderByDesc('updated_at')
-                            ->get();
+                            });
+                        \App\Support\MatterScopedAccess::scopeColumnToViewerMatters($notUsedDocs, 'client_matter_id', (int) $fetchedData->id, true);
+                        $notUsedDocs = $notUsedDocs->orderByDesc('updated_at')->get();
                     }
 
                     $folderTitles = \Illuminate\Support\Facades\Schema::hasTable('personal_document_types')

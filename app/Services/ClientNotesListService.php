@@ -52,6 +52,10 @@ class ClientNotesListService
             ->orderByDesc('pin')
             ->orderByDesc('updated_at');
 
+        if ($type === 'client') {
+            \App\Support\MatterScopedAccess::scopeColumnToViewerMatters($query, 'matter_id', $clientId, true);
+        }
+
         $total = (clone $query)->count();
         $notes = $query->skip($offset)->take($limit)->get();
         $this->normalizeSpendMinutes($notes);

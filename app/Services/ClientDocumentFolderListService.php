@@ -58,6 +58,7 @@ class ClientDocumentFolderListService
             if ($clientMatterId !== null && $clientMatterId !== 0) {
                 $query->where('client_matter_id', $clientMatterId);
             }
+            \App\Support\MatterScopedAccess::scopeColumnToViewerMatters($query, 'client_matter_id', $clientId, true);
             $query->orderByDesc('created_at');
         } else {
             $query->where('doc_type', $doctype)->orderByDesc('updated_at');
