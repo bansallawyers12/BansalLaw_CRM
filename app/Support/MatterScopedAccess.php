@@ -453,7 +453,7 @@ final class MatterScopedAccess
             );
         }
 
-        if (self::bypassesMatterTeamEnforcement($user)) {
+        if (self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
             return true;
         }
 
@@ -524,13 +524,54 @@ final class MatterScopedAccess
     public static function filterMattersForViewer($matters, ?Authenticatable $user = null)
     {
         $user = $user ?? Auth::guard('admin')->user();
-        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user)) {
+        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
             return $matters;
         }
 
         return $matters->filter(function ($matter) use ($user) {
             return self::canAccessClientMatter((int) $matter->id, $user);
         })->values();
+    }
+
+    /**
+     * Hide client_matters rows the viewer is not assigned to.
+     * No-op for Super Admin, Calling Team, Kabir, Ajay, and Khusi.
+     *
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     */
+    public static function constrainMatterRows($query, string $table = 'client_matters', ?Authenticatable $user = null): void
+    {
+        $user = $user ?? Auth::guard('admin')->user();
+        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
+            return;
+        }
+
+        if (! $user instanceof Staff) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $staffId = (int) $user->id;
+        $query->where(function ($q) use ($staffId, $table) {
+            $q->where($table.'.sel_legal_practitioner', $staffId)
+                ->orWhere($table.'.sel_person_responsible', $staffId)
+                ->orWhere($table.'.sel_person_assisting', $staffId)
+                ->orWhereExists(function ($sub) use ($staffId, $table) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_access_grants')
+                        ->whereColumn('client_access_grants.admin_id', $table.'.client_id')
+                        ->where('client_access_grants.staff_id', $staffId)
+                        ->where('client_access_grants.grant_type', self::GRANT_TYPE_MATTER_TEMP)
+                        ->where('client_access_grants.status', 'active')
+                        ->whereNotNull('client_access_grants.ends_at')
+                        ->whereRaw('client_access_grants.ends_at > NOW()')
+                        ->where(function ($note) use ($table) {
+                            $note->whereRaw("client_access_grants.requester_note = CONCAT('matter_id:', {$table}.id)")
+                                ->orWhereRaw("client_access_grants.requester_note LIKE CONCAT('matter_id:', {$table}.id, ';role:%')");
+                        });
+                });
+        });
     }
 
     /**
@@ -545,7 +586,7 @@ final class MatterScopedAccess
             return [];
         }
 
-        if (! self::isEnabled() || self::bypassesMatterTeamEnforcement($user)) {
+        if (! self::isEnabled() || self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
             return ClientMatter::query()
                 ->where('client_id', $clientAdminId)
                 ->pluck('id')

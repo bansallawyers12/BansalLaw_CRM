@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Models\Staff;
+use App\Support\MatterScopedAccess;
 
 /**
  * Staff CRM controller for matters, workflow-adjacent utilities, and documents.
@@ -38,7 +39,7 @@ class ClientMatterHubController extends Controller
 		$clientId = $request->client_id;
 		$clientMatterId = $request->client_matter_id;
 
-		$matter = DB::table('client_matters')
+		$matter = ClientMatter::query()
 			->where('client_id', $clientId)
 			->where('id', $clientMatterId)
 			->first();
@@ -46,6 +47,8 @@ class ClientMatterHubController extends Controller
 		if (!$matter) {
 			return response()->json(['status' => false, 'message' => 'Matter not found'], 404);
 		}
+
+		$this->ensureClientMatterAccess($matter);
 		
 		return response()->json([
 			'status' => true,
@@ -132,7 +135,7 @@ class ClientMatterHubController extends Controller
 					], 404);
 				}
 
-				$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 				// Get current stage
 				$currentStageId = $clientMatter->workflow_stage_id;
@@ -327,7 +330,7 @@ class ClientMatterHubController extends Controller
 					], 404);
 				}
 
-				$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 				$currentStageId = $clientMatter->workflow_stage_id;
 
@@ -491,6 +494,7 @@ class ClientMatterHubController extends Controller
 			if (!$clientMatter) {
 				return response()->json(['status' => false, 'message' => 'Client matter not found'], 404);
 			}
+			$this->ensureClientMatterAccess($clientMatter);
 
 			$workflow = \App\Models\Workflow::find($workflowId);
 			if (!$workflow) {
@@ -609,7 +613,7 @@ class ClientMatterHubController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
-			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 			$clientMatter->matter_status = 0;
 			$clientMatter->closed_by = Auth::guard('admin')->id() ?? Auth::id();
@@ -731,7 +735,7 @@ class ClientMatterHubController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
-			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 			if ($clientMatter->matter_status == 1) {
 				return response()->json(['status' => false, 'message' => 'Matter is already open.'], 400);
@@ -807,7 +811,7 @@ class ClientMatterHubController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
-			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 			if ($clientMatter->matter_status == 1) {
 				return response()->json(['status' => false, 'message' => 'Matter is already open.'], 400);
@@ -891,7 +895,7 @@ class ClientMatterHubController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
-			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 			$requesterId = $clientMatter->reopen_requested_by;
 
@@ -1022,7 +1026,7 @@ class ClientMatterHubController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
-			$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 			$actor = Auth::user();
 			if (! ($actor instanceof Staff && ($actor->hasEffectiveSuperAdminPrivileges() || $actor->canCloseDiscontinueMatter()))) {
@@ -1098,6 +1102,7 @@ class ClientMatterHubController extends Controller
 			if (!$clientMatter) {
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
+			$this->ensureClientMatterAccess($clientMatter);
 
 			if ($setDeadline) {
 				$request->validate(['deadline' => 'required|date']);
@@ -1145,7 +1150,7 @@ class ClientMatterHubController extends Controller
 			return response()->json(['status' => false, 'message' => 'Matter not found'], 404);
 		}
 
-		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 		$workflowId = $clientMatter->workflowStage->workflow_id ?? $clientMatter->workflow_id;
 		$currentStage = $clientMatter->workflowStage;
@@ -1252,7 +1257,7 @@ class ClientMatterHubController extends Controller
 			echo json_encode(['status' => false, 'message' => 'Matter not found']);
 			return;
 		}
-		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 		$obj = new ActivitiesLog;
 		$obj->client_id = $clientMatter->client_id;
@@ -1279,7 +1284,7 @@ class ClientMatterHubController extends Controller
 			echo '';
 			return;
 		}
-		$this->ensureCrmRecordAccess((int) $clientMatter->client_id);
+        $this->ensureClientMatterAccess($clientMatter);
 
 		$lists = ActivitiesLog::where('activity_type','note')
 			->where('use_for','matter')
@@ -1465,10 +1470,12 @@ class ClientMatterHubController extends Controller
 			$this->ensureCrmRecordAccess($clientId);
 		}
 
-		$matters = ClientMatter::query()
-			->where('client_id', $clientId)
-			->orderByDesc('id')
-			->get(['id', 'client_unique_matter_no']);
+		$matters = MatterScopedAccess::filterMattersForViewer(
+			ClientMatter::query()
+				->where('client_id', $clientId)
+				->orderByDesc('id')
+				->get(['id', 'client_unique_matter_no', 'sel_legal_practitioner', 'sel_person_responsible', 'sel_person_assisting'])
+		);
 
 		$options = $matters->map(function (ClientMatter $matter) {
 			return [

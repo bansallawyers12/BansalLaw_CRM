@@ -14,13 +14,16 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Row-level visibility for CRM staff.
  *
- * Matter allocation (clients): for all non-exempt staff, visibility is limited to CRM clients where the staff
- * appears on any client_matters row as Legal Practitioner (sel_legal_practitioner), Person Responsible,
- * or Person Assisting — plus admins.user_id and active cross-access grants. Exempt roles/staff unchanged.
+ * Matter allocation (clients): staff other than Super Admin, Calling Team, and the named
+ * matter-visibility exceptions (Kabir, Ajay, Khusi/Khushi) only see client_matters rows where they
+ * are Legal Practitioner, Person Responsible, or Person Assisting, plus an active matter_temp grant
+ * on that same row. Client ownership and a grant on a different matter of the same client do not
+ * reveal the rest of that client's matters.
  * Lead listing keeps its own role rules (leadFullAccessRoleIds, strict mode) in restrictLeadListQuery / userMaySeeByAllocation.
  *
  * Cross-access grants and strict allocation are controlled by config/crm_access.php
@@ -135,6 +138,77 @@ final class StaffClientVisibility
         return in_array((int) ($user->role ?? 0), config('crm_access.exempt_role_ids', [1, 17]), true);
     }
 
+    /**
+     * Full client-matter visibility: Super Admin, Calling Team (role or department), and Kabir / Ajay / Khusi.
+     * Everyone else is limited to matters they are assigned to.
+     */
+    public static function seesAllClientMatters(?Authenticatable $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        if (in_array((int) ($user->role ?? 0), config('crm_access.matter_scope_bypass_role_ids', [1]), true)) {
+            return true;
+        }
+
+        if (in_array((int) ($user->role ?? 0), config('crm_access.quick_access_only_role_ids', [14]), true)) {
+            return true;
+        }
+
+        $teamId = (int) ($user->team ?? 0);
+        if ($teamId > 0 && $teamId === self::callingTeamId()) {
+            return true;
+        }
+
+        return self::isNamedMatterVisibilityException($user);
+    }
+
+    private static function callingTeamId(): int
+    {
+        if (! Schema::hasTable('teams')) {
+            return 0;
+        }
+
+        return (int) DB::table('teams')->whereRaw('LOWER(TRIM(name)) = ?', ['calling team'])->value('id');
+    }
+
+    private static function isNamedMatterVisibilityException(Authenticatable $user): bool
+    {
+        $first = strtolower(trim((string) ($user->first_name ?? '')));
+        $last = strtolower(trim((string) ($user->last_name ?? '')));
+        $email = strtolower(trim((string) ($user->email ?? '')));
+
+        $named = [
+            ['ajay', 'bansal'],
+            ['kabir', 'makkar'],
+            ['khushi', 'sangroya'],
+            ['khusi', 'sangroya'],
+            ['khusi', 'bansal'],
+        ];
+        foreach ($named as [$expectedFirst, $expectedLast]) {
+            if ($first === $expectedFirst && ($last === '' || $last === $expectedLast)) {
+                return true;
+            }
+        }
+
+        if (in_array($first, ['kabir', 'ajay', 'khusi', 'khushi'], true)) {
+            return true;
+        }
+
+        foreach (['kabir', 'ajay', 'khusi', 'khushi'] as $token) {
+            if ($email !== '' && str_contains($email, $token)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static function isQuickAccessOnly(?Authenticatable $user): bool
     {
         if (! $user) {
@@ -232,26 +306,32 @@ final class StaffClientVisibility
     public static function restrictMatterListToAllocatedClients($query, string $cmAlias = 'cm', string $adAlias = 'ad'): void
     {
         $user = self::currentStaff();
-        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
             return;
         }
         $staffId = (int) $user->id;
-        $query->where(function ($q) use ($staffId, $cmAlias, $adAlias) {
-            $q->whereExists(function ($sub) use ($staffId, $cmAlias) {
-                $sub->select(DB::raw('1'))
-                    ->from('client_matters')
-                    ->whereColumn('client_matters.client_id', $cmAlias . '.client_id');
-                self::whereClientMatterRowAssignedToStaff($sub, $staffId);
-            })->orWhere($adAlias . '.user_id', $staffId)
-              ->orWhereExists(function ($sub) use ($staffId, $cmAlias) {
-                  $sub->select(DB::raw('1'))
-                      ->from('client_access_grants')
-                      ->whereColumn('client_access_grants.admin_id', $cmAlias . '.client_id')
-                      ->where('client_access_grants.staff_id', $staffId)
-                      ->where('client_access_grants.status', 'active')
-                      ->whereNotNull('client_access_grants.ends_at')
-                      ->whereRaw('client_access_grants.ends_at > NOW()');
-              });
+        $matterAlias = preg_replace('/[^A-Za-z0-9_]/', '', $cmAlias) ?: 'cm';
+        $query->where(function ($q) use ($staffId, $matterAlias) {
+            $q->where($matterAlias . '.sel_legal_practitioner', $staffId)
+                ->orWhere($matterAlias . '.sel_person_responsible', $staffId)
+                ->orWhere($matterAlias . '.sel_person_assisting', $staffId)
+                ->orWhereExists(function ($sub) use ($staffId, $matterAlias) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_access_grants')
+                        ->whereColumn('client_access_grants.admin_id', $matterAlias . '.client_id')
+                        ->where('client_access_grants.staff_id', $staffId)
+                        ->where('client_access_grants.grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                        ->where('client_access_grants.status', 'active')
+                        ->whereNotNull('client_access_grants.ends_at')
+                        ->whereRaw('client_access_grants.ends_at > NOW()')
+                        ->where(function ($note) use ($matterAlias) {
+                            $note->whereRaw(
+                                "client_access_grants.requester_note = CONCAT('matter_id:', {$matterAlias}.id)"
+                            )->orWhereRaw(
+                                "client_access_grants.requester_note LIKE CONCAT('matter_id:', {$matterAlias}.id, ';role:%')"
+                            );
+                        });
+                });
         });
     }
 
@@ -357,47 +437,20 @@ final class StaffClientVisibility
     }
 
     /**
+     * Leads list and Other Parties list.
+     * Full list: Super Admin, Calling Team, Kabir, Ajay, Khusi.
+     * Everyone else sees rows they own, rows where they are on a matter, or rows with an active grant.
+     *
      * @param  Builder<\App\Models\Lead>  $query
      */
     public static function restrictLeadListQuery(Builder $query): void
     {
         $user = self::currentStaff();
-        if (! $user || ! self::isAllocationEnforcementEnabled()) {
-            return;
-        }
-
-        if (self::isExemptFromAllocation($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
             return;
         }
 
         $staffId = (int) $user->id;
-
-        if ((bool) config('crm_access.strict_allocation', false)) {
-            $query->where(function (Builder $q) use ($staffId) {
-                $q->whereExists(function ($sub) use ($staffId) {
-                    $sub->select(DB::raw('1'))
-                        ->from('client_matters')
-                        ->whereColumn('client_matters.client_id', 'admins.id');
-                    self::whereClientMatterRowAssignedToStaff($sub, $staffId);
-                })->orWhere('admins.user_id', $staffId)
-                  ->orWhereExists(function ($sub) use ($staffId) {
-                      $sub->select(DB::raw('1'))
-                          ->from('client_access_grants')
-                          ->whereColumn('client_access_grants.admin_id', 'admins.id')
-                          ->where('client_access_grants.staff_id', $staffId)
-                          ->where('client_access_grants.status', 'active')
-                          ->whereNotNull('client_access_grants.ends_at')
-                          ->whereRaw('client_access_grants.ends_at > NOW()');
-                  });
-            });
-
-            return;
-        }
-
-        if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
-            return;
-        }
-
         $column = $query->getModel()->qualifyColumn('user_id');
         $query->where(function (Builder $q) use ($column, $staffId) {
             $q->where($column, $staffId)
@@ -556,7 +609,11 @@ final class StaffClientVisibility
             return true;
         }
 
-        if (self::isExemptFromAllocation($user)) {
+        if (self::seesAllClientMatters($user)) {
+            return true;
+        }
+
+        if (self::isExemptFromAllocation($user) && self::seesAllClientMatters($user)) {
             if ($user instanceof Staff) {
                 self::logExemptAccessIfNeeded((int) $user->id, $adminId, (string) ($row->type ?? 'client'));
             }
@@ -622,7 +679,7 @@ final class StaffClientVisibility
     public static function restrictDocumentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
     {
         $user = self::currentStaff($user);
-        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
             return;
         }
 
@@ -662,6 +719,21 @@ final class StaffClientVisibility
                 });
             }
         });
+
+        $query->where(function (Builder $matterDoc) use ($staffId, $table) {
+            $matterDoc->whereNull("{$table}.client_matter_id")
+                ->orWhere("{$table}.client_matter_id", '<=', 0)
+                ->orWhereExists(function ($sub) use ($staffId, $table) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_matters')
+                        ->whereColumn('client_matters.id', "{$table}.client_matter_id")
+                        ->where(function ($w) use ($staffId) {
+                            $w->where('client_matters.sel_legal_practitioner', $staffId)
+                                ->orWhere('client_matters.sel_person_responsible', $staffId)
+                                ->orWhere('client_matters.sel_person_assisting', $staffId);
+                        });
+                });
+        });
     }
 
     /**
@@ -674,7 +746,7 @@ final class StaffClientVisibility
             return false;
         }
 
-        if (! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
+        if (! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
             return true;
         }
 
@@ -705,16 +777,18 @@ final class StaffClientVisibility
     }
 
     /**
-     * Limit booking appointment listings to clients the viewer may access (linked CRM client_id).
-     *
-     * Rows with no linked client remain visible (public / unlinked bookings).
+     * Bookings list and calendar.
+     * Full list: Super Admin, Calling Team, Kabir, Ajay, Khusi.
+     * Everyone else sees a booking only when it is linked to a client matter they are on,
+     * they own that client, they hold an active grant, or the booking is assigned to them.
+     * Website bookings with no CRM client stay hidden from everyone else.
      *
      * @param  Builder<\App\Models\BookingAppointment>  $query
      */
     public static function restrictBookingAppointmentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
     {
         $user = self::currentStaff($user);
-        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
             return;
         }
 
@@ -722,8 +796,8 @@ final class StaffClientVisibility
         $table   = $query->getModel()->getTable();
 
         $query->where(function (Builder $outer) use ($staffId, $table) {
-            $outer->whereNull("{$table}.client_id")
-                ->orWhere("{$table}.client_id", '<=', 0);
+            $outer->where("{$table}.user_id", $staffId)
+                ->orWhere("{$table}.assigned_by_admin_id", $staffId);
 
             $outer->orWhere(function (Builder $inner) use ($staffId, $table) {
                 $inner->where("{$table}.client_id", '>', 0)
@@ -778,27 +852,7 @@ final class StaffClientVisibility
      */
     private static function userMaySeeByAllocation(int $adminId, Authenticatable $user, Admin $row): bool
     {
-        $strict = (bool) config('crm_access.strict_allocation', false);
-
         if (($row->type ?? '') === 'lead') {
-            if (! $strict) {
-                // Non-strict mode: PR (role 12) and other full-access roles see all leads.
-                // When strict_allocation = true, ALL non-exempt roles (including PR 12) fall
-                // through to the allocation check below — enforcing plan §2 / §9.
-                if (! self::isRestrictedPersonAssisting($user)) {
-                    if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
-                        return true;
-                    }
-                }
-                $staffId = (int) $user->id;
-                if (self::clientHasAllocatingMatter($adminId, $staffId)) {
-                    return true;
-                }
-
-                return (int) ($row->user_id ?? 0) === $staffId;
-            }
-
-            // Strict mode: allocation-only regardless of role (PR 12 included).
             $staffId = (int) $user->id;
             if (self::clientHasAllocatingMatter($adminId, $staffId)) {
                 return true;

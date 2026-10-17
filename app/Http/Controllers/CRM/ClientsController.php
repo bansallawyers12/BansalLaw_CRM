@@ -4317,8 +4317,9 @@ class ClientsController extends Controller
 				->select('client_matters.id', 'client_matters.client_unique_matter_no', 'matters.title', 'client_matters.sel_matter_id')
 				->where('client_matters.matter_status', 1)
 				->where('client_matters.client_id', $clientId)
-				->orderBy('client_matters.id', 'desc')
-				->get();
+				->orderBy('client_matters.id', 'desc');
+			\App\Support\MatterScopedAccess::constrainMatterRows($clientMatters, 'client_matters');
+			$clientMatters = $clientMatters->get();
 			
 			$matters = [];
 			foreach($clientMatters as $matter){

@@ -29,7 +29,6 @@ use Exception;
 use Carbon\Carbon;
 use App\Support\StaffClientVisibility;
 use Illuminate\Support\Str;
-use Yajra\DataTables\Facades\DataTables;
 
 class BookingAppointmentsController extends Controller
 {
@@ -1000,6 +999,10 @@ class BookingAppointmentsController extends Controller
 
         $query = BookingAppointment::query()->with(['client', 'consultant']);
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
+
+        if ($request->filled('type')) {
+            $this->applyBookingCalendarTypeScope($query, (string) $request->type);
+        }
 
         $listStatusFilter = $this->calendarExternalFeed->crmBookingsListStatusFilterResolvedSlug($request->input('status'));
         if ($listStatusFilter !== '') {

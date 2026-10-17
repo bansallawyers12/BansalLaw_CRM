@@ -11,6 +11,7 @@ use App\Services\ClientAccountTabService;
 use App\Services\ClientNotesListService;
 use App\Support\ActivityFeedQuery;
 use App\Support\GlobalSearchPhoneMatcher;
+use App\Support\MatterScopedAccess;
 use App\Support\NoteDescriptionHtml;
 use App\Support\StaffClientVisibility;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -157,6 +158,8 @@ class CrmMcpReadService
             ->orderByDesc('id')
             ->get();
 
+        $matters = MatterScopedAccess::filterMattersForViewer($matters, $staff);
+
         $this->audit($staff, 'list_matters', ['admin_id' => $adminId, 'count' => $matters->count()]);
 
         return $matters->map(function (ClientMatter $m) {
@@ -212,6 +215,15 @@ class CrmMcpReadService
                 'updated_at' => optional($note->updated_at)?->toIso8601String(),
             ];
         })->all();
+
+        if ($noteType === 'client') {
+            $allowed = array_flip(MatterScopedAccess::accessibleMatterIdsForClient($adminId, $staff));
+            $notes = array_values(array_filter($notes, static function (array $note) use ($allowed): bool {
+                $matterId = (int) ($note['matter_id'] ?? 0);
+
+                return $matterId <= 0 || isset($allowed[$matterId]);
+            }));
+        }
 
         return [
             'notes' => $notes,

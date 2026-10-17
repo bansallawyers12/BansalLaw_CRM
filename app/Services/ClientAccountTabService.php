@@ -6,6 +6,9 @@ use App\Models\AccountClientReceipt;
 use App\Models\ClientLegalForm;
 use App\Models\Document;
 use Illuminate\Support\Collection;
+use App\Support\MatterScopedAccess;
+use App\Support\StaffClientVisibility;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -166,7 +169,8 @@ class ClientAccountTabService
      */
     public function filterClientOptions(): Collection
     {
-        $cacheKey = 'account_receipt_filter_clients_v3';
+        $viewerId = (int) (Auth::guard('admin')->id() ?? 0);
+        $cacheKey = 'account_receipt_filter_clients_v4_'.$viewerId;
         $raw = null;
 
         try {
@@ -184,8 +188,11 @@ class ClientAccountTabService
                 ->join('admins', 'admins.id', '=', 'acr.client_id')
                 ->select('acr.client_id', 'admins.first_name', 'admins.last_name', 'admins.client_id as client_unique_id')
                 ->distinct()
-                ->orderBy('admins.first_name', 'asc')
-                ->get()
+                ->orderBy('admins.first_name', 'asc');
+            if (! StaffClientVisibility::seesAllClientMatters(Auth::guard('admin')->user())) {
+                StaffClientVisibility::applyAllocatedClientVisibilityOnAdminJoin($raw, 'admins');
+            }
+            $raw = $raw->get()
                 ->map(fn ($row) => [
                     'client_id' => $row->client_id,
                     'first_name' => $row->first_name,
@@ -211,7 +218,8 @@ class ClientAccountTabService
      */
     public function filterMatterOptions(): Collection
     {
-        $cacheKey = 'account_receipt_filter_matters_v3';
+        $viewerId = (int) (Auth::guard('admin')->id() ?? 0);
+        $cacheKey = 'account_receipt_filter_matters_v4_'.$viewerId;
         $raw = null;
 
         try {
@@ -230,8 +238,9 @@ class ClientAccountTabService
                 ->join('admins', 'admins.id', '=', 'acr.client_id')
                 ->select('acr.client_matter_id', 'client_matters.client_unique_matter_no', 'admins.client_id as client_unique_id')
                 ->distinct()
-                ->orderBy('admins.client_id', 'asc')
-                ->get()
+                ->orderBy('admins.client_id', 'asc');
+            MatterScopedAccess::constrainMatterRows($raw, 'client_matters');
+            $raw = $raw->get()
                 ->map(fn ($row) => [
                     'client_matter_id' => $row->client_matter_id,
                     'client_unique_matter_no' => $row->client_unique_matter_no,
@@ -428,14 +437,19 @@ class ClientAccountTabService
     protected function resolveAccountMatterId(int $clientId, ?int $clientMatterId): ?int
     {
         if ($clientMatterId !== null && $clientMatterId > 0) {
+            if (! MatterScopedAccess::canAccessClientMatter($clientMatterId)) {
+                return null;
+            }
+
             return $clientMatterId;
         }
 
         $matterIds = DB::table('client_matters')
             ->where('client_id', $clientId)
             ->orderBy('id')
-            ->limit(2)
-            ->pluck('id');
+            ->limit(2);
+        MatterScopedAccess::constrainMatterRows($matterIds, 'client_matters');
+        $matterIds = $matterIds->pluck('id');
 
         if ($matterIds->count() === 1) {
             return (int) $matterIds->first();

@@ -550,28 +550,29 @@ class DashboardService
             StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q, $user);
         });
 
-        // Exempt roles / staff see all non-locked matters
-        if (StaffClientVisibility::isExemptFromAllocation($user)) {
+        // Calling Team, Kabir, Ajay, and Khusi see every non-locked matter. Other staff see assigned rows only.
+        if (StaffClientVisibility::seesAllClientMatters($user)) {
             return;
         }
 
-        // Non-exempt staff: must be assigned on matter, client owner, or have active cross-access grant
         $uid = (int) $user->id;
         $query->where(function ($q) use ($uid) {
             $q->where('client_matters.sel_legal_practitioner', $uid)
                 ->orWhere('client_matters.sel_person_responsible', $uid)
                 ->orWhere('client_matters.sel_person_assisting', $uid)
-                ->orWhereHas('client', function ($clientQ) use ($uid) {
-                    $clientQ->where('user_id', $uid);
-                })
                 ->orWhereExists(function ($sub) use ($uid) {
                     $sub->select(DB::raw('1'))
                         ->from('client_access_grants')
                         ->whereColumn('client_access_grants.admin_id', 'client_matters.client_id')
                         ->where('client_access_grants.staff_id', $uid)
+                        ->where('client_access_grants.grant_type', \App\Support\MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
                         ->where('client_access_grants.status', 'active')
                         ->whereNotNull('client_access_grants.ends_at')
-                        ->whereRaw('client_access_grants.ends_at > NOW()');
+                        ->whereRaw('client_access_grants.ends_at > NOW()')
+                        ->where(function ($note) {
+                            $note->whereRaw("client_access_grants.requester_note = CONCAT('matter_id:', client_matters.id)")
+                                ->orWhereRaw("client_access_grants.requester_note LIKE CONCAT('matter_id:', client_matters.id, ';role:%')");
+                        });
                 });
         });
     }

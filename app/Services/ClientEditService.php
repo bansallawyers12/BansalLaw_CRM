@@ -13,6 +13,7 @@ use App\Models\Country;
 use App\Models\Staff;
 use App\Models\Branch;
 use App\Support\EnsureDummyMatterStaff;
+use App\Support\MatterScopedAccess;
 
 /**
  * ClientEditService
@@ -277,14 +278,16 @@ class ClientEditService
      */
     protected function getClientMatters(int $clientId)
     {
-        return ClientMatter::query()
-            ->where('client_id', $clientId)
-            ->with([
-                'matter:id,title,nick_name',
-                'workflowStage:id,name',
-            ])
-            ->orderByDesc('id')
-            ->get();
+        return MatterScopedAccess::filterMattersForViewer(
+            ClientMatter::query()
+                ->where('client_id', $clientId)
+                ->with([
+                    'matter:id,title,nick_name',
+                    'workflowStage:id,name',
+                ])
+                ->orderByDesc('id')
+                ->get()
+        );
     }
 
     /**
@@ -292,11 +295,19 @@ class ClientEditService
      */
     protected function getCourtHearings(int $clientId)
     {
-        return ClientCourtHearing::where('client_id', $clientId)
+        $hearings = ClientCourtHearing::where('client_id', $clientId)
             ->with(['matter:id,client_unique_matter_no,sel_matter_id', 'matter.matter:id,title'])
             ->orderByDesc('hearing_date')
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('id');
+
+        $allowedMatterIds = MatterScopedAccess::accessibleMatterIdsForClient($clientId);
+        $hearings->where(function ($q) use ($allowedMatterIds) {
+            $q->whereNull('client_matter_id')
+                ->orWhere('client_matter_id', '<=', 0)
+                ->orWhereIn('client_matter_id', $allowedMatterIds === [] ? [0] : $allowedMatterIds);
+        });
+
+        return $hearings->get();
     }
 
     /**

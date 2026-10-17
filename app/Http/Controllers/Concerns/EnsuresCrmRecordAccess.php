@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\Admin;
+use App\Models\ClientMatter;
+use App\Support\MatterScopedAccess;
 use App\Support\StaffClientVisibility;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
@@ -59,6 +61,32 @@ trait EnsuresCrmRecordAccess
         }
 
         abort(403, 'Unauthorized');
+    }
+
+    /**
+     * Client-file access is not enough. The viewer must be on this matter
+     * (or be Super Admin, Calling Team, Kabir, Ajay, or Khusi).
+     */
+    protected function ensureClientMatterAccess(ClientMatter $matter): void
+    {
+        $this->ensureCrmRecordAccess((int) $matter->client_id);
+
+        if (! MatterScopedAccess::isEnabled()) {
+            return;
+        }
+
+        $user = Auth::guard('admin')->user();
+        if (MatterScopedAccess::canAccessClientMatter((int) $matter->id, $user)) {
+            return;
+        }
+
+        if (request()->expectsJson() || request()->ajax()) {
+            throw new HttpResponseException(
+                response()->json(StaffClientVisibility::unauthorizedPayload(), 403)
+            );
+        }
+
+        abort(403, 'You do not have access to this matter.');
     }
 
     /**

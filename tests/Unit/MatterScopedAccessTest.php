@@ -21,6 +21,7 @@ class MatterScopedAccessTest extends TestCase
         \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
             ['id' => 1, 'name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 14, 'name' => 'Calling', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 16, 'name' => 'Solicitor', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 
@@ -47,8 +48,8 @@ class MatterScopedAccessTest extends TestCase
     {
         config(['crm_access.allocation_enabled' => true, 'crm_access.matter_scoped_access_enabled' => true]);
 
-        $assigned = Staff::factory()->create(['status' => 1, 'role' => 14]);
-        $other = Staff::factory()->create(['status' => 1, 'role' => 14]);
+        $assigned = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Assigned', 'last_name' => 'Lawyer']);
+        $other = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Other', 'last_name' => 'Lawyer']);
         $client = \App\Models\Admin::factory()->create(['type' => 'client', 'user_id' => $assigned->id]);
 
         $matter = ClientMatter::create([
@@ -185,8 +186,8 @@ class MatterScopedAccessTest extends TestCase
     {
         config(['crm_access.allocation_enabled' => true, 'crm_access.matter_scoped_access_enabled' => true]);
 
-        $assigned = Staff::factory()->create(['status' => 1, 'role' => 14]);
-        $visitor = Staff::factory()->create(['status' => 1, 'role' => 14]);
+        $assigned = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Assigned', 'last_name' => 'Lawyer']);
+        $visitor = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Visitor', 'last_name' => 'Lawyer']);
         $client = \App\Models\Admin::factory()->create(['type' => 'client', 'user_id' => $assigned->id]);
 
         $matter = ClientMatter::create([
@@ -225,8 +226,8 @@ class MatterScopedAccessTest extends TestCase
     {
         config(['crm_access.allocation_enabled' => true, 'crm_access.matter_scoped_access_enabled' => true]);
 
-        $owner = Staff::factory()->create(['status' => 1, 'role' => 14]);
-        $lp = Staff::factory()->create(['status' => 1, 'role' => 14]);
+        $owner = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Owner', 'last_name' => 'Lawyer']);
+        $lp = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Lead', 'last_name' => 'Lawyer']);
         $client = \App\Models\Admin::factory()->create(['type' => 'client', 'user_id' => $owner->id]);
 
         $matter = ClientMatter::create([
@@ -254,8 +255,8 @@ class MatterScopedAccessTest extends TestCase
             ['id' => 17, 'name' => 'Exempt', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        $lp = Staff::factory()->create(['status' => 1, 'role' => 14]);
-        $exempt = Staff::factory()->create(['status' => 1, 'role' => 17]);
+        $lp = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Lead', 'last_name' => 'Lawyer']);
+        $exempt = Staff::factory()->create(['status' => 1, 'role' => 17, 'first_name' => 'Office', 'last_name' => 'Admin']);
         $client = \App\Models\Admin::factory()->create(['type' => 'client']);
 
         $matter = ClientMatter::create([
@@ -288,5 +289,52 @@ class MatterScopedAccessTest extends TestCase
 
         $matter->refresh();
         $this->assertNull($matter->user_id);
+    }
+
+    #[Test]
+    public function calling_team_and_named_staff_see_unassigned_matters_others_do_not(): void
+    {
+        config(['crm_access.allocation_enabled' => true, 'crm_access.matter_scoped_access_enabled' => true]);
+
+        $calling = Staff::factory()->create(['status' => 1, 'role' => 14, 'first_name' => 'Reception', 'last_name' => 'Caller']);
+        $ajay = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Ajay', 'last_name' => 'Bansal']);
+        $kabir = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Kabir', 'last_name' => 'Makkar']);
+        $khusi = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Khusi', 'last_name' => 'Sangroya']);
+        $solicitor = Staff::factory()->create(['status' => 1, 'role' => 16, 'first_name' => 'Other', 'last_name' => 'Lawyer']);
+        $client = \App\Models\Admin::factory()->create(['type' => 'client']);
+
+        $assigned = ClientMatter::create([
+            'client_id' => $client->id,
+            'matter_status' => 1,
+            'client_unique_matter_no' => 'MAT-MINE',
+            'sel_person_responsible' => $solicitor->id,
+        ]);
+        $other = ClientMatter::create([
+            'client_id' => $client->id,
+            'matter_status' => 1,
+            'client_unique_matter_no' => 'MAT-OTHER',
+            'sel_legal_practitioner' => 99999,
+        ]);
+
+        foreach ([$calling, $ajay, $kabir, $khusi] as $viewer) {
+            $this->assertTrue(MatterScopedAccess::canAccessClientMatter((int) $other->id, $viewer));
+        }
+
+        $this->assertTrue(MatterScopedAccess::canAccessClientMatter((int) $assigned->id, $solicitor));
+        $this->assertFalse(MatterScopedAccess::canAccessClientMatter((int) $other->id, $solicitor));
+
+        $this->actingAs($solicitor, 'admin');
+        $ids = \Illuminate\Support\Facades\DB::table('client_matters as cm')
+            ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
+            ->where('ad.id', $client->id);
+        \App\Support\StaffClientVisibility::restrictMatterListToAllocatedClients($ids, 'cm', 'ad');
+        $this->assertSame([(int) $assigned->id], $ids->pluck('cm.id')->map(fn ($id) => (int) $id)->all());
+
+        $this->actingAs($calling, 'admin');
+        $all = \Illuminate\Support\Facades\DB::table('client_matters as cm')
+            ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
+            ->where('ad.id', $client->id);
+        \App\Support\StaffClientVisibility::restrictMatterListToAllocatedClients($all, 'cm', 'ad');
+        $this->assertCount(2, $all->pluck('cm.id'));
     }
 }

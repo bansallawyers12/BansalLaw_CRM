@@ -962,17 +962,26 @@ class Area8SecurityTest extends TestCase
             ['name' => 'Restricted Agent', 'created_at' => now(), 'updated_at' => now()]
         );
 
+        \Illuminate\Support\Facades\DB::table('user_roles')->updateOrInsert(
+            ['id' => 16],
+            ['name' => 'Solicitor', 'created_at' => now(), 'updated_at' => now()]
+        );
+
         $staffAssigned = new Staff();
         $staffAssigned->email = 'staff_assigned_980@bansallawyers.com.au';
         $staffAssigned->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $staffAssigned->role = 14;
+        $staffAssigned->first_name = 'Assigned';
+        $staffAssigned->last_name = 'Lawyer';
+        $staffAssigned->role = 16;
         $staffAssigned->status = 1;
         $staffAssigned->save();
 
         $staffUnassigned = new Staff();
         $staffUnassigned->email = 'staff_unassigned_981@bansallawyers.com.au';
         $staffUnassigned->password = \Illuminate\Support\Facades\Hash::make('password123');
-        $staffUnassigned->role = 14;
+        $staffUnassigned->first_name = 'Other';
+        $staffUnassigned->last_name = 'Lawyer';
+        $staffUnassigned->role = 16;
         $staffUnassigned->status = 1;
         $staffUnassigned->save();
 
@@ -998,10 +1007,23 @@ class Area8SecurityTest extends TestCase
         $dataAssigned = $dashboardService->getDashboardData(new \Illuminate\Http\Request());
         $this->assertGreaterThanOrEqual(1, $dataAssigned['count_active_matter']);
 
-        // Unassigned staff sees 0 active matters for this assigned client
+        // Unassigned solicitor sees 0 active matters for this client
         $this->actingAs($staffUnassigned, 'admin');
         $dataUnassigned = $dashboardService->getDashboardData(new \Illuminate\Http\Request());
         $this->assertEquals(0, $dataUnassigned['count_active_matter']);
+
+        $calling = new Staff();
+        $calling->email = 'calling_982@bansallawyers.com.au';
+        $calling->password = \Illuminate\Support\Facades\Hash::make('password123');
+        $calling->first_name = 'Reception';
+        $calling->last_name = 'Caller';
+        $calling->role = 14;
+        $calling->status = 1;
+        $calling->save();
+
+        $this->actingAs($calling, 'admin');
+        $dataCalling = $dashboardService->getDashboardData(new \Illuminate\Http\Request());
+        $this->assertGreaterThanOrEqual(1, $dataCalling['count_active_matter']);
     }
 
     #[Test]

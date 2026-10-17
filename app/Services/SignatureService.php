@@ -628,7 +628,9 @@ class SignatureService
                         'matters.title as matter_title',
                         'client_matters.matter_status'
                     )
-                    ->orderBy('client_matters.created_at', 'desc')
+                    ->orderBy('client_matters.created_at', 'desc');
+                \App\Support\MatterScopedAccess::constrainMatterRows($matters, 'client_matters');
+                $matters = $matters
                     ->get()
                     ->map(function($matter) {
                         return [
