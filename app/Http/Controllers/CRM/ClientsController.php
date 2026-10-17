@@ -1720,6 +1720,15 @@ class ClientsController extends Controller
             $activeTab = $resolved['activeTab'];
             $id1 = $resolved['matterRef'];
 
+            $strippedMatterRef = $detailService->stripClosedOnlyMatterRef((int) $id, $id1);
+            if ($strippedMatterRef !== $id1) {
+                return redirect()->route('clients.detail', [
+                    'client_id' => $encodeId,
+                    'client_unique_matter_ref_no' => $activeTab,
+                ]);
+            }
+            $id1 = $strippedMatterRef;
+
             if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
                 $fetchedData = $detailService->loadClientRecord((int) $id);
 

@@ -59,6 +59,14 @@
     </header>
 
     <div class="cdn-ov-card__body cdn-ov-card__body--scroll">
+    @if($matterCount === 0)
+        <div class="cdn-ov-matters-empty-state">
+            <p class="cdn-ov-matters-empty-state__text">No active matters on this client.</p>
+            @if($canAddClientMatter)
+                <p class="cdn-ov-matters-empty-state__hint">Use <strong>Add</strong> to open a new matter.</p>
+            @endif
+        </div>
+    @endif
     @if($matterCount > 0)
     @if($matterCount > 1)
     <p class="cdn-ov-matters-hint">Select a row to switch the active matter.</p>
@@ -217,6 +225,20 @@
     #clientMattersListCard .client-matter-list-close-btn:focus-visible {
         outline: 2px solid #dc2626;
         outline-offset: 2px;
+    }
+    #clientMattersListCard .cdn-ov-matters-empty-state {
+        padding: 0.75rem 0.25rem 0.5rem;
+        color: #64748b;
+        font-size: 0.875rem;
+        line-height: 1.45;
+    }
+    #clientMattersListCard .cdn-ov-matters-empty-state__text {
+        margin: 0 0 0.35rem;
+        font-weight: 600;
+        color: #334155;
+    }
+    #clientMattersListCard .cdn-ov-matters-empty-state__hint {
+        margin: 0;
     }
 </style>
 
