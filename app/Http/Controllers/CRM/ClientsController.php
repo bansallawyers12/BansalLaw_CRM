@@ -240,8 +240,9 @@ class ClientsController extends Controller
                         $closedStages
                     );
             })
-            ->orderByDesc('cm.id')
-            ->get(['cm.client_id', 'cm.client_unique_matter_no']);
+            ->orderByDesc('cm.id');
+        \App\Support\MatterScopedAccess::constrainMatterRows($rows, 'cm');
+        $rows = $rows->get(['cm.client_id', 'cm.client_unique_matter_no']);
 
         $grouped = [];
         foreach ($rows as $row) {
@@ -275,8 +276,9 @@ class ClientsController extends Controller
         $matters = DB::table('client_matters')
             ->whereIn('client_id', $clientIds)
             ->where('matter_status', 1)
-            ->orderByDesc('id')
-            ->get(['id', 'client_id']);
+            ->orderByDesc('id');
+        \App\Support\MatterScopedAccess::constrainMatterRows($matters, 'client_matters');
+        $matters = $matters->get(['id', 'client_id']);
 
         $matterIdByClient = [];
         foreach ($matters as $matter) {
@@ -2390,6 +2392,7 @@ class ClientsController extends Controller
                         ->tap(function ($q) {
                             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
                             StaffClientVisibility::applyAllocatedClientVisibilityOnAdminJoin($q, 'admins');
+                            \App\Support\MatterScopedAccess::constrainMatterRows($q, 'client_matters');
                         })
                         ->select(
                             'admins.id as client_id',
@@ -2442,6 +2445,7 @@ class ClientsController extends Controller
                             ->tap(function ($q) {
                                 StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
                                 StaffClientVisibility::applyAllocatedClientVisibilityOnAdminJoin($q, 'admins');
+                                \App\Support\MatterScopedAccess::constrainMatterRows($q, 'client_matters');
                             })
                             ->select(
                                 'admins.id as client_id',
@@ -2480,6 +2484,7 @@ class ClientsController extends Controller
                 ->tap(function ($q) {
                     StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
                     StaffClientVisibility::applyAllocatedClientVisibilityOnAdminJoin($q, 'admins');
+                    \App\Support\MatterScopedAccess::constrainMatterRows($q, 'client_matters');
                 })
                 ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', [$likeMatterOnly])
                 ->select(
@@ -2658,7 +2663,9 @@ class ClientsController extends Controller
                     ->join('admins', 'client_matters.client_id', '=', 'admins.id')
                     ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
                     ->leftJoin('workflow_stages as ws', 'client_matters.workflow_stage_id', '=', 'ws.id')
-                    ->whereIn('client_matters.client_id', $clientIds)
+                    ->whereIn('client_matters.client_id', $clientIds);
+                \App\Support\MatterScopedAccess::constrainMatterRows($allClientMatters, 'client_matters');
+                $allClientMatters = $allClientMatters
                     ->select(
                         'admins.id as client_id',
                         'admins.first_name',

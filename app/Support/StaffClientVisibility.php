@@ -480,7 +480,7 @@ final class StaffClientVisibility
     public static function applyAllocatedClientVisibilityOnAdminJoin($query, string $adminsAlias = 'admins', ?Authenticatable $user = null): void
     {
         $user = self::currentStaff($user);
-        if (! $user || ! self::isAllocationEnforcementEnabled()) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
             return;
         }
 
@@ -554,10 +554,10 @@ final class StaffClientVisibility
         }
 
         if (MatterScopedAccess::isEnabled()) {
-            if (MatterScopedAccess::bypassesMatterTeamEnforcement($user)) {
+            if (MatterScopedAccess::bypassesMatterTeamEnforcement($user) || self::seesAllClientMatters($user)) {
                 return $results;
             }
-        } elseif (self::isExemptFromAllocation($user)) {
+        } elseif (self::isExemptFromAllocation($user) || self::seesAllClientMatters($user)) {
             return $results;
         }
 
