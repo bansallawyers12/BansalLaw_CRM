@@ -99,12 +99,13 @@ class ClientEditService
     }
 
     /**
-     * Person Responsible dropdown: role {@see PERSON_RESPONSIBLE_STAFF_ROLE}; if none, Michael fallback email.
+     * Person Responsible dropdown: active legal practitioners (Solicitor role 16), plus any
+     * staff still on the legacy Person Responsible role (12). If none, Michael fallback email.
      */
     public static function staffSelectableForPersonResponsibleRole()
     {
         $staff = Staff::query()
-            ->where('role', self::PERSON_RESPONSIBLE_STAFF_ROLE)
+            ->whereIn('role', [self::SOLICITOR_STAFF_ROLE, self::PERSON_RESPONSIBLE_STAFF_ROLE])
             ->where('status', 1)
             ->whereNotNull('first_name')
             ->where('first_name', '!=', '')
@@ -158,7 +159,7 @@ class ClientEditService
     }
 
     /**
-     * Add matter: solicitors (16), person responsible (12), person assisting (13), each with role-specific fallback.
+     * Add matter: solicitors (16), person responsible (solicitors + legacy role 12), person assisting (13).
      */
     protected function getMatterFormOptionsForLead(bool $isCompany): array
     {

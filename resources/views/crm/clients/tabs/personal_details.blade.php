@@ -1,8 +1,6 @@
 <div class="tab-pane{{ strtolower((string) ($activeTab ?? 'personaldetails')) === 'personaldetails' ? ' active' : '' }}" id="personaldetails-tab">
                 @php
                     $__sch = \Illuminate\Support\Facades\Schema::class;
-                    $detailHasMatterTeam = $__sch::hasTable('client_matters')
-                        && $__sch::hasColumn('client_matters', 'sel_legal_practitioner');
                     $detailHasClientAddressCols = $__sch::hasTable('client_addresses')
                         && $__sch::hasColumn('client_addresses', 'client_id')
                         && $__sch::hasColumn('client_addresses', 'address');
@@ -283,233 +281,74 @@
 
                     @endif
 
-                    <?php
-                    $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-                    //dd($matter_cnt);
-                    if($matter_cnt >0)
-                    {
-                    ?>
-                        <?php
-                            $overviewClientMatterId = null;
-                            $matter_dis_ref_info_arr = null;
-                            $matterAssigneeCols = ['id'];
-                            if ($detailHasMatterTeam) {
-                                $matterAssigneeCols = array_merge($matterAssigneeCols, ['sel_legal_practitioner', 'sel_person_responsible', 'sel_person_assisting', 'office_id']);
-                            }
-                            if ($__sch::hasColumn('client_matters', 'incidence_type')) {
-                                $matterAssigneeCols[] = 'incidence_type';
-                            }
-                            if ($__sch::hasColumn('client_matters', 'date_of_incidence')) {
-                                $matterAssigneeCols[] = 'date_of_incidence';
-                            }
-                            if ($__sch::hasColumn('client_matters', 'case_detail')) {
-                                $matterAssigneeCols[] = 'case_detail';
-                            }
-                            if ($__sch::hasColumn('client_matters', 'our_party_role')) {
-                                $matterAssigneeCols[] = 'our_party_role';
-                            }
-                            if ($__sch::hasColumn('client_matters', 'sel_matter_id')) {
-                                $matterAssigneeCols[] = 'sel_matter_id';
-                            }
-                            if ($matterAssigneeCols !== []) {
-                                if ($id1) {
-                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select($matterAssigneeCols)
-                                        ->where('client_id', $fetchedData->id)
-                                        ->where('client_unique_matter_no', $id1)
-                                        ->first();
-                                } else {
-                                    $matter_cnt_inner2 = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
-                                    if ($matter_cnt_inner2 > 0) {
-                                        $matter_dis_ref_info_arr = \App\Models\ClientMatter::select($matterAssigneeCols)
-                                            ->where('client_id', $fetchedData->id)
-                                            ->where('matter_status', 1)
-                                            ->orderBy('id', 'desc')
-                                            ->first();
-                                    }
-                                }
-                            }
-                            if ($matter_dis_ref_info_arr && ! empty($matter_dis_ref_info_arr->id)) {
-                                $overviewClientMatterId = (int) $matter_dis_ref_info_arr->id;
-                            }
-                            ?>
+                    @php
+                        $matterTeamOverview = \App\Services\MatterTeamOverview::forClient(
+                            (int) $fetchedData->id,
+                            isset($id1) ? (string) $id1 : null
+                        );
+                    @endphp
+                    @if($matterTeamOverview)
                         <article class="card cdn-ov-card cdn-ov-card--matter">
                             <header class="cdn-ov-card__head">
                                 <div class="cdn-ov-card__title">
                                     <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-briefcase"></i></span>
-                                    <h3>Matter team &amp; details</h3>
+                                    <h3>
+                                        Matter team &amp; details
+                                        @if(! empty($matterTeamOverview['matter_reference']))
+                                            <span class="cdn-ov-matter-ref">{{ $matterTeamOverview['matter_reference'] }}</span>
+                                        @endif
+                                    </h3>
                                 </div>
-                                @if($overviewClientMatterId)
-                                <a class="cdn-ov-card__action changeMatterAssignee" href="javascript:;" role="button" data-client-matter-id="{{ $overviewClientMatterId }}">
+                                @if(! empty($matterTeamOverview['client_matter_id']))
+                                <button type="button" class="cdn-ov-card__action changeMatterAssignee" data-client-matter-id="{{ $matterTeamOverview['client_matter_id'] }}">
                                     <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Edit details
-                                </a>
-                                @else
-                                <a class="cdn-ov-card__action changeMatterAssignee" href="javascript:;" role="button">
-                                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Edit details
-                                </a>
+                                </button>
                                 @endif
                             </header>
                             <div class="cdn-ov-card__body cdn-ov-card__body--scroll">
-                                @php
-                                    $lpName = 'Ajay Bansal';
-                                    $lpFirst = 'A';
-                                    $lpLast = 'B';
-                                    if (isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_legal_practitioner != '') {
-                                        $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_legal_practitioner)->first();
-                                        if ($legal_practitioner_info) {
-                                            $lpName = $legal_practitioner_info->first_name . ' ' . $legal_practitioner_info->last_name;
-                                            $lpFirst = $legal_practitioner_info->first_name;
-                                            $lpLast = $legal_practitioner_info->last_name;
-                                        }
-                                    }
-
-                                    $prName = 'Michael Saleh';
-                                    $prFirst = 'M';
-                                    $prLast = 'S';
-                                    if (isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_responsible != ''){
-                                        $sel_person_responsible_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_responsible)->first();
-                                        if ($sel_person_responsible_info_arr) {
-                                            $prName = $sel_person_responsible_info_arr->first_name . ' ' . $sel_person_responsible_info_arr->last_name;
-                                            $prFirst = $sel_person_responsible_info_arr->first_name;
-                                            $prLast = $sel_person_responsible_info_arr->last_name;
-                                        }
-                                    }
-
-                                    $paName = 'Khushi Sangroya';
-                                    $paFirst = 'K';
-                                    $paLast = 'S';
-                                    if (isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_assisting != ''){
-                                        $sel_person_assisting_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_assisting)->first();
-                                        if ($sel_person_assisting_info_arr) {
-                                            $paName = $sel_person_assisting_info_arr->first_name . ' ' . $sel_person_assisting_info_arr->last_name;
-                                            $paFirst = $sel_person_assisting_info_arr->first_name;
-                                            $paLast = $sel_person_assisting_info_arr->last_name;
-                                        }
-                                    }
-
-                                    $officeName = 'Melbourne';
-                                    if (isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->office_id != ''){
-                                        $office_info = \App\Models\Branch::select('office_name')->where('id', $matter_dis_ref_info_arr->office_id)->first();
-                                        if ($office_info) {
-                                            $officeName = $office_info->office_name;
-                                        }
-                                    }
-                                @endphp
-
                                 <section class="cdn-ov-block">
                                     <div class="cdn-ov-block__head">
                                         <p class="cdn-ov-section-label"><i class="fa-solid fa-users-gear"></i> Assigned Team</p>
                                     </div>
                                     <div class="cdn-ov-team-list">
-                                        {{-- Principal Solicitor --}}
-                                        <div class="cdn-ov-member-card">
-                                            <div class="cdn-ov-member-avatar cdn-ov-member-avatar--navy" title="Principal Solicitor">
-                                                {{ strtoupper(substr($lpFirst, 0, 1) . substr($lpLast, 0, 1)) }}
+                                        @foreach($matterTeamOverview['team'] as $slot)
+                                            <div class="cdn-ov-member-card{{ $slot['status'] !== 'assigned' ? ' is-empty' : '' }}">
+                                                <div class="cdn-ov-member-avatar cdn-ov-member-avatar--{{ $slot['avatar_variant'] }}{{ $slot['status'] !== 'assigned' ? ' is-empty' : '' }}" title="{{ $slot['role_title'] }}">
+                                                    @if(! empty($slot['is_office']))
+                                                        <i class="fa-solid fa-building" style="font-size: 0.75rem;" aria-hidden="true"></i>
+                                                    @elseif($slot['status'] === 'assigned' && ! empty($slot['initials']))
+                                                        {{ $slot['initials'] }}
+                                                    @else
+                                                        <i class="fa-solid fa-user" style="font-size: 0.7rem;" aria-hidden="true"></i>
+                                                    @endif
+                                                </div>
+                                                <div class="cdn-ov-member-info">
+                                                    <span class="cdn-ov-member-role">{{ $slot['role'] }}</span>
+                                                    @if($slot['status'] === 'assigned')
+                                                        <strong class="cdn-ov-member-name">{{ $slot['name'] }}</strong>
+                                                    @elseif($slot['status'] === 'missing')
+                                                        <span class="cdn-ov-member-name cdn-ov-member-name--muted">No longer on file</span>
+                                                    @else
+                                                        <span class="cdn-ov-member-name cdn-ov-member-name--muted">Unassigned</span>
+                                                    @endif
+                                                </div>
                                             </div>
-                                            <div class="cdn-ov-member-info">
-                                                <span class="cdn-ov-member-role">Principal</span>
-                                                <strong class="cdn-ov-member-name">{{ $lpName }}</strong>
-                                            </div>
-                                        </div>
-
-                                        {{-- Responsible Solicitor --}}
-                                        <div class="cdn-ov-member-card">
-                                            <div class="cdn-ov-member-avatar cdn-ov-member-avatar--blue" title="Responsible Solicitor">
-                                                {{ strtoupper(substr($prFirst, 0, 1) . substr($prLast, 0, 1)) }}
-                                            </div>
-                                            <div class="cdn-ov-member-info">
-                                                <span class="cdn-ov-member-role">Responsible</span>
-                                                <strong class="cdn-ov-member-name">{{ $prName }}</strong>
-                                            </div>
-                                        </div>
-
-                                        {{-- Paralegal --}}
-                                        <div class="cdn-ov-member-card">
-                                            <div class="cdn-ov-member-avatar cdn-ov-member-avatar--teal" title="Paralegal">
-                                                {{ strtoupper(substr($paFirst, 0, 1) . substr($paLast, 0, 1)) }}
-                                            </div>
-                                            <div class="cdn-ov-member-info">
-                                                <span class="cdn-ov-member-role">Paralegal</span>
-                                                <strong class="cdn-ov-member-name">{{ $paName }}</strong>
-                                            </div>
-                                        </div>
-
-                                        {{-- Handling Office --}}
-                                        <div class="cdn-ov-member-card">
-                                            <div class="cdn-ov-member-avatar cdn-ov-member-avatar--slate" title="Handling Office">
-                                                <i class="fa-solid fa-building" style="font-size: 0.75rem;"></i>
-                                            </div>
-                                            <div class="cdn-ov-member-info">
-                                                <span class="cdn-ov-member-role">Office</span>
-                                                <strong class="cdn-ov-member-name">{{ $officeName }}</strong>
-                                            </div>
-                                        </div>
+                                        @endforeach
                                     </div>
                                 </section>
-
-                                @php
-                                    $mdRows = [];
-                                    if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'our_party_role')) {
-                                        $ourRoleVal = trim((string) ($matter_dis_ref_info_arr->our_party_role ?? ''));
-                                        if ($ourRoleVal !== '') {
-                                            $matterStream = 'general';
-                                            if (! empty($matter_dis_ref_info_arr->sel_matter_id)) {
-                                                $matterStream = (string) (\App\Models\Matter::query()->whereKey($matter_dis_ref_info_arr->sel_matter_id)->value('stream') ?? 'general');
-                                            }
-                                            $roleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($matterStream);
-                                            $mdRows[] = ['label' => 'Our client\'s role', 'value' => $roleLabels[$ourRoleVal] ?? $ourRoleVal];
-                                        }
-                                    }
-                                    $linkedOtherParties = collect();
-                                    if ($matter_dis_ref_info_arr && $__sch::hasTable('client_matter_opposing_parties')) {
-                                        $linkedOtherParties = \App\Models\ClientMatterOpposingParty::query()
-                                            ->where('client_matter_id', (int) $matter_dis_ref_info_arr->id)
-                                            ->orderBy('sort_order')
-                                            ->orderBy('id')
-                                            ->get();
-                                    }
-                                    if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'incidence_type')) {
-                                        $subtype = trim((string) ($matter_dis_ref_info_arr->incidence_type ?? ''));
-                                        if ($subtype !== '') {
-                                            $mdRows[] = ['label' => 'Matter subtype', 'value' => $subtype];
-                                        }
-                                    }
-                                    if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'date_of_incidence') && ! empty($matter_dis_ref_info_arr->date_of_incidence)) {
-                                        try {
-                                            $doiLabel = \Carbon\Carbon::parse($matter_dis_ref_info_arr->date_of_incidence)->format('d/m/Y');
-                                        } catch (\Throwable $e) {
-                                            $doiLabel = (string) $matter_dis_ref_info_arr->date_of_incidence;
-                                        }
-                                        $mdRows[] = ['label' => 'Date of incidence', 'value' => $doiLabel];
-                                    }
-                                    if ($__sch::hasColumn('client_matters', 'case_detail')) {
-                                        $rawCaseDetail = ($matter_dis_ref_info_arr && isset($matter_dis_ref_info_arr->case_detail)) ? trim((string) $matter_dis_ref_info_arr->case_detail) : '';
-                                        if ($rawCaseDetail !== '') {
-                                            foreach (preg_split('/\r?\n/', $rawCaseDetail) as $cdLine) {
-                                                $cdLine = trim($cdLine);
-                                                if ($cdLine === '') continue;
-                                                if (strpos($cdLine, ':') !== false) {
-                                                    [$cdLabel, $cdVal] = explode(':', $cdLine, 2);
-                                                    $mdRows[] = ['label' => trim($cdLabel), 'value' => trim($cdVal)];
-                                                } else {
-                                                    $mdRows[] = ['label' => 'Case detail', 'value' => $cdLine];
-                                                }
-                                            }
-                                        }
-                                    }
-                                @endphp
 
                                 <section class="cdn-ov-block">
                                     <div class="cdn-ov-block__head">
                                         <p class="cdn-ov-section-label"><i class="fa-solid fa-folder-tree"></i> Case Details</p>
                                     </div>
-                                    @if(count($mdRows) > 0)
+                                    @if(count($matterTeamOverview['case_details']) > 0)
                                         <div class="cdn-ov-case-grid">
-                                            @foreach($mdRows as $mdRow)
-                                                <div class="cdn-ov-case-item{{ $mdRow['label'] === 'Case detail' ? ' cdn-ov-case-item--full' : '' }}">
-                                                    @if($mdRow['label'] !== '')
+                                            @foreach($matterTeamOverview['case_details'] as $mdRow)
+                                                <div class="cdn-ov-case-item{{ ($mdRow['kind'] ?? '') === 'full' ? ' cdn-ov-case-item--full' : '' }}">
+                                                    @if(($mdRow['label'] ?? '') !== '')
                                                         <span class="cdn-ov-case-item__label">{{ $mdRow['label'] }}</span>
                                                     @endif
-                                                    @if(strtolower((string)$mdRow['label']) === "our client's role")
+                                                    @if(($mdRow['kind'] ?? '') === 'role')
                                                         <span class="cdn-ov-role-pill"><i class="fa-solid fa-user-tag"></i> {{ $mdRow['value'] }}</span>
                                                     @else
                                                         <span class="cdn-ov-case-item__value">{{ $mdRow['value'] }}</span>
@@ -521,53 +360,9 @@
                                         <p class="cdn-ov-empty">No case details yet. Use <strong>Edit details</strong> to add role, subtype, dates, or notes.</p>
                                     @endif
                                 </section>
-
-                                @if($linkedOtherParties->isNotEmpty())
-                                    <section class="cdn-ov-block cdn-ov-block--parties">
-                                        <div class="cdn-ov-block__head">
-                                            <p class="cdn-ov-section-label"><i class="fa-solid fa-users"></i> Other Parties</p>
-                                            <span class="cdn-ov-count">{{ $linkedOtherParties->count() }}</span>
-                                        </div>
-                                        <div class="cdn-ov-scroll cdn-ov-scroll--parties" tabindex="0" role="region" aria-label="Other parties">
-                                            <ul class="cdn-ov-party-list">
-                                                @foreach($linkedOtherParties as $opp)
-                                                    @php
-                                                        $oppRoleLabel = $opp->party_role;
-                                                        if ($matter_dis_ref_info_arr && ! empty($matter_dis_ref_info_arr->sel_matter_id)) {
-                                                            $oppStream = (string) (\App\Models\Matter::query()->whereKey($matter_dis_ref_info_arr->sel_matter_id)->value('stream') ?? 'general');
-                                                            $oppRoleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($oppStream);
-                                                            $oppRoleLabel = $oppRoleLabels[$opp->party_role] ?? $opp->party_role;
-                                                        }
-                                                        $repParts = array_filter([
-                                                            $opp->rep_firm ?? null,
-                                                            $opp->rep_name ?? null,
-                                                            $opp->rep_email ?? null,
-                                                            $opp->rep_phone ?? null,
-                                                        ]);
-                                                    @endphp
-                                                    <li class="cdn-ov-party-item">
-                                                        <div class="cdn-ov-party-item__main">
-                                                            <strong class="cdn-ov-party-item__name">{{ $opp->name }}</strong>
-                                                            @if($oppRoleLabel)
-                                                                <span class="cdn-ov-party-item__role">{{ $oppRoleLabel }}</span>
-                                                            @endif
-                                                        </div>
-                                                        @if($repParts !== [])
-                                                            <div class="cdn-ov-party-item__meta">Rep: {{ implode(' · ', $repParts) }}</div>
-                                                        @endif
-                                                        @if(! empty($opp->rep_notes))
-                                                            <div class="cdn-ov-party-item__meta">{{ $opp->rep_notes }}</div>
-                                                        @endif
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-                                    </section>
-                                @endif
                             </div>
                         </article>
-                    <?php
-                    } ?>
+                    @endif
 
                     @include('crm.clients.partials.client-matters-list-card', [
                         'fetchedData' => $fetchedData,

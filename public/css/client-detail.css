@@ -9209,11 +9209,28 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-card__head h3,
   font-weight: 700 !important;
   color: #0f172a !important;
   line-height: 1.3 !important;
-  display: block !important;
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__head h3 i {
   display: none;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-matter-ref {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__action {
@@ -9228,8 +9245,10 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-card__head h3,
   color: #1e3d60 !important;
   font-size: 0.8rem;
   font-weight: 600;
+  font-family: inherit;
   text-decoration: none !important;
   line-height: 1.2;
+  cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   transition: all 0.15s ease;
 }
@@ -10159,6 +10178,21 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   color: #0f172a;
   line-height: 1.25;
   word-break: break-word;
+}
+
+#personaldetails-tab .cdn-ov-member-name--muted {
+  font-weight: 600;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+#personaldetails-tab .cdn-ov-member-avatar.is-empty {
+  background: #e2e8f0;
+  color: #94a3b8;
+}
+
+#personaldetails-tab .cdn-ov-member-card.is-empty {
+  background: #fafbfc;
 }
 
 /* Case Grid */
