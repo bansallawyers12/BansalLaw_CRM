@@ -124,9 +124,6 @@
                             @endif
                         </div>
                     </div>
-                    <div class="cdn-ov-matter-card-meta">
-                        <span class="cdn-ov-matter-stream-tag"><i class="fa-solid fa-circle-plus"></i> Add new matter</span>
-                    </div>
                 </div>
             </li>
         @endif

@@ -90,7 +90,7 @@ class ClientDetailClosedOnlyMatterTest extends TestCase
         $response->assertOk();
         $response->assertSee('AIRI2600184', false);
         $response->assertSee('CIV_1', false);
-        $response->assertSee('Add new matter', false);
+        $response->assertSee('client-matter-list-add-btn', false);
         $response->assertDontSee('This matter is closed', false);
     }
 
