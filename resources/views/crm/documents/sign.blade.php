@@ -481,7 +481,7 @@
                         <div class="relative">
                             <img
                                 id="pdf-image-{{ $i }}"
-                                src="{{ route('public.documents.page', ['id' => $document->id, 'page' => $i]) }}"
+                                src="{{ route('public.documents.page', ['id' => $document->id, 'page' => $i, 'token' => $signer->token]) }}"
                                 alt="Page {{ $i }}"
                                 class="w-full h-auto rounded-md shadow-sm"
                                 style="max-width: 100%; z-index: 1; pointer-events: none;"

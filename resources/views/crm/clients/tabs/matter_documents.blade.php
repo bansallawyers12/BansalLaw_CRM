@@ -272,7 +272,7 @@
                                                             $links = json_decode($fetch->signature_doc_link, true);
                                                             $signingUrl = is_array($links) && isset($links[0]['url']) ? $links[0]['url'] : null;
                                                         }
-                                                        $pendingSigner = $fetch->signers()->whereIn('status', ['pending'])->first();
+                                                        $pendingSigner = $fetch->signers()->whereIn('status', ['pending'])->orderByDesc('id')->first();
                                                         $signerId = $pendingSigner ? $pendingSigner->id : null;
                                                     ?>
                                                     <tr class="visa-sig-action-bar" data-doc-id="<?= $fetch->id ?>" data-signer-id="<?= $signerId ?>">

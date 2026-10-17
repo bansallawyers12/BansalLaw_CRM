@@ -409,12 +409,12 @@
                             
             <img
                 id="pdf-image-{{ $i }}"
-                src="{{ route('public.documents.page', ['id' => $document->id, 'page' => $i]) }}"
+                src="{{ route('public.documents.page', ['id' => $document->id, 'page' => $i, 'token' => $signer->token]) }}"
                 alt="Page {{ $i }}"
                 class="w-full h-auto rounded-md shadow-sm pdf-page-image"
                 style="max-width: 100%; z-index: 1; pointer-events: none; display: none;"
                 data-page="{{ $i }}"
-                data-debug-url="{{ route('public.documents.page', ['id' => $document->id, 'page' => $i]) }}"
+                data-debug-url="{{ route('public.documents.page', ['id' => $document->id, 'page' => $i, 'token' => $signer->token]) }}"
             >
                             @foreach ($signatureFields as $field)
                                 @if ($field->page_number == $i)
@@ -641,9 +641,15 @@
             if (errorPlaceholder) errorPlaceholder.classList.add('hidden');
             if (loadingPlaceholder) loadingPlaceholder.style.display = 'flex';
             
-            // Force reload by adding timestamp
+            const tokenInput = document.querySelector('input[name="token"]');
+            const token = tokenInput ? tokenInput.value : '';
             const currentSrc = img.src.split('?')[0];
-            img.src = currentSrc + '?retry=' + Date.now();
+            const params = new URLSearchParams();
+            if (token) {
+                params.set('token', token);
+            }
+            params.set('retry', String(Date.now()));
+            img.src = currentSrc + '?' + params.toString();
         };
 
         // Optimized Signature Pad (SignaturePad library + HiDPI scaling)
