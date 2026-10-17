@@ -98,6 +98,17 @@
         }
 
         $sel.val(v);
+        if (el.tomselect && typeof el.tomselect.setValue === 'function') {
+            el.tomselect.setValue(v, true);
+        }
+    }
+
+    function syncChangeMatterTomSelectFromNative(selectEl) {
+        if (!selectEl || !selectEl.tomselect || typeof selectEl.tomselect.setValue !== 'function') {
+            return;
+        }
+        var v = selectEl.value != null ? String(selectEl.value) : '';
+        selectEl.tomselect.setValue(v, true);
     }
 
     function getChangeMatterStream() {
@@ -402,6 +413,17 @@
 
         ensureChangeMatterSearchableSelects(modal);
 
+        [
+            '#change_sel_legal_practitioner_id',
+            '#change_sel_person_responsible_id',
+            '#change_sel_person_assisting_id',
+            '#change_office_id',
+            '#change_sel_matter_id',
+            '#change_matter_our_party_role'
+        ].forEach(function (selector) {
+            syncChangeMatterTomSelectFromNative(modal.querySelector(selector));
+        });
+
         var opp = info.opposing_parties || [];
         var oppContainer = getOpposingPartiesContainerEl();
         if (oppContainer) {
@@ -475,17 +497,24 @@
         var modalEl = this;
         // Keep .crm-modal-close; only strip legacy close controls that stack a second X.
         $(modalEl).find('.modal-header .close:not(.crm-modal-close), .modal-header .btn-close, .modal-header .close-btn:not(.crm-modal-close)').remove();
-        ['change_sel_legal_practitioner_id', 'change_sel_person_responsible_id', 'change_sel_person_assisting_id', 'change_office_id'].forEach(function (id) {
-            var el = modalEl.querySelector('#' + id);
-            if (el && el.tomselect && typeof destroyTS === 'function') {
-                destroyTS(el);
-            }
-        });
     });
 
     $(document).on('hidden.bs.modal', '#changeMatterAssigneeModal', function () {
         var modalEl = this;
         setModalLoading(false);
+        [
+            'change_sel_legal_practitioner_id',
+            'change_sel_person_responsible_id',
+            'change_sel_person_assisting_id',
+            'change_office_id',
+            'change_sel_matter_id',
+            'change_matter_our_party_role'
+        ].forEach(function (id) {
+            var el = modalEl.querySelector('#' + id);
+            if (el && el.tomselect && typeof destroyTS === 'function') {
+                destroyTS(el);
+            }
+        });
         $(modalEl).find('#change_matter_opposing_parties_container .opp-party-lead-select, #change_matter_opposing_parties_container .opp-party-solicitor-select').each(function () {
             if (typeof destroyTS === 'function') destroyTS(this);
         });
