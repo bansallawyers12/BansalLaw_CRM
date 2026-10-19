@@ -940,7 +940,25 @@
         $(document).on('click', '.listing-container .deleteNote', function(e) {
             e.preventDefault();
             var url = $(this).data('remote');
-            if (confirm('Are you sure you want to delete this task?')) {
+            if (!url) {
+                crmAlert('Unable to delete: missing URL');
+                return;
+            }
+
+            var ask = (typeof window.crmConfirm === 'function')
+                ? window.crmConfirm({
+                    title: 'Delete task?',
+                    text: 'Are you sure you want to delete this task?',
+                    icon: 'warning',
+                    confirmText: 'Delete',
+                    confirmColor: '#dc3545'
+                })
+                : Promise.resolve(window.confirm('Are you sure you want to delete this task?'));
+
+            ask.then(function(confirmed) {
+                if (!confirmed) {
+                    return;
+                }
                 $.ajax({
                     type: 'DELETE',
                     url: url,
@@ -954,7 +972,7 @@
                                 location.reload();
                             }
                         } else {
-                            crmAlert('Error deleting task: ' + response.message);
+                            crmAlert('Error deleting task: ' + (response.message || 'Unknown error'));
                         }
                     },
                     error: function(xhr, status, error) {
@@ -962,7 +980,7 @@
                         console.error('Delete error:', error);
                     }
                 });
-            }
+            });
         });
     });
 </script>
