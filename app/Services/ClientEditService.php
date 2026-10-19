@@ -61,7 +61,7 @@ class ClientEditService
         ];
     }
 
-    public const DEFAULT_PERSON_RESPONSIBLE_EMAIL = 'michael@bansallawyers.com.au';
+    public const DEFAULT_PERSON_RESPONSIBLE_EMAIL = 'Ajay@bansallawyers.com.au';
 
     /** Fallback “Person assisting” row when no staff have that role (case-insensitive email match). */
     public const DEFAULT_PERSON_ASSISTING_EMAIL = 'Admin@bansallawyers.com.au';
@@ -77,7 +77,7 @@ class ClientEditService
 
     /**
      * Legal practitioner dropdown: active staff with Solicitor role (16). If none, single fallback row
-     * for {@see DEFAULT_PERSON_RESPONSIBLE_EMAIL} when present (required-field safety).
+     * for {@see DEFAULT_PERSON_RESPONSIBLE_EMAIL} (Ajay Bansal) when present (required-field safety).
      */
     public static function staffSelectableForSolicitorRole()
     {
@@ -101,7 +101,7 @@ class ClientEditService
 
     /**
      * Person Responsible dropdown: active legal practitioners (Solicitor role 16), plus any
-     * staff still on the legacy Person Responsible role (12). If none, Michael fallback email.
+     * staff still on the legacy Person Responsible role (12). If none, Ajay fallback email.
      */
     public static function staffSelectableForPersonResponsibleRole()
     {

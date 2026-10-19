@@ -29,7 +29,7 @@ final class MatterAssigneeDefaults
         }
         if (self::isUnset($row->sel_person_responsible)) {
             $id = self::staffIdByWorkEmail(ClientEditService::DEFAULT_PERSON_RESPONSIBLE_EMAIL)
-                ?? self::staffIdByFirstLast(['Michael'], 'Saleh');
+                ?? self::staffIdByFirstLast(['Ajay'], 'Bansal');
             if ($id !== null) {
                 $row->sel_person_responsible = $id;
             }
