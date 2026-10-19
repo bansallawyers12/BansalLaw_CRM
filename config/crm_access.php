@@ -62,6 +62,13 @@ return [
     // Set true to restore allocation filtering and the quick/supervisor grant flow.
     'allocation_enabled' => filter_var(env('CRM_ACCESS_ALLOCATION_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
+    // When true, staff only see leads/clients/mail they are assigned to (matter LP/PR/PA, lead owner,
+    // active cross-access grants, or mail To/Cc/Bcc). Super Admin (role 1) still bypasses unless disabled below.
+    'assignment_only_access_enabled' => filter_var(env('CRM_ACCESS_ASSIGNMENT_ONLY', true), FILTER_VALIDATE_BOOLEAN),
+
+    // Roles that bypass assignment-only rules (default: Super Admin only).
+    'assignment_only_bypass_role_ids' => $intList('CRM_ACCESS_ASSIGNMENT_ONLY_BYPASS_ROLE_IDS', '1', [1]),
+
     // When true, matter URLs and matter-scoped data require LP/PR/PA on that matter (or a matter_temp grant).
     'matter_scoped_access_enabled' => filter_var(env('CRM_ACCESS_MATTER_SCOPED', true), FILTER_VALIDATE_BOOLEAN),
 

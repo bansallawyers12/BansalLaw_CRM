@@ -6299,6 +6299,30 @@ class ClientsController extends Controller
             return redirect()->back()->with('error', 'You do not have permission to view synced inbox emails.');
         }
 
+        if ($staff instanceof \App\Models\Staff) {
+            if (! empty($clientId) && ! \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, $staff)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have access to this client or lead.',
+                    'emails' => [],
+                    'total' => 0,
+                    'current_page' => 1,
+                    'last_page' => 1,
+                ], 403);
+            }
+            if (! empty($clientMatterId) && \App\Support\MatterScopedAccess::isEnabled()
+                && ! \App\Support\MatterScopedAccess::canAccessClientMatter((int) $clientMatterId, $staff)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have access to this matter.',
+                    'emails' => [],
+                    'total' => 0,
+                    'current_page' => 1,
+                    'last_page' => 1,
+                ], 403);
+            }
+        }
+
         $search = $request->input('search');
         $labelId = $request->input('label_id');
         if (! empty($labelId)) {
@@ -6562,6 +6586,10 @@ class ClientsController extends Controller
                 \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxHasZohoPasswordFilter($query);
                 \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailAvailabilityFloor($query);
             }
+        }
+
+        if ($staff instanceof \App\Models\Staff) {
+            \App\Support\StaffClientVisibility::applyEmailLogLinkedClientVisibilityFilter($query, $staff);
         }
 
         // Calendar invites / ICS events belong on the calendar, not mail lists.

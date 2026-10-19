@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\Schema;
  * reveal the rest of that client's matters.
  * Lead listing, bookings, documents, and the global search all use seesAllClientMatters() for the
  * full-visibility group and matter assignment for everyone else.
+ * With CRM_ACCESS_ASSIGNMENT_ONLY=true, other staff only see leads/clients/mail they are assigned to
+ * (matter team, lead owner, grants, or synced mail To/Cc/Bcc).
  *
  * Cross-access grants and strict allocation are controlled by config/crm_access.php
  * (CRM_ACCESS_ALLOCATION_ENABLED, CRM_ACCESS_STRICT_ALLOCATION, exempt roles, approvers, quick access).
@@ -104,6 +106,15 @@ final class StaffClientVisibility
         return (bool) config('crm_access.allocation_enabled', true);
     }
 
+    /**
+     * When true, non-bypass staff only access leads/clients/mail they are assigned to (see class docblock).
+     */
+    public static function isAssignmentOnlyAccessEnabled(): bool
+    {
+        return self::isAllocationEnforcementEnabled()
+            && (bool) config('crm_access.assignment_only_access_enabled', true);
+    }
+
     public static function isRestrictedPersonAssisting(?Authenticatable $user): bool
     {
         if (! self::isAllocationEnforcementEnabled()) {
@@ -136,7 +147,14 @@ final class StaffClientVisibility
             return true;
         }
 
-        return in_array((int) ($user->role ?? 0), config('crm_access.exempt_role_ids', [1, 17]), true);
+        $role = (int) ($user->role ?? 0);
+        if (self::isAssignmentOnlyAccessEnabled()) {
+            $bypass = config('crm_access.assignment_only_bypass_role_ids', [1]);
+
+            return in_array($role, array_map('intval', (array) $bypass), true);
+        }
+
+        return in_array($role, config('crm_access.exempt_role_ids', [1, 17]), true);
     }
 
     /**
@@ -497,32 +515,15 @@ final class StaffClientVisibility
         $adminIdCol = $adminsAlias . '.id';
         $userIdCol = $adminsAlias . '.user_id';
 
-        $query->where(function ($q) use ($staffId, $adminIdCol, $userIdCol) {
-            $q->whereExists(function ($sub) use ($staffId, $adminIdCol) {
-                $sub->select(DB::raw('1'))
-                    ->from('client_matters')
-                    ->whereColumn('client_matters.client_id', $adminIdCol);
-                self::whereClientMatterRowAssignedToStaff($sub, $staffId);
-            })->orWhere($userIdCol, $staffId)
-                ->orWhereExists(function ($sub) use ($staffId, $adminIdCol) {
-                    $sub->select(DB::raw('1'))
-                        ->from('client_access_grants')
-                        ->whereColumn('client_access_grants.admin_id', $adminIdCol)
-                        ->where('client_access_grants.staff_id', $staffId)
-                        ->where('client_access_grants.status', 'active')
-                        ->whereNotNull('client_access_grants.ends_at')
-                        ->whereRaw('client_access_grants.ends_at > NOW()');
-                })
-                ->orWhereExists(function ($sub) use ($staffId, $adminIdCol) {
-                    $sub->select(DB::raw('1'))
-                        ->from('client_access_grants')
-                        ->whereColumn('client_access_grants.admin_id', $adminIdCol)
-                        ->where('client_access_grants.staff_id', $staffId)
-                        ->where('client_access_grants.grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
-                        ->where('client_access_grants.status', 'active')
-                        ->whereNotNull('client_access_grants.ends_at')
-                        ->whereRaw('client_access_grants.ends_at > NOW()');
-                });
+        $typeCol = $adminsAlias . '.type';
+        $query->where(function ($q) use ($staffId, $adminIdCol, $userIdCol, $typeCol) {
+            self::applyAssignedClientAdminVisibilityClauses(
+                $q,
+                $staffId,
+                $adminIdCol,
+                self::isAssignmentOnlyAccessEnabled() ? null : $userIdCol,
+                self::isAssignmentOnlyAccessEnabled() ? $typeCol : null
+            );
         });
     }
 
@@ -884,6 +885,10 @@ final class StaffClientVisibility
             return true;
         }
 
+        if (self::isAssignmentOnlyAccessEnabled()) {
+            return false;
+        }
+
         return (int) ($row->user_id ?? 0) === $staffId;
     }
 
@@ -954,6 +959,88 @@ final class StaffClientVisibility
                     });
             });
         });
+    }
+
+    /**
+     * SQL visibility: matter team, grants, matter_temp, and (optionally) lead record owner.
+     *
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $q
+     */
+    /**
+     * Limit email_logs rows to clients/leads the staff may access (assignment-only mode).
+     *
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     */
+    public static function applyEmailLogLinkedClientVisibilityFilter($query, ?Authenticatable $user = null): void
+    {
+        $user = self::currentStaff($user);
+        if (! $user instanceof Staff || ! self::isAssignmentOnlyAccessEnabled() || self::isExemptFromAllocation($user)) {
+            return;
+        }
+
+        $staffId = (int) $user->id;
+        $table = method_exists($query, 'getModel') ? $query->getModel()->getTable() : 'email_logs';
+        $clientCol = $table . '.client_id';
+
+        $query->where(function ($outer) use ($staffId, $clientCol) {
+            $outer->whereNull($clientCol)
+                ->orWhere($clientCol, '<=', 0)
+                ->orWhereExists(function ($sub) use ($staffId, $clientCol) {
+                    $sub->select(DB::raw('1'))
+                        ->from('admins')
+                        ->whereColumn('admins.id', $clientCol)
+                        ->where(function ($visibility) use ($staffId) {
+                            self::applyAssignedClientAdminVisibilityClauses(
+                                $visibility,
+                                $staffId,
+                                'admins.id',
+                                null,
+                                'admins.type'
+                            );
+                        });
+                });
+        });
+    }
+
+    public static function applyAssignedClientAdminVisibilityClauses(
+        $q,
+        int $staffId,
+        string $adminIdColumn,
+        ?string $userIdColumn = null,
+        ?string $adminTypeColumn = null
+    ): void {
+        $q->whereExists(function ($sub) use ($staffId, $adminIdColumn) {
+            $sub->select(DB::raw('1'))
+                ->from('client_matters')
+                ->whereColumn('client_matters.client_id', $adminIdColumn);
+            self::whereClientMatterRowAssignedToStaff($sub, $staffId);
+        })->orWhereExists(function ($sub) use ($staffId, $adminIdColumn) {
+            $sub->select(DB::raw('1'))
+                ->from('client_access_grants')
+                ->whereColumn('client_access_grants.admin_id', $adminIdColumn)
+                ->where('client_access_grants.staff_id', $staffId)
+                ->where('client_access_grants.status', 'active')
+                ->whereNotNull('client_access_grants.ends_at')
+                ->whereRaw('client_access_grants.ends_at > NOW()');
+        })->orWhereExists(function ($sub) use ($staffId, $adminIdColumn) {
+            $sub->select(DB::raw('1'))
+                ->from('client_access_grants')
+                ->whereColumn('client_access_grants.admin_id', $adminIdColumn)
+                ->where('client_access_grants.staff_id', $staffId)
+                ->where('client_access_grants.grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                ->where('client_access_grants.status', 'active')
+                ->whereNotNull('client_access_grants.ends_at')
+                ->whereRaw('client_access_grants.ends_at > NOW()');
+        });
+
+        if ($userIdColumn !== null) {
+            $q->orWhere($userIdColumn, $staffId);
+        } elseif ($adminTypeColumn !== null && str_ends_with($adminIdColumn, '.id')) {
+            $ownerCol = preg_replace('/\.id$/', '.user_id', $adminIdColumn);
+            $q->orWhere(function ($leadOnly) use ($adminTypeColumn, $ownerCol, $staffId) {
+                $leadOnly->where($adminTypeColumn, 'lead')->where($ownerCol, $staffId);
+            });
+        }
     }
 
     /**

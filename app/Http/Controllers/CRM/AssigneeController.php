@@ -794,7 +794,8 @@ class AssigneeController extends Controller
             abort(403, 'Unauthorized access to task.');
         }
 
-        if ($appointment->client_id) {
+        // Assigner and assignee may complete/delete their task without opening the client file.
+        if ($appointment->client_id && ! $isCreator && ! $isAssignee) {
             $this->ensureCrmRecordAccess((int) $appointment->client_id);
         }
     }
@@ -896,9 +897,17 @@ class AssigneeController extends Controller
             $objs->pin = 0;
             $objs->activity_type = 'activity';
             $objs->save();
-            echo json_encode(array('success' => true, 'message' => 'Activity deleted successfully'));
-            exit;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Activity deleted successfully',
+            ]);
         }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Could not delete task.',
+        ], 422);
     }
 
     //complete activity remove
