@@ -321,7 +321,6 @@
                                             $legal_practitioner_info = $staffById->get($list->sel_legal_practitioner);
                                             $person_responsible = $staffById->get($list->sel_person_responsible);
                                             $person_assisting = $staffById->get($list->sel_person_assisting);
-                                            $clientDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
                                             $matterDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)) . '/' . $list->client_unique_matter_no);
                                             $dobDisplay = ! empty($list->dob) && strtotime($list->dob)
                                                 ? date('d/m/Y', strtotime($list->dob))
@@ -348,7 +347,7 @@
                                                 <span class="matter-cell-meta matter-cell-meta--chip">{{ $list->client_unique_matter_no ?: 'No matter no.' }}</span>
                                             </td>
                                             <td>
-                                                <a class="matter-cell-primary" href="{{ $clientDetailUrl }}" title="Open client">
+                                                <a class="matter-cell-primary" href="{{ $matterDetailUrl }}" title="Open matter">
                                                     {{ $clientName }}
                                                 </a>
                                                 <span class="matter-cell-meta">{{ $list->client_unique_id ?: ('#' . $list->client_id) }}</span>
