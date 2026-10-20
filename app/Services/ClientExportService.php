@@ -153,7 +153,6 @@ class ClientExportService
                     'state' => $address->state,
                     'country' => $address->country,
                     'zip' => $address->zip,
-                    'regional_code' => $address->regional_code,
                     'start_date' => $address->start_date,
                     'end_date' => $address->end_date,
                     'is_current' => $address->is_current,

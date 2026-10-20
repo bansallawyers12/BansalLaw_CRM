@@ -17,7 +17,6 @@ class ClientAddress extends Model
         'state',
         'country',           // NEW
         'zip',               // Existing
-        'regional_code',     // Existing
         'start_date',        // Existing
         'end_date',          // Existing
         'is_current'         // Existing

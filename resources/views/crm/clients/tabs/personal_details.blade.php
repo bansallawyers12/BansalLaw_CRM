@@ -217,7 +217,7 @@
                             @php
                                 $address_Info = null;
                                 if ($detailHasClientAddressCols) {
-                                    $addressSelectCols = ['address', 'suburb', 'country', 'zip', 'regional_code'];
+                                    $addressSelectCols = ['address', 'suburb', 'country', 'zip'];
                                     foreach (['address_line_1', 'address_line_2', 'state'] as $addressCol) {
                                         if ($__sch::hasColumn('client_addresses', $addressCol)) {
                                             $addressSelectCols[] = $addressCol;
@@ -264,12 +264,6 @@
                                 </div>
                             </div>
 
-                            @if($address_Info && !empty($address_Info->regional_code))
-                                <div class="cdn-ov-contact-block">
-                                    <span class="cdn-ov-field__label">Regional Classification</span>
-                                    <span class="cdn-ov-field__value">{{ $address_Info->regional_code }}</span>
-                                </div>
-                            @endif
                         </div>
                         @if(!empty($cdnHeroLastUpdateOn))
                             <footer class="cdn-ov-card__foot">

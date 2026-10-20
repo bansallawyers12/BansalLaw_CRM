@@ -767,7 +767,6 @@
     <script src="{{ asset('js/clients/edit-client.js') }}?v={{ file_exists(public_path('js/clients/edit-client.js')) ? filemtime(public_path('js/clients/edit-client.js')) : 1 }}"></script>
     <script src="{{ asset('js/clients/address-delete.js') }}?v={{ file_exists(public_path('js/clients/address-delete.js')) ? filemtime(public_path('js/clients/address-delete.js')) : 1 }}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>
-    <script src="{{asset('js/clients/address-regional-codes.js')}}"></script>
     <script>
         @include('crm.clients.partials.client-edit-matter-court-scripts')
     </script>

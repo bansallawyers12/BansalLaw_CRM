@@ -199,7 +199,6 @@ class ClientImportService
                         'state' => $addressData['state'] ?? null,
                         'country' => $addressData['country'] ?? null,
                         'zip' => $addressData['zip'] ?? null,
-                        'regional_code' => $addressData['regional_code'] ?? null,
                         'start_date' => $this->parseDate($addressData['start_date'] ?? null),
                         'end_date' => $this->parseDate($addressData['end_date'] ?? null),
                         'is_current' => $addressData['is_current'] ?? 0,

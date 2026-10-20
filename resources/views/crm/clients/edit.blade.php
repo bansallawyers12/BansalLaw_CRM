@@ -667,7 +667,6 @@
         })();
     </script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>
-    <script src="{{asset('js/clients/address-regional-codes.js')}}"></script>
     {{-- Google Maps library removed - using backend proxy for address autocomplete --}}
 
     <script>

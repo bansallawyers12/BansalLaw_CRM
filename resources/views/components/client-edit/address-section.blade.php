@@ -48,12 +48,6 @@
                             @endphp
                         </span>
                     </div>
-                    @if($currentAddress->regional_code)
-                    <div class="summary-item-inline">
-                        <span class="summary-label">REGIONAL CODE:</span>
-                        <span class="summary-value strong">{{ $currentAddress->regional_code }}</span>
-                    </div>
-                    @endif
                 </div>
             </div>
         @else

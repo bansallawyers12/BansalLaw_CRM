@@ -1481,7 +1481,6 @@ window.saveAddressInfo = function() {
     const formData = new FormData();
     const addressId = $entry.find('input[name="address_id[]"]').val();
     const addressLine2 = $entry.find('input[name="address_line_2[]"]').val();
-    const regionalCode = $entry.find('input[name="regional_code[]"]').val();
 
     formData.append('address_id[]', addressId || '');
     formData.append('address_line_1[]', addressLine1 || '');
@@ -1490,7 +1489,6 @@ window.saveAddressInfo = function() {
     formData.append('state[]', state || '');
     formData.append('country[]', country || 'Australia');
     formData.append('zip[]', zip || '');
-    formData.append('regional_code[]', regionalCode || '');
     formData.append('address_start_date[]', '');
     formData.append('address_end_date[]', '');
     
@@ -1559,7 +1557,6 @@ function updateAddressSummary($entries) {
     const state = $entry.find('input[name="state[]"]').val();
     const zip = $entry.find('input[name="zip[]"]').val();
     const country = $entry.find('input[name="country[]"]').val();
-    const regionalCode = $entry.find('input[name="regional_code[]"]').val();
 
     const fullAddress = [addressLine1, addressLine2, suburb, state, zip, country]
         .filter(Boolean).join(', ');
@@ -1572,10 +1569,6 @@ function updateAddressSummary($entries) {
                         <span class="summary-label">ADDRESS:</span>
                         <span class="summary-value">${fullAddress || 'Not set'}</span>
                     </div>
-                    ${regionalCode ? `<div class="summary-item-inline">
-                        <span class="summary-label">REGIONAL CODE:</span>
-                        <span class="summary-value strong">${regionalCode}</span>
-                    </div>` : ''}
                 </div>
             </div>
         </div>

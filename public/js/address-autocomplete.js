@@ -1,15 +1,12 @@
 /**
  * Address Autocomplete Module
- * Handles Google Places address autocomplete and regional code calculation
+ * Handles Google Places address autocomplete
  */
 
 (function() {
     'use strict';
-    
-    
-    // Note: Regional code functions (getRegionalCodeInfo and isValidAustralianPostcode) 
-    // are now defined in address-regional-codes.js to avoid duplication
-    
+
+
     // Initialize when DOM is ready
     $(document).ready(function() {
         initAddressAutocomplete();
@@ -27,7 +24,6 @@
         initDatePickers();
         
         // Set up event listeners
-        bindRegionalCodeCalculation();
         bindAddressSearch(config);
         bindAddressSelection(config);
         bindClickOutside();
@@ -68,7 +64,7 @@
         }
         
         // Note: Event listeners don't need re-binding because they use delegation
-        // bindAddressSearch, bindAddressSelection, bindRegionalCodeCalculation use
+        // bindAddressSearch and bindAddressSelection use
         // $(document).on() which automatically handles dynamically added elements
     };
     
@@ -148,29 +144,6 @@
         } catch(e) {
             console.warn('⚠️ Flatpickr initialization failed:', e.message);
         }
-    }
-    
-    /**
-     * Bind regional code auto-calculation based on postcode
-     */
-    function bindRegionalCodeCalculation() {
-        $(document).on('input', 'input[name="zip[]"]', function() {
-            const postcode = $(this).val();
-            const $wrapper = $(this).closest('.address-entry-wrapper');
-            const $regionalCode = $wrapper.find('input[name="regional_code[]"]');
-            
-            if (postcode && window.isValidAustralianPostcode(postcode)) {
-                const regionalInfo = window.getRegionalCodeInfo(postcode);
-                $regionalCode.val(regionalInfo);
-            } else {
-                // Clear regional code if postcode is invalid or empty
-                $regionalCode.val('');
-                if (postcode) {
-                    console.warn('⚠️ Invalid postcode format:', postcode, '- regional code cleared');
-                } else {
-                }
-            }
-        });
     }
     
     /**
@@ -578,16 +551,7 @@
         }
         
         $wrapper.find('input[name="country[]"]').val(country);
-        
-        // Auto-calculate regional code
-        if (postcode && window.isValidAustralianPostcode(postcode)) {
-            const regionalInfo = window.getRegionalCodeInfo(postcode);
-            $wrapper.find('input[name="regional_code[]"]').val(regionalInfo);
-        } else {
-            // Clear regional code if no valid postcode
-            $wrapper.find('input[name="regional_code[]"]').val('');
-        }
-        
+
         // Show appropriate message based on completeness
         if (!postcode) {
             const warningMessage = $('<div class="autocomplete-warning" style="color: #ff9800; font-size: 12px; margin-top: 5px;">⚠ Address populated but postcode is missing. Please enter manually.</div>');

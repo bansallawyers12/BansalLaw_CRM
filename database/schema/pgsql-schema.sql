@@ -889,7 +889,6 @@ CREATE TABLE public.client_addresses (
     admin_id bigint,
     address text,
     state character varying(100),
-    regional_code character varying(50),
     start_date date,
     end_date date,
     is_current boolean DEFAULT false NOT NULL

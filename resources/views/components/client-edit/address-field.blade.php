@@ -82,15 +82,4 @@
                    class="address-required">
         </div>
     </div>
-    
-    <div class="form-group">
-        <label for="regional_code_{{ $index }}">Regional Code</label>
-        <input type="text" 
-               id="regional_code_{{ $index }}" 
-               name="regional_code[]" 
-               value="{{ $address?->regional_code ?? '' }}"
-               placeholder="Regional code (auto-calculated)"
-               class="regional-code-field"
-               readonly>
-    </div>
 </div>

@@ -2724,7 +2724,7 @@ class ClientPersonalDetailsController extends Controller
                 // Single current address per client — only process the first submitted entry
                 foreach ([
                     'zip', 'address_id', 'address_line_1', 'address_line_2',
-                    'suburb', 'state', 'country', 'regional_code',
+                    'suburb', 'state', 'country',
                     'address_start_date', 'address_end_date',
                 ] as $addressField) {
                     if (isset($requestData[$addressField]) && is_array($requestData[$addressField])) {
@@ -2739,7 +2739,6 @@ class ClientPersonalDetailsController extends Controller
                     $suburb = $requestData['suburb'][$key] ?? null;
                     $state = $requestData['state'][$key] ?? null;
                     $country = $requestData['country'][$key] ?? 'Australia';
-                    $regional_code = $requestData['regional_code'][$key] ?? null;
                     $start_date = $requestData['address_start_date'][$key] ?? null;
                     $end_date = $requestData['address_end_date'][$key] ?? null;
                     $address_id = $requestData['address_id'][$key] ?? null;
@@ -2754,7 +2753,6 @@ class ClientPersonalDetailsController extends Controller
                         'suburb' => $suburb,
                         'state' => $state,
                         'country' => $country,
-                        'regional_code' => $regional_code,
                         'start_date' => $start_date,
                         'end_date' => $end_date
                     ]);
@@ -2826,7 +2824,6 @@ class ClientPersonalDetailsController extends Controller
                                 'state' => $state,
                                 'country' => $country,
                                 'zip' => $zip,
-                                'regional_code' => $regional_code,
                                 'start_date' => $formatted_start_date,
                                 'end_date' => $formatted_end_date,
                                 'is_current' => true,
@@ -2847,7 +2844,6 @@ class ClientPersonalDetailsController extends Controller
                                 'state' => $state,
                                 'country' => $country,
                                 'zip' => $zip,
-                                'regional_code' => $regional_code,
                                 'start_date' => $formatted_start_date,
                                 'end_date' => $formatted_end_date,
                                 'is_current' => true,
@@ -2868,7 +2864,6 @@ class ClientPersonalDetailsController extends Controller
                             'state' => $state,
                             'country' => $country,
                             'zip' => $zip,
-                            'regional_code' => $regional_code,
                             'start_date' => $formatted_start_date,
                             'end_date' => $formatted_end_date,
                             'is_current' => true,
@@ -3170,7 +3165,6 @@ class ClientPersonalDetailsController extends Controller
         $fieldsToCompare = [
             'address_line_2',
             'country',
-            'regional_code',
             'start_date',
             'end_date'
         ];

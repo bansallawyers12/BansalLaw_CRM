@@ -1083,7 +1083,6 @@ class ClientsController extends Controller
                 'is_current_address' => 'nullable|in:1',
                 'address.*' => 'nullable|string|max:1000',
                 'zip.*' => 'nullable|string|max:20',
-                'regional_code.*' => 'nullable|string|max:50',
                 'address_start_date.*' => [
                     'nullable',
                     'regex:/^\d{2}\/\d{2}\/\d{4}$/',
@@ -1407,7 +1406,6 @@ class ClientsController extends Controller
                     foreach ($reversedKeys as $index => $key) {
                         $addr = $validated['address'][$key] ?? null;
                         $zip = $validated['zip'][$key] ?? null;
-                        $regional_code = $validated['regional_code'][$key] ?? null;
                         $start_date = $validated['address_start_date'][$key] ?? null;
                         $end_date = $validated['address_end_date'][$key] ?? null;
 
@@ -1438,7 +1436,6 @@ class ClientsController extends Controller
                                 'admin_id' => Auth::user()->id,
                                 'address' => $addr,
                                 'zip' => $zip,
-                                'regional_code' => $regional_code,
                                 'start_date' => $formatted_start_date,
                                 'end_date' => $formatted_end_date,
                                 'is_current' => $isCurrent,

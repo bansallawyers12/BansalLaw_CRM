@@ -44,9 +44,6 @@ return new class extends Migration
             if (! Schema::hasColumn('client_addresses', 'zip')) {
                 $table->string('zip', 20)->nullable();
             }
-            if (! Schema::hasColumn('client_addresses', 'regional_code')) {
-                $table->string('regional_code', 50)->nullable();
-            }
             if (! Schema::hasColumn('client_addresses', 'start_date')) {
                 $table->date('start_date')->nullable();
             }
@@ -67,7 +64,7 @@ return new class extends Migration
 
         $cols = array_values(array_filter([
             'client_id', 'admin_id', 'address', 'address_line_1', 'address_line_2',
-            'suburb', 'state', 'country', 'zip', 'regional_code',
+            'suburb', 'state', 'country', 'zip',
             'start_date', 'end_date', 'is_current',
         ], fn ($c) => Schema::hasColumn('client_addresses', $c)));
 
