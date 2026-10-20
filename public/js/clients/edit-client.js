@@ -328,8 +328,6 @@ window.validateForm = function() {
                 context = ' (Personal tab)';
             } else if (tabId === 'familyTab') {
                 context = ' (Family Information tab)';
-            } else if (tabId === 'visaPassportCitizenshipTab') {
-                context = ' (Visa, Passport & Citizenship tab)';
             } else if (tabId === 'addressTravelTab') {
                 context = ' (Address & Travel tab)';
             } else if (tabId === 'skillsEducationTab') {
@@ -397,8 +395,6 @@ document.addEventListener('DOMContentLoaded', function() {
 let phoneNumbersToDelete = [];
 let emailsToDelete = [];
 
-// Cache visa types to avoid multiple AJAX calls
-let visaTypesCache = null;
 let countriesCache = null;
 
 

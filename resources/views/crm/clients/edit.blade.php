@@ -145,7 +145,6 @@
                 // Configuration object for edit-client.js
                 window.editClientConfig = {
                     rootUrl: @json(rtrim(url('/'), '/')),
-                    visaTypesRoute: '{{ route("getVisaTypes") }}',
                     countriesRoute: '{{ route("getCountries") }}',
                     csrfToken: '{{ csrf_token() }}'
                 };
@@ -163,11 +162,6 @@
     var $pane = $("#" + tabId);
     if ($pane.length) {
         $pane.addClass("show active");
-    }
-
-    var menu3 = document.getElementById('menu3');
-    if (menu3) {
-        menu3.style.setProperty('display', 'none', 'important');
     }
 
     document.querySelectorAll('.sidebar-primary-tab').forEach(function (btn) {
@@ -477,7 +471,7 @@
                                                 'Online Enquiry','Walk-in','Phone Call','Email',
                                                 'Referral','Word of Mouth','Social Media','Facebook',
                                                 'Instagram','LinkedIn','Google','Google Ads',
-                                                'Sub Agent','Legal Aid','Court Referral','Other',
+                                                'Legal Aid','Court Referral','Other',
                                             ];
                                             $currentSource = $fetchedData->source ?? $fetchedData->lead_source ?? '';
                                         @endphp
@@ -486,6 +480,10 @@
                                                 {{ $src }}
                                             </option>
                                         @endforeach
+                                        {{-- Legacy: clients already stored as "Sub Agent" must still load/save with their value intact. --}}
+                                        @if($currentSource === 'Sub Agent')
+                                            <option value="Sub Agent" selected>Sub Agent (legacy)</option>
+                                        @endif
                                     </select>
                                 </div>
                             </div>
@@ -604,7 +602,6 @@
         (function () {
             var tabMap = {
                 'matter_case': 'menu2',
-                'family': 'menu3',
                 'hearings': 'menu4',
                 'court': 'menu4',
             };
@@ -614,7 +611,7 @@
                     var editTab = qs.get('edit_tab') || '';
                     var hash = (window.location.hash || '').replace('#', '');
                     var targetId = tabMap[editTab] || hash || '';
-                    if (!targetId || !['home','menu1','menu2','menu3','menu4'].includes(targetId)) {
+                    if (!targetId || !['home','menu1','menu2','menu4'].includes(targetId)) {
                         return;
                     }
                     if (typeof window.showTab === 'function') {
@@ -627,10 +624,6 @@
                         });
                         $('.main-content-area .tab-pane').removeClass('show active');
                         $pane.addClass('show active');
-                        var menu3 = document.getElementById('menu3');
-                        if (menu3) {
-                            menu3.style.setProperty('display', 'none', 'important');
-                        }
                     }
                     // Highlight matter row if ref given
                     if (targetId === 'menu2') {

@@ -1873,7 +1873,6 @@ $(document).ready(function() {
 (function () {
     window.editClientConfig = Object.assign({}, window.editClientConfig || {}, {
         rootUrl: @json(rtrim(url('/'), '/')),
-        visaTypesRoute: @json(route('getVisaTypes')),
         countriesRoute: @json(route('getCountries')),
         csrfToken: @json(csrf_token()),
     });

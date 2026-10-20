@@ -20,7 +20,6 @@
               'MERITS'=> ['icon' => 'fa-clipboard-list','color' => '#5d6d7e'],
               'JR'    => ['icon' => 'fa-search',        'color' => '#1f618d'],
               'NOICC' => ['icon' => 'fa-bell',          'color' => '#b7950b'],
-              'IMM'   => ['icon' => 'fa-passport',      'color' => '#154360'],
           ];
           $defaultIcon = ['icon' => 'fa-folder-open', 'color' => '#555'];
       @endphp

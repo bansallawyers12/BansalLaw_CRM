@@ -54,7 +54,6 @@ class ClientEditService
             'courtHearings' => $this->getCourtHearings($clientId),
 
             // Dropdown data - loaded ONCE to prevent N+1 queries
-            'visaTypes' => $this->getVisaTypes(),
             'countries' => $this->getCountries(),
             'allMatters' => $this->getAllMattersForMatterTypeSelector((bool) ($clientData->is_company ?? false)),
             'matterFormForLead' => $matterFormForLead,
@@ -320,19 +319,6 @@ class ClientEditService
             ->where('status', 1)
             ->forClientType($isCompany)
             ->orderBy('title')
-            ->get();
-    }
-
-    /**
-     * Get visa types for dropdown
-     * Loaded once and passed to view to prevent multiple queries
-     */
-    protected function getVisaTypes()
-    {
-        return Matter::select('id', 'title', 'nick_name')
-            ->where('title', 'not like', '%skill assessment%')
-            ->where('status', 1)
-            ->orderBy('title', 'ASC')
             ->get();
     }
 

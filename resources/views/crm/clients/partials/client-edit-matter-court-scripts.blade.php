@@ -729,47 +729,6 @@
                     { id: 'dyn_condition', label: 'Condition Breached', type: 'text', placeholder: 'Which condition was breached' }
                 ]
             }
-        },
-        'IMM': {
-            label: 'Immigration Matter',
-            subType: { id: 'dyn_sub_type', label: 'Type of Immigration Matter', required: true,
-                options: ['Work Permit / Employment Visa','Permanent Residency','Student Visa','Visa Refusal / Appeal','Deportation / Removal','Citizenship / Naturalisation','Other'] },
-            commonFields: [
-                { id: 'dyn_country', label: 'Country', type: 'text', placeholder: 'Destination country' },
-                { id: 'dyn_application_no', label: 'Application / File Number', type: 'text', placeholder: 'e.g. IMM/2024/00123' },
-                { id: 'dyn_authority', label: 'Authority / Department', type: 'text', placeholder: 'e.g. FRRO, Embassy' }
-            ],
-            subTypeFields: {
-                'Work Permit / Employment Visa': [
-                    { id: 'dyn_employer', label: 'Employer Name', type: 'text', placeholder: 'Employer in destination country' },
-                    { id: 'dyn_visa_type', label: 'Visa Type', type: 'text', placeholder: 'Specific visa category' },
-                    { id: 'dyn_application_date', label: 'Application Date', type: 'date' }
-                ],
-                'Permanent Residency': [
-                    { id: 'dyn_stream', label: 'Stream / Program', type: 'text', placeholder: 'e.g. Express Entry, PNP' },
-                    { id: 'dyn_application_date', label: 'Application Date', type: 'date' },
-                    { id: 'dyn_residence_period', label: 'Period of Residence', type: 'text', placeholder: 'e.g. 3 years' }
-                ],
-                'Student Visa': [
-                    { id: 'dyn_institution', label: 'Institution Name', type: 'text', placeholder: 'University / college name' },
-                    { id: 'dyn_course', label: 'Course / Program', type: 'text', placeholder: 'e.g. MBA, B.Tech' },
-                    { id: 'dyn_application_date', label: 'Application Date', type: 'date' }
-                ],
-                'Visa Refusal / Appeal': [
-                    { id: 'dyn_visa_type', label: 'Visa Type', type: 'text', placeholder: 'Type of visa refused' },
-                    { id: 'dyn_refusal_date', label: 'Refusal Date', type: 'date' },
-                    { id: 'dyn_grounds', label: 'Grounds of Refusal', type: 'text', placeholder: 'Reason given' }
-                ],
-                'Deportation / Removal': [
-                    { id: 'dyn_order_date', label: 'Order Date', type: 'date' },
-                    { id: 'dyn_grounds', label: 'Grounds', type: 'text', placeholder: 'Basis of deportation' },
-                    { id: 'dyn_appeal_deadline', label: 'Appeal Deadline', type: 'date' }
-                ],
-                'Citizenship / Naturalisation': [
-                    { id: 'dyn_application_date', label: 'Application Date', type: 'date' },
-                    { id: 'dyn_residence_period', label: 'Period of Residence', type: 'text', placeholder: 'e.g. 5 years' }
-                ]
-            }
         }
     };
 
@@ -790,7 +749,6 @@
         'MERITS':{ icon: 'fa-clipboard-list',color: '#5d6d7e' },
         'JR':    { icon: 'fa-search',        color: '#1f618d' },
         'NOICC': { icon: 'fa-bell',          color: '#b7950b' },
-        'IMM':   { icon: 'fa-passport',      color: '#154360' },
     };
 
     function onMatterDropdownChange(sel) {

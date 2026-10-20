@@ -62,17 +62,6 @@ class ClientPersonalDetailsController extends Controller
         $this->middleware('auth:admin');
     }
 
-    public function getVisaTypes()
-    {
-        $visaTypes = \App\Models\Matter::select('id', 'title', 'nick_name')
-            ->where('title', 'not like', '%skill assessment%')
-            ->where('status', 1)
-            ->orderBy('title', 'ASC')
-            ->get();
-
-        return response()->json($visaTypes);
-    }
-
     public function getCountries()
     {
         $countries = \App\Models\Country::all()->pluck('name')->toArray();
@@ -3012,13 +3001,8 @@ class ClientPersonalDetailsController extends Controller
 
     private function saveLeadSourceSection($request, $client)
     {
-        $allowedSources = [
-            'Online Enquiry','Walk-in','Phone Call','Email',
-            'Referral','Word of Mouth','Social Media','Facebook',
-            'Instagram','LinkedIn','Google','Google Ads',
-            'Sub Agent','Legal Aid','Court Referral','Other','',
-        ];
-
+        // Unconstrained string on purpose: the dropdown no longer offers
+        // "Sub Agent", but clients already stored with that value must still save.
         $validated = $request->validate([
             'lead_source' => ['nullable','string','max:100'],
             'refer_by'    => 'nullable|string|max:500',

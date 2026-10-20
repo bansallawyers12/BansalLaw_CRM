@@ -60,7 +60,6 @@
                 // Configuration object for edit-client.js
                 window.editClientConfig = {
                     rootUrl: @json(rtrim(url('/'), '/')),
-                    visaTypesRoute: '{{ route("getVisaTypes") }}',
                     countriesRoute: '{{ route("getCountries") }}',
                     relatedContactsRoute: '{{ route("leads.related_contacts", base64_encode(convert_uuencode($fetchedData->id))) }}',
                     csrfToken: '{{ csrf_token() }}'

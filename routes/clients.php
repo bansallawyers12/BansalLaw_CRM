@@ -296,7 +296,6 @@ Route::post('/clients/get-place-details', [ClientPersonalDetailsController::clas
 
 Route::post('/clients/fetchClientContactNo', [ClientPersonalDetailsController::class, 'fetchClientContactNo']);
 
-Route::get('/get-visa-types', [ClientPersonalDetailsController::class, 'getVisaTypes'])->name('getVisaTypes');
 Route::get('/get-countries', [ClientPersonalDetailsController::class, 'getCountries'])->name('getCountries');
 
 // Legal Forms (Short Costs Disclosure, Long Costs Disclosure, Authority to Act)

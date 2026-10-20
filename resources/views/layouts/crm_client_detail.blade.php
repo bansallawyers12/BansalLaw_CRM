@@ -2248,17 +2248,6 @@
                 }
             });
 
-            $('#internal select[name="source"]').on('change', function(){
-                var sourceval = $(this).val();
-                if(sourceval == 'Sub Agent'){
-                    $('#internal .is_subagent').show();
-                    $('#internal .is_subagent select').attr('data-valid', 'required');
-                } else{
-                    $('#internal .is_subagent').hide();
-                    $('#internal .is_subagent select').attr('data-valid', '');
-                }
-            });
-
             $('.card .card-body .grid_data').hide();
             $('.card .card-body .document_layout_type a.list').on('click', function(){
                 $('.card .card-body .document_layout_type a').removeClass('active');

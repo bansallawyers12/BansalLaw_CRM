@@ -31,11 +31,10 @@ function updateActiveNavItem(sectionId) {
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
     const sectionMap = {
         'personalSection': 0,
-        'visaPassportSection': 1,
-        'addressTravelSection': 2,
-        'skillsEducationSection': 3,
-        'otherInformationSection': 4,
-        'familySection': 5
+        'addressTravelSection': 1,
+        'skillsEducationSection': 2,
+        'otherInformationSection': 3,
+        'familySection': 4
     };
     
     const index = sectionMap[sectionId];
@@ -67,7 +66,6 @@ function scrollToTop() {
 function handleScroll() {
     const sections = [
         'personalSection',
-        'visaPassportSection',
         'addressTravelSection',
         'skillsEducationSection',
         'otherInformationSection',
