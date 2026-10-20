@@ -978,6 +978,10 @@ final class StaffClientVisibility
             return;
         }
 
+        if (self::seesAllClientMatters($user)) {
+            return;
+        }
+
         $staffId = (int) $user->id;
         $table = method_exists($query, 'getModel') ? $query->getModel()->getTable() : 'email_logs';
         $clientCol = $table . '.client_id';

@@ -509,20 +509,19 @@ function crmInitOutlookEmailsInterface() {
     const leadScopedMail = !!(outlookContainer && outlookContainer.getAttribute('data-lead-scoped-mail') === '1')
         || recordType === 'lead';
     const hasLeadMailHistory = !!(outlookContainer && outlookContainer.getAttribute('data-has-lead-mail-history') === '1');
-    function getMatterId() {
+    function getUploadMatterId() {
         // Leads stay lead-scoped (no matter binding) until converted to a client.
         if (leadScopedMail) {
             return '';
         }
-        // Prefer the live matter dropdown when staff pick one for upload/filter.
+        // Prefer the live matter dropdown when staff pick one for upload/compose.
         if (window.EmailMatterContext && typeof window.EmailMatterContext.fromDropdown === 'function') {
             const fromDropdown = window.EmailMatterContext.fromDropdown();
             if (fromDropdown) {
                 return fromDropdown;
             }
         }
-        // Client detail opened without a matter in the URL: keep list client-scoped so
-        // Outlook saves with no matter remain visible (do not inherit auto-resolved config matter).
+        // Client detail opened without a matter in the URL: allow client-scoped saves.
         if (outlookContainer && outlookContainer.getAttribute('data-force-client-scoped-mail') === '1') {
             return '';
         }
@@ -530,6 +529,26 @@ function crmInitOutlookEmailsInterface() {
             return window.EmailMatterContext.resolve(outlookContainer);
         }
         return outlookContainer ? (outlookContainer.getAttribute('data-matter-id') || '') : '';
+    }
+
+    /**
+     * Matter filter for the mail list API. On the generic client Emails tab (no matter in URL),
+     * ignore the auto-selected sidebar dropdown so uploads and all matters stay visible until
+     * the user changes the matter picker (data-matter-id is updated on change).
+     */
+    function getListMatterId() {
+        if (leadScopedMail) {
+            return '';
+        }
+        if (outlookContainer && outlookContainer.getAttribute('data-force-client-scoped-mail') === '1') {
+            return outlookContainer ? String(outlookContainer.getAttribute('data-matter-id') || '').trim() : '';
+        }
+
+        return getUploadMatterId();
+    }
+
+    function getMatterId() {
+        return getUploadMatterId();
     }
     function getComposeRecordType() {
         return leadScopedMail ? 'lead' : 'client';
@@ -4948,7 +4967,7 @@ function crmInitOutlookEmailsInterface() {
             }
             
             if (clientId) url.searchParams.append('client_id', clientId);
-            const listMatterId = getMatterId();
+            const listMatterId = getListMatterId();
             if (listMatterId) url.searchParams.append('client_matter_id', listMatterId);
             if (leadScopedMail) {
                 url.searchParams.append('mail_scope', 'lead');
