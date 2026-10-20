@@ -71,7 +71,7 @@
     $staffById = $staffIds
         ? \App\Models\Staff::query()->whereIn('id', $staffIds)->get(['id', 'first_name', 'last_name'])->keyBy('id')
         : collect();
-    $showMatterPersonResponsibleCol = app()->environment('local');
+    $showMatterPersonResponsibleCol = true;
 @endphp
 
 <div id="matters-listing-root"
