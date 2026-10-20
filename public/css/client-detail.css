@@ -11359,12 +11359,12 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 .crm-container.crm-container--unified .cdn-client-hero__avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
   background: #1e3d60;
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .crm-container.crm-container--unified .cdn-client-hero__identity {
@@ -11373,8 +11373,9 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 .crm-container.crm-container--unified .cdn-client-hero__name {
-  font-size: 1.15rem;
-  font-weight: 600;
+  font-size: 1.28rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .crm-container.crm-container--unified .cdn-client-hero__name-edit {
@@ -11468,7 +11469,7 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 .crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button.active,
 .crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button.active span,
 .crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button.active i {
-  background: transparent !important;
+  background: #eef3f8 !important;
   color: #1e3d60 !important;
   border-bottom-color: #1e3d60 !important;
 }
@@ -11479,9 +11480,9 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-overview > .cdn-ov-card.card,
 #personaldetails-tab .cdn-overview .cdn-ov-card.card {
-  border-radius: 4px !important;
-  box-shadow: none !important;
-  border-color: #c8dcef !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px rgba(30, 61, 96, 0.05) !important;
+  border-color: #d5e3f0 !important;
 }
 
 #personaldetails-tab .cdn-overview > .cdn-ov-card.card:hover,
@@ -11491,13 +11492,25 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__head {
-  padding: 7px 10px;
-  background: #fff;
+  padding: 8px 12px;
+  background: #f4f8fc;
   border-bottom-color: #e4eef6;
 }
 
-#personaldetails-tab .cdn-overview .cdn-ov-card__icon {
-  display: none;
+#personaldetails-tab .cdn-overview .cdn-ov-card__icon,
+#personaldetails-tab .cdn-overview .cdn-ov-card--matter .cdn-ov-card__icon,
+#personaldetails-tab .cdn-overview #clientMattersListCard .cdn-ov-card__icon,
+#personaldetails-tab .cdn-overview #conflictPartiesCard .cdn-ov-card__icon,
+#personaldetails-tab .cdn-overview .cdn-ov-card__icon--gavel {
+  display: inline-flex;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #1e3d60;
+  color: #fff;
+  border: none;
+  font-size: 0.7rem;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-card__title {
@@ -11528,46 +11541,72 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-ov-demographics-row {
   gap: 8px;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0 0 6px;
-  border-bottom: 1px solid #e4eef6;
+  background: #f7fafd;
+  border: 1px solid #e4eef6;
+  border-radius: 4px;
+  padding: 8px 10px;
 }
 
 #personaldetails-tab .cdn-ov-demo-tile__label i,
 #personaldetails-tab .cdn-ov-field__label i,
-#personaldetails-tab .cdn-ov-contact-link i,
-#personaldetails-tab .cdn-ov-address-icon,
 #personaldetails-tab .cdn-ov-pulse-dot {
   display: none;
+}
+
+#personaldetails-tab .cdn-ov-contact-link i,
+#personaldetails-tab .cdn-ov-address-icon {
+  display: inline-block;
+  color: #5e7a90;
 }
 
 #personaldetails-tab .cdn-ov-contact-row,
 #personaldetails-tab .cdn-ov-address-row,
 #personaldetails-tab .cdn-ov-member-card,
-#personaldetails-tab .cdn-ov-matter-card-inner,
-#personaldetails-tab .cdn-ov-matter-temp__panel,
-#personaldetails-tab .cdn-ov-conflict-status-card {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  border-bottom: 1px solid #e4eef6;
+#personaldetails-tab .cdn-ov-matter-temp__panel {
+  background: #f7fafd;
+  border: 1px solid #e4eef6;
+  border-radius: 4px;
   box-shadow: none;
-  padding: 6px 0;
+  padding: 6px 8px;
 }
 
 #personaldetails-tab .cdn-ov-contact-row:hover,
-#personaldetails-tab .cdn-ov-member-card:hover,
-#personaldetails-tab .cdn-ov-matter-card-inner:hover {
-  background: transparent;
-  border-color: #e4eef6;
+#personaldetails-tab .cdn-ov-member-card:hover {
+  background: #f0f6ff;
+  border-color: #d5e3f0;
 }
 
 #personaldetails-tab .cdn-ov-matter-card-inner {
+  background: #f7fafd;
+  border: 1px solid #d5e3f0;
   border-left: 3px solid #1e3d60;
-  padding-left: 8px;
+  border-radius: 4px;
+  box-shadow: none;
+  padding: 8px 10px 8px 10px;
   gap: 4px;
+}
+
+#personaldetails-tab .cdn-ov-matter-card-inner:hover {
+  background: #f0f6ff;
+  border-color: #d5e3f0;
+}
+
+#personaldetails-tab .cdn-ov-conflict-status-card {
+  background: #fbf6ea;
+  border: 1px solid #ead9b0;
+  border-radius: 4px;
+  box-shadow: none;
+  padding: 8px 10px;
+}
+
+#personaldetails-tab .cdn-ov-conflict-status-card.is-checked {
+  background: #f3f8f5;
+  border-color: #c9ddd2;
+}
+
+#personaldetails-tab .cdn-ov-conflict-status-card.is-conflict_found {
+  background: #faf3f2;
+  border-color: #e4cfcb;
 }
 
 #personaldetails-tab .cdn-ov-team-list--matter {
@@ -11575,29 +11614,38 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-ov-member-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 3px;
-  font-size: 0.65rem;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  font-size: 0.68rem;
   background: #1e3d60 !important;
 }
 
 #personaldetails-tab .cdn-ov-card--matter .cdn-ov-member-card--matter {
-  padding: 5px 0;
-  background: transparent;
+  padding: 6px 8px;
+  background: #f7fafd;
 }
 
 #personaldetails-tab .cdn-ov-role-pill,
-#personaldetails-tab .cdn-ov-active-matter-pill,
 #personaldetails-tab .cdn-ov-matter-role-tag,
 #personaldetails-tab .cdn-ov-matter-stream-tag,
 #personaldetails-tab .cdn-ov-matter-ref,
 #personaldetails-tab .cdn-overview .cdn-ov-verify-badge {
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
+  background: #fff !important;
+  border: 1px solid #d5e3f0 !important;
+  border-radius: 3px !important;
+  padding: 1px 6px !important;
   box-shadow: none !important;
+  color: #1e3d60 !important;
+}
+
+#personaldetails-tab .cdn-ov-active-matter-pill {
+  background: #eef6f1 !important;
+  border: 1px solid #c9ddd2 !important;
+  border-radius: 3px !important;
+  padding: 1px 6px !important;
+  box-shadow: none !important;
+  color: #1e7a52 !important;
 }
 
 #personaldetails-tab .cdn-ov-matter-code,
@@ -11632,12 +11680,12 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-ov-parties-empty-state,
 #personaldetails-tab .cdn-ov-matter-temp__empty {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 6px 0;
-  align-items: flex-start;
-  text-align: left;
+  background: #f7fafd;
+  border: 1px solid #e4eef6;
+  border-radius: 4px;
+  padding: 10px 8px;
+  align-items: center;
+  text-align: center;
 }
 
 #personaldetails-tab .cdn-ov-parties-count-badge,

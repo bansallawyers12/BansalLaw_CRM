@@ -56,6 +56,9 @@ class DashboardPersonResponsibleMattersTest extends TestCase
         $this->assertSame('CIV_6', $matters->first()->client_unique_matter_no);
 
         $html = view('components.dashboard.responsible-matters', ['matters' => $matters])->render();
+        $this->assertStringContainsString('responsible-matters-table', $html);
+        $this->assertStringContainsString('Last activity', $html);
+        $this->assertStringContainsString('Legal practitioner', $html);
         $this->assertStringContainsString('CIV_6', $html);
         $this->assertStringContainsString('/CIV_6', $html);
         $this->assertStringNotContainsString('CIV_9', $html);

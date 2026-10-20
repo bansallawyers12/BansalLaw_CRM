@@ -146,6 +146,7 @@
             <div class="focus-container todo-container">
                 <div class="todo-header">
                     <div class="todo-header-left">
+                        <span class="dashboard-section-icon-badge dashboard-section-icon-badge--tasks" aria-hidden="true"><i class="fa-solid fa-list-check"></i></span>
                         <h3>My Tasks</h3>
                         <span class="todo-count-badge">{{ $count_note_deadline }}</span>
                     </div>
@@ -188,6 +189,7 @@
             <div class="focus-container dashboard-scroll-anchor" id="recent-matter-activity">
                 <div class="focus-header">
                     <div class="focus-header-left">
+                        <span class="dashboard-section-icon-badge dashboard-section-icon-badge--activity" aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span>
                         <h3>Recent Matter Activity</h3>
                     </div>
                     <span class="badge-count" id="cases-attention-badge">{{ $count_cases_requiring_attention_data }}</span>

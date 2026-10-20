@@ -3995,6 +3995,111 @@ body > .ts-dropdown {
     font-weight: 700 !important;
 }
 
+.responsible-matters-scroll {
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.responsible-matters-table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.responsible-matters-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f0f6ff;
+    color: #1e3d60;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 12px 14px;
+    border-bottom: 2px solid #c8dcef;
+    white-space: nowrap;
+    text-align: left;
+    box-shadow: 0 1px 0 #c8dcef;
+}
+
+.responsible-matters-table tbody td {
+    padding: 14px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+    color: #1a2c40;
+}
+
+.responsible-matters-table tbody tr:hover td {
+    background: rgba(221, 234, 248, 0.45);
+}
+
+.responsible-matters-table__actions {
+    text-align: right;
+    width: 72px;
+}
+
+.responsible-matters-primary {
+    display: block;
+    font-weight: 600;
+    color: #1e3d60;
+    text-decoration: none;
+    line-height: 1.35;
+}
+
+a.responsible-matters-primary:hover {
+    color: #3a6fa8;
+    text-decoration: underline;
+}
+
+.responsible-matters-meta {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #5e7a90;
+}
+
+.responsible-matters-chip {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(58, 111, 168, 0.1);
+    border: 1px solid rgba(58, 111, 168, 0.18);
+    color: #1e3d60;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.responsible-matters-date {
+    white-space: nowrap;
+    font-weight: 500;
+    color: #1a2c40;
+}
+
+.responsible-matters-open {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #c8dcef;
+    color: #1e3d60;
+    background: #fff;
+    text-decoration: none;
+}
+
+.responsible-matters-open:hover {
+    background: #f0f6ff;
+    color: #3a6fa8;
+}
+
 .dashboard-section-sub {
     font-size: 0.74rem;
     color: #64748b;
@@ -4751,8 +4856,8 @@ body > .ts-dropdown {
 
 .dashboard-welcome-banner {
     background: var(--primary-color) !important;
-    border-radius: 4px !important;
-    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    padding: 10px 14px !important;
     margin-bottom: 10px !important;
     box-shadow: none !important;
     border: none !important;
@@ -4763,9 +4868,9 @@ body > .ts-dropdown {
 }
 
 .dashboard-welcome-heading h1 {
-    font-size: 1.05rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0 !important;
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
 }
 
 .dashboard-header-meta {
@@ -4806,10 +4911,11 @@ body > .ts-dropdown {
 }
 
 .kpi-card-modern {
-    border-radius: 4px !important;
-    padding: 8px 12px !important;
-    box-shadow: none !important;
-    border-color: var(--border-color) !important;
+    border-radius: 6px !important;
+    padding: 10px 12px !important;
+    box-shadow: 0 1px 2px rgba(30, 61, 96, 0.05) !important;
+    border-color: #d5e3f0 !important;
+    background: #fff !important;
 }
 
 .kpi-card-modern::before,
@@ -4847,9 +4953,9 @@ body > .ts-dropdown {
 .dashboard-calendar-card,
 .focus-container,
 .access-approvals-dashboard {
-    border-radius: 4px !important;
-    box-shadow: none !important;
-    border-color: var(--border-color) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 1px 2px rgba(30, 61, 96, 0.05) !important;
+    border-color: #d5e3f0 !important;
 }
 
 .dashboard-calendar-card {
@@ -4860,9 +4966,9 @@ body > .ts-dropdown {
 .todo-header,
 .focus-header,
 .access-approvals-header {
-    background: #fff !important;
-    padding: 7px 12px !important;
-    border-bottom: 1px solid var(--border-color) !important;
+    background: #f4f8fc !important;
+    padding: 8px 12px !important;
+    border-bottom: 1px solid #e4eef6 !important;
 }
 
 .dashboard-calendar-header h2,
@@ -4880,9 +4986,24 @@ body > .ts-dropdown {
     gap: 8px !important;
 }
 
-.dashboard-section-icon-badge,
 .dashboard-section-sub {
     display: none !important;
+}
+
+.dashboard-section-icon-badge,
+.dashboard-section-icon-badge--tasks,
+.dashboard-section-icon-badge--activity,
+.dashboard-section-icon-badge--calendar,
+.dashboard-section-icon-badge--approvals,
+.dashboard-section-icon-badge--responsible {
+    display: inline-flex !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 4px !important;
+    background: #1e3d60 !important;
+    color: #fff !important;
+    border: none !important;
+    font-size: 0.7rem !important;
 }
 
 .dashboard-cal-type-pill,
@@ -4900,14 +5021,15 @@ body > .ts-dropdown {
 
 .dashboard-cal-stat {
     min-width: 42px !important;
-    padding: 2px 6px !important;
-    border-radius: 3px !important;
-    background: transparent !important;
-    border: none !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    background: #f7fafd !important;
+    border: 1px solid #e4eef6 !important;
 }
 
 .dashboard-cal-stat--overdue {
-    background: transparent !important;
+    background: #faf3f2 !important;
+    border-color: #e4cfcb !important;
 }
 
 .dashboard-calendar-body {
@@ -4962,13 +5084,13 @@ body > .ts-dropdown {
 .dashboard-upcoming-count,
 .todo-count-badge,
 .badge-count {
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    color: var(--text-muted-color) !important;
-    font-weight: 600 !important;
-    font-size: 0.8rem !important;
+    background: #fff !important;
+    border: 1px solid #d5e3f0 !important;
+    border-radius: 3px !important;
+    padding: 1px 7px !important;
+    color: #1e3d60 !important;
+    font-weight: 700 !important;
+    font-size: 0.75rem !important;
     min-width: 0 !important;
 }
 
@@ -5029,6 +5151,7 @@ body > .ts-dropdown {
 
 .todo-filter-tab.is-active {
     border-bottom-color: var(--primary-color) !important;
+    background: #eef3f8 !important;
 }
 
 .todo-task-list-container,
@@ -5124,19 +5247,19 @@ body > .ts-dropdown {
 .activity-payment,
 .activity-deadline,
 .activity-default {
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
+    background: #fff !important;
+    border: 1px solid #d5e3f0 !important;
+    border-radius: 3px !important;
+    padding: 1px 6px !important;
     box-shadow: none !important;
     font-style: normal !important;
     font-weight: 600 !important;
+    color: #1e3d60 !important;
 }
 
 .case-activity-badge {
     gap: 5px !important;
     font-size: 0.75rem !important;
-    color: var(--text-muted-color) !important;
 }
 
 .case-activity-badge:hover {
@@ -5159,26 +5282,31 @@ body > .ts-dropdown {
 .todo-task-due.overdue,
 .stalled-days.text-danger {
     color: var(--danger-color) !important;
+    background: #faf3f2 !important;
+    border-color: #e4cfcb !important;
 }
 
 .todo-task-due.today,
 .todo-task-due.tomorrow,
 .stalled-days.text-warning {
     color: #8a5a10 !important;
+    background: #fbf6ea !important;
+    border-color: #ead9b0 !important;
 }
 
-.activity-email,
-.activity-upload,
-.activity-sms,
 .activity-note,
+.activity-deadline {
+    color: #8a5a10 !important;
+    background: #fbf6ea !important;
+    border-color: #ead9b0 !important;
+}
+
 .activity-signed,
-.activity-status,
-.activity-stage,
-.activity-appointment,
 .activity-payment,
-.activity-deadline,
-.activity-default {
-    color: var(--text-muted-color) !important;
+.activity-appointment {
+    color: #1e7a52 !important;
+    background: #f3f8f5 !important;
+    border-color: #c9ddd2 !important;
 }
 
 @media (max-width: 1200px) {

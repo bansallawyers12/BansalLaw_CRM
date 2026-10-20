@@ -27,6 +27,7 @@
         <div class="dashboard-calendar-header">
             <div class="dashboard-calendar-header-left">
                 <div class="dashboard-calendar-title-group">
+                    <span class="dashboard-section-icon-badge dashboard-section-icon-badge--calendar" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span>
                     <h2>My Calendar</h2>
                     <p class="dashboard-calendar-subtitle visually-hidden" id="dashboardCalendarSubtitle">
                         @if(!empty($canFilterCalendarStaff))

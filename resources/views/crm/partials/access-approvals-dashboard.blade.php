@@ -14,6 +14,7 @@
 <section class="access-approvals-dashboard focus-container">
     <div class="focus-header access-approvals-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
         <div class="focus-header-left">
+            <span class="dashboard-section-icon-badge dashboard-section-icon-badge--approvals" aria-hidden="true"><i class="fa-solid fa-user-shield"></i></span>
             <h3 style="margin: 0;">Access approvals</h3>
             @if($dashCrmAccessPending > 0)
                 <span class="badge badge-access-pending ms-1" id="crm-access-approvals-count">{{ $dashCrmAccessPending }}</span>

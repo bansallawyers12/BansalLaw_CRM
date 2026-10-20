@@ -169,13 +169,18 @@ class DashboardService
 
         $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
 
+        $with = [
+            'client:id,first_name,last_name,client_id,is_company,dob',
+            'client.company:id,admin_id,company_name',
+            'matter:id,title',
+        ];
+        if (Schema::hasTable('workflow_stages')) {
+            $with[] = 'workflowStage:id,name';
+        }
+
         $query = ClientMatter::query()
             ->select('client_matters.*')
-            ->with([
-                'client:id,first_name,last_name,client_id,is_company',
-                'client.company:id,admin_id,company_name',
-                'matter:id,title',
-            ])
+            ->with($with)
             ->where('client_matters.sel_person_responsible', $uid)
             ->where('client_matters.matter_status', 1)
             ->whereNotNull('client_matters.client_unique_matter_no')
@@ -207,15 +212,160 @@ class DashboardService
             ->get();
 
         $this->attachPrimaryOpposingPartyNames($matters);
-
-        foreach ($matters as $matter) {
-            $matter->dashboard_display_name = $this->personResponsibleMatterDisplayName($matter);
-            $ref = trim((string) ($matter->client_unique_matter_no ?? ''));
-            $title = Matter::displayTitleFromJoinedRow($matter->matter->title ?? null);
-            $matter->dashboard_matter_label = $ref !== '' ? $title.' ('.$ref.')' : $title;
-        }
+        $this->attachResponsibleMatterListFields($matters);
 
         return $matters;
+    }
+
+    /**
+     * Fields the dashboard responsible-matters table needs, matching the All Matters columns.
+     *
+     * @param  Collection<int, ClientMatter>  $matters
+     */
+    private function attachResponsibleMatterListFields(Collection $matters): void
+    {
+        if ($matters->isEmpty()) {
+            return;
+        }
+
+        $staffIds = $matters->flatMap(function (ClientMatter $matter) {
+            return [
+                $matter->sel_legal_practitioner ?? null,
+                $matter->sel_person_assisting ?? null,
+            ];
+        })->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
+
+        $staffById = $staffIds === []
+            ? collect()
+            : Staff::query()->whereIn('id', $staffIds)->get(['id', 'first_name', 'last_name'])->keyBy('id');
+
+        $logsByClient = $this->recentActivityLogsForClients(
+            $matters->pluck('client_id')->filter()->map(fn ($id) => (int) $id)->unique()->values()->all()
+        );
+
+        foreach ($matters as $matter) {
+            $client = $matter->client;
+            $ref = trim((string) ($matter->client_unique_matter_no ?? ''));
+            $title = Matter::displayTitleFromJoinedRow($matter->matter->title ?? null);
+            $clientName = $this->personResponsibleMatterDisplayName($matter);
+            if ($clientName !== '' && $ref !== '') {
+                $clientName .= ' ('.$ref.')';
+            }
+
+            $matter->dashboard_display_name = $clientName !== '' ? $clientName : '—';
+            $matter->dashboard_matter_title = $title !== '' ? $title : 'Untitled matter';
+            $matter->dashboard_matter_ref = $ref !== '' ? $ref : 'No matter no.';
+            $matter->dashboard_matter_label = $ref !== '' ? $title.' ('.$ref.')' : $title;
+            $matter->dashboard_client_ref = trim((string) ($client->client_id ?? ''));
+            if ($matter->dashboard_client_ref === '') {
+                $matter->dashboard_client_ref = $client ? '#'.$client->id : '—';
+            }
+            $matter->dashboard_dob = $this->formatPlainDate(optional($client)->dob);
+            $matter->dashboard_created = $this->formatPlainDate($matter->created_at ?? null);
+            $matter->dashboard_stage = trim((string) (optional($matter->workflowStage)->name ?? ''));
+            $matter->dashboard_legal_practitioner = $this->staffDisplayName($staffById->get($matter->sel_legal_practitioner));
+            $matter->dashboard_person_assisting = $this->staffDisplayName($staffById->get($matter->sel_person_assisting));
+
+            $matchedLog = null;
+            $matterNo = strtolower($ref);
+            $clientLogs = $logsByClient->get((int) ($matter->client_id ?? 0));
+            if ($clientLogs && $matterNo !== '') {
+                $matchedLog = $clientLogs->first(function ($log) use ($matterNo) {
+                    $subject = strtolower((string) ($log->subject ?? ''));
+
+                    return $subject !== '' && str_contains($subject, $matterNo);
+                });
+            }
+
+            if ($matchedLog) {
+                $text = trim(preg_replace('/\s+/', ' ', strip_tags((string) ($matchedLog->subject ?? ''))) ?? '');
+                if ($text === '') {
+                    $text = $this->formatMatterActivityTypeLabel((string) ($matchedLog->activity_type ?? ''));
+                }
+                $at = $matchedLog->created_at;
+            } else {
+                $text = $this->formatMatterActivityTypeLabel($matter->updated_at_type ?? null);
+                $at = $matter->updated_at ?? $matter->created_at ?? null;
+            }
+
+            $matter->last_activity_text = $text !== '' ? $text : '—';
+            $matter->last_activity_display = $this->formatDashboardDate($at, 'd/m/Y H:i');
+        }
+    }
+
+    /**
+     * @param  array<int, int>  $clientIds
+     * @return Collection<int, Collection<int, ActivitiesLog>>
+     */
+    private function recentActivityLogsForClients(array $clientIds): Collection
+    {
+        if ($clientIds === [] || ! Schema::hasTable('activities_logs')) {
+            return collect();
+        }
+
+        return ActivitiesLog::query()
+            ->whereIn('client_id', $clientIds)
+            ->where('created_at', '>=', Carbon::now()->subDays(180))
+            ->orderByDesc('id')
+            ->limit(max(200, count($clientIds) * 25))
+            ->get(['id', 'client_id', 'subject', 'activity_type', 'created_at'])
+            ->groupBy('client_id');
+    }
+
+    private function staffDisplayName($staff): string
+    {
+        if (! $staff) {
+            return '—';
+        }
+
+        $name = trim(($staff->first_name ?? '').' '.($staff->last_name ?? ''));
+
+        return $name !== '' ? $name : '—';
+    }
+
+    private function formatPlainDate(mixed $value): string
+    {
+        if (empty($value)) {
+            return '—';
+        }
+
+        $timestamp = strtotime((string) $value);
+
+        return $timestamp ? date('d/m/Y', $timestamp) : '—';
+    }
+
+    private function formatDashboardDate(mixed $value, string $format): string
+    {
+        if (empty($value)) {
+            return '—';
+        }
+
+        try {
+            return Carbon::parse($value)->timezone(config('app.timezone', 'Australia/Melbourne'))->format($format);
+        } catch (\Throwable $e) {
+            return '—';
+        }
+    }
+
+    private function formatMatterActivityTypeLabel(?string $type): string
+    {
+        $type = strtolower(trim((string) $type));
+        if ($type === '') {
+            return 'Updated';
+        }
+
+        return match (true) {
+            str_contains($type, 'email') => 'Email',
+            str_contains($type, 'sms') => 'SMS',
+            str_contains($type, 'note') => 'Note',
+            str_contains($type, 'sign') => 'Signed document',
+            str_contains($type, 'document') || str_contains($type, 'upload') => 'Document uploaded',
+            str_contains($type, 'stage') || str_contains($type, 'workflow') => 'Stage updated',
+            str_contains($type, 'status') => 'Status changed',
+            str_contains($type, 'payment') || str_contains($type, 'invoice') => 'Payment / invoice',
+            str_contains($type, 'appointment') || str_contains($type, 'meeting') => 'Appointment',
+            default => ucfirst(str_replace(['_', '-'], ' ', $type)),
+        };
     }
 
     /**
