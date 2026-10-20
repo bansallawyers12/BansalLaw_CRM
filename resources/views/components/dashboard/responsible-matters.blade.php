@@ -80,5 +80,20 @@
             </tbody>
         </table>
     </div>
+    <div class="responsible-matters-pager" data-total="{{ $matters->count() }}" data-page="1" data-per-page="10">
+        <label class="responsible-matters-pager__size" for="responsible-matters-per-page">
+            Show
+            <select id="responsible-matters-per-page" data-responsible-per-page>
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </label>
+        <span class="responsible-matters-pager__status" data-responsible-status>
+            Showing 1–{{ min(10, $matters->count()) }} of {{ $matters->count() }}
+        </span>
+        <div class="responsible-matters-pager__nav" data-responsible-nav aria-label="Matters pages"></div>
+    </div>
 </section>
 @endif

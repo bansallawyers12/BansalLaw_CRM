@@ -461,6 +461,7 @@
                 var responsibleMount = document.getElementById('responsible-matters-mount');
                 if (responsibleMount && typeof data.responsible_matters_html === 'string') {
                     responsibleMount.innerHTML = data.responsible_matters_html;
+                    initResponsibleMattersPager();
                 }
 
                 refreshCalendarFeed();
@@ -504,10 +505,120 @@
         });
     }
 
+    function initResponsibleMattersPager() {
+        var section = document.getElementById('responsible-matters');
+        if (!section) {
+            return;
+        }
+
+        var pager = section.querySelector('.responsible-matters-pager');
+        var table = section.querySelector('.responsible-matters-table');
+        var rows = table ? Array.prototype.slice.call(table.querySelectorAll('tbody tr')) : [];
+        if (!pager || !table || rows.length === 0) {
+            return;
+        }
+
+        var total = rows.length;
+        var perPageSelect = pager.querySelector('[data-responsible-per-page]');
+        var status = pager.querySelector('[data-responsible-status]');
+        var nav = pager.querySelector('[data-responsible-nav]');
+        var page = 1;
+
+        function perPage() {
+            var value = perPageSelect ? parseInt(perPageSelect.value, 10) : 10;
+            return value > 0 ? value : 10;
+        }
+
+        function pageCount() {
+            return Math.max(1, Math.ceil(total / perPage()));
+        }
+
+        function render() {
+            var size = perPage();
+            var pages = pageCount();
+            if (page > pages) {
+                page = pages;
+            }
+            if (page < 1) {
+                page = 1;
+            }
+
+            var start = (page - 1) * size;
+            var end = Math.min(start + size, total);
+            table.classList.add('is-paged');
+            rows.forEach(function (row, index) {
+                row.classList.toggle('is-visible', index >= start && index < end);
+            });
+
+            if (status) {
+                status.textContent = 'Showing ' + (start + 1) + '–' + end + ' of ' + total;
+            }
+
+            if (!nav) {
+                return;
+            }
+
+            nav.innerHTML = '';
+            var prev = document.createElement('button');
+            prev.type = 'button';
+            prev.className = 'responsible-matters-page-btn';
+            prev.textContent = 'Prev';
+            prev.disabled = page <= 1;
+            prev.addEventListener('click', function () {
+                page -= 1;
+                render();
+            });
+            nav.appendChild(prev);
+
+            var windowStart = Math.max(1, page - 2);
+            var windowEnd = Math.min(pages, windowStart + 4);
+            windowStart = Math.max(1, windowEnd - 4);
+            for (var i = windowStart; i <= windowEnd; i++) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'responsible-matters-page-btn' + (i === page ? ' is-current' : '');
+                btn.textContent = String(i);
+                btn.setAttribute('aria-label', 'Page ' + i);
+                if (i === page) {
+                    btn.setAttribute('aria-current', 'page');
+                }
+                (function (target) {
+                    btn.addEventListener('click', function () {
+                        page = target;
+                        render();
+                    });
+                })(i);
+                nav.appendChild(btn);
+            }
+
+            var next = document.createElement('button');
+            next.type = 'button';
+            next.className = 'responsible-matters-page-btn';
+            next.textContent = 'Next';
+            next.disabled = page >= pages;
+            next.addEventListener('click', function () {
+                page += 1;
+                render();
+            });
+            nav.appendChild(next);
+        }
+
+        if (perPageSelect && perPageSelect.dataset.bound !== '1') {
+            perPageSelect.dataset.bound = '1';
+            perPageSelect.addEventListener('change', function () {
+                page = 1;
+                render();
+            });
+        }
+
+        render();
+    }
+
     function initDashboardPage() {
         bindTodoFilterTabs(document);
         initTodoInfiniteScroll();
         initCasesInfiniteScroll();
+        initResponsibleMattersPager();
         bindRefreshControls();
         initKpiCardAnimations();
     }

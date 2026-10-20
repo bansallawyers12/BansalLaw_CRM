@@ -214,7 +214,17 @@ class DashboardService
         $this->attachPrimaryOpposingPartyNames($matters);
         $this->attachResponsibleMatterListFields($matters);
 
-        return $matters;
+        return $matters->sortByDesc(function (ClientMatter $matter) {
+            try {
+                $timestamp = $matter->last_activity_at
+                    ? Carbon::parse($matter->last_activity_at)->getTimestamp()
+                    : 0;
+            } catch (\Throwable $e) {
+                $timestamp = 0;
+            }
+
+            return sprintf('%010d-%010d', $timestamp, (int) $matter->id);
+        })->values();
     }
 
     /**
@@ -289,6 +299,7 @@ class DashboardService
             }
 
             $matter->last_activity_text = $text !== '' ? $text : '—';
+            $matter->last_activity_at = $at;
             $matter->last_activity_display = $this->formatDashboardDate($at, 'd/m/Y H:i');
         }
     }
