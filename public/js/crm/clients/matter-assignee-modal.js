@@ -7,6 +7,8 @@
 
     var matterOptionsCacheKey = '';
     var matterOptionsCache = null;
+    /** Above #changeMatterAssigneeModal (client-detail.css z-index 12050). */
+    var CHANGE_MATTER_ASSIGNEE_CONFIRM_Z_INDEX = 12100;
 
     function getChangeMatterAssigneeModalEl() {
         var shown = document.querySelector('#changeMatterAssigneeModal.show');
@@ -111,6 +113,59 @@
         selectEl.tomselect.setValue(v, true);
     }
 
+    var CHANGE_MATTER_ASSIGNEE_TS_SELECT_IDS = [
+        'change_sel_legal_practitioner_id',
+        'change_sel_person_responsible_id',
+        'change_sel_person_assisting_id',
+        'change_office_id',
+        'change_sel_matter_id',
+        'change_matter_our_party_role'
+    ];
+
+    function syncTomSelectValueToNativeSelect(selEl) {
+        if (!selEl) {
+            return;
+        }
+        var chosen;
+        if (selEl.tomselect && typeof selEl.tomselect.getValue === 'function') {
+            chosen = selEl.tomselect.getValue();
+        } else {
+            chosen = $(selEl).val();
+        }
+        selEl.value = (chosen === null || chosen === undefined)
+            ? ''
+            : (Array.isArray(chosen) ? (chosen[0] || '') : String(chosen));
+    }
+
+    window.syncChangeMatterAssigneeFormTomSelect = function (formEl) {
+        if (!formEl) {
+            return;
+        }
+        CHANGE_MATTER_ASSIGNEE_TS_SELECT_IDS.forEach(function (id) {
+            var selEl = formEl.querySelector('#' + id);
+            syncTomSelectValueToNativeSelect(selEl);
+        });
+    };
+
+    function readChangeMatterSelectValue(selector) {
+        var el = $inChangeMatterModal(selector)[0];
+        if (!el) {
+            return '';
+        }
+        if (el.tomselect && typeof el.tomselect.getValue === 'function') {
+            var fromTs = el.tomselect.getValue();
+            if (fromTs === null || fromTs === undefined) {
+                return '';
+            }
+            return Array.isArray(fromTs) ? String(fromTs[0] || '') : String(fromTs);
+        }
+        var raw = $(el).val();
+        if (raw === null || raw === undefined) {
+            return '';
+        }
+        return Array.isArray(raw) ? String(raw[0] || '') : String(raw);
+    }
+
     function getChangeMatterStream() {
         var $sel = $inChangeMatterModal('#change_sel_matter_id');
         if (!$sel.length) {
@@ -203,7 +258,7 @@
 
     window.prepareChangeMatterAssigneeSubmit = function () {
         var $ourRole = $inChangeMatterModal('#change_matter_our_party_role');
-        var ourRole = $.trim($ourRole.val() || '');
+        var ourRole = $.trim(readChangeMatterSelectValue('#change_matter_our_party_role') || '');
         if ($ourRole.length && ourRole === '') {
             if (typeof iziToast !== 'undefined' && iziToast.warning) {
                 iziToast.warning({ title: 'Required', message: 'Our client\'s role is required.', position: 'topRight' });
@@ -219,8 +274,13 @@
             : [];
         $inChangeMatterModal('#change_matter_opposing_parties_json').val(JSON.stringify(rows));
 
+        var assigneeForm = document.getElementById('change_matter_assignee');
+        if (assigneeForm && typeof window.syncChangeMatterAssigneeFormTomSelect === 'function') {
+            window.syncChangeMatterAssigneeFormTomSelect(assigneeForm);
+        }
+
         var init = $inChangeMatterModal('#change_matter_initial_sel_matter_id').val();
-        var now = $inChangeMatterModal('#change_sel_matter_id').val();
+        var now = readChangeMatterSelectValue('#change_sel_matter_id');
         if (init && now && String(init) !== String(now)) {
             var confirmPromise = typeof window.crmConfirm === 'function'
                 ? window.crmConfirm({
@@ -230,7 +290,8 @@
                     confirmText: 'Yes, continue',
                     cancelText: 'Cancel',
                     confirmColor: '#e08e0b',
-                    cancelColor: '#5e7a90'
+                    cancelColor: '#5e7a90',
+                    zIndex: CHANGE_MATTER_ASSIGNEE_CONFIRM_Z_INDEX
                 })
                 : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
                     ? Swal.fire({
@@ -241,7 +302,13 @@
                         confirmButtonText: 'Yes, continue',
                         cancelButtonText: 'Cancel',
                         confirmButtonColor: '#e08e0b',
-                        cancelButtonColor: '#5e7a90'
+                        cancelButtonColor: '#5e7a90',
+                        didOpen: function () {
+                            var container = document.querySelector('.swal2-container');
+                            if (container) {
+                                container.style.zIndex = String(CHANGE_MATTER_ASSIGNEE_CONFIRM_Z_INDEX);
+                            }
+                        }
                     }).then(function(r) { return !!(r && r.isConfirmed); })
                     : Promise.resolve(true);
 
