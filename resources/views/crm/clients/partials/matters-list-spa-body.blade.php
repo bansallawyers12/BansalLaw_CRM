@@ -71,6 +71,7 @@
     $staffById = $staffIds
         ? \App\Models\Staff::query()->whereIn('id', $staffIds)->get(['id', 'first_name', 'last_name'])->keyBy('id')
         : collect();
+    $showMatterPersonResponsibleCol = app()->environment('local');
 @endphp
 
 <div class="filter_panel{{ $activeMatterFilters > 0 ? ' is-open' : '' }}" id="matterFilterPanel">
@@ -251,6 +252,11 @@
                     <th>Status</th>
                     <th class="sortable-header"><a href="{{ $buildSortUrl('cm.updated_at') }}">Closed {!! $sortIcon('cm.updated_at') !!}</a></th>
                     <th>Reason</th>
+                    @if($showMatterPersonResponsibleCol)
+                    <th class="sortable-header">
+                        <a href="{{ $buildSortUrl('cm.sel_person_responsible') }}">Person responsible {!! $sortIcon('cm.sel_person_responsible') !!}</a>
+                    </th>
+                    @endif
                     <th class="text-end">Actions</th>
                 </tr>
             @else
@@ -270,6 +276,11 @@
                     <th class="sortable-header">
                         <a href="{{ $buildSortUrl('cm.created_at') }}">Created {!! $sortIcon('cm.created_at') !!}</a>
                     </th>
+                    @if($showMatterPersonResponsibleCol)
+                    <th class="sortable-header">
+                        <a href="{{ $buildSortUrl('cm.sel_person_responsible') }}">Person responsible {!! $sortIcon('cm.sel_person_responsible') !!}</a>
+                    </th>
+                    @endif
                     <th class="text-end">Actions</th>
                 </tr>
             @endif
@@ -359,6 +370,11 @@
                                     <span class="matter-cell-meta">Checklist not recorded</span>
                                 @endif
                             </td>
+                            @if($showMatterPersonResponsibleCol)
+                            <td>
+                                <span class="matter-cell-primary">{{ $staffName($person_responsible) }}</span>
+                            </td>
+                            @endif
                             <td>
                                 <div class="matter-actions">
                                     <a href="{{ $matterDetailUrl }}" class="matter-action-btn" title="Open matter">
@@ -429,6 +445,11 @@
                                 <span class="matter-cell-meta">{{ $lastActivityDisplay }}</span>
                             </td>
                             <td><span class="matter-date">{{ $createdDisplay }}</span></td>
+                            @if($showMatterPersonResponsibleCol)
+                            <td>
+                                <span class="matter-cell-primary">{{ $staffName($person_responsible) }}</span>
+                            </td>
+                            @endif
                             <td>
                                 <div class="matter-actions">
                                     <a href="{{ $matterDetailUrl }}" class="matter-action-btn" title="Open matter">
@@ -455,7 +476,7 @@
                 @endforeach
             @else
                 <tr>
-                    <td colspan="{{ $isClosed ? 7 : 6 }}">
+                    <td colspan="{{ $isClosed ? ($showMatterPersonResponsibleCol ? 8 : 7) : ($showMatterPersonResponsibleCol ? 7 : 6) }}">
                         <div class="matters-empty">
                             <i class="fa-regular fa-folder-open"></i>
                             <p>{{ $isClosed ? 'No closed matters found' : 'No matters found' }}</p>

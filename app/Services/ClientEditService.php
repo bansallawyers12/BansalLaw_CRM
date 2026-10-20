@@ -14,6 +14,7 @@ use App\Models\Staff;
 use App\Models\Branch;
 use App\Support\EnsureDummyMatterStaff;
 use App\Support\MatterScopedAccess;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * ClientEditService
@@ -168,7 +169,9 @@ class ClientEditService
             'legalPractitioners'       => static::staffSelectableForSolicitorRole(),
             'personResponsibleOptions' => static::staffSelectableForPersonResponsibleRole(),
             'personAssistingOptions'   => static::staffSelectableForPersonAssistingRole(),
-            'branchOffices'            => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
+            'branchOffices'            => Schema::hasTable('branches')
+                ? Branch::query()->orderBy('office_name')->get(['id', 'office_name'])
+                : collect(),
         ];
     }
 

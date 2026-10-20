@@ -71,6 +71,7 @@
     $staffById = $staffIds
         ? \App\Models\Staff::query()->whereIn('id', $staffIds)->get(['id', 'first_name', 'last_name'])->keyBy('id')
         : collect();
+    $showMatterPersonResponsibleCol = app()->environment('local');
 @endphp
 
 <div id="matters-listing-root"
@@ -303,6 +304,11 @@
                                     <th class="sortable-header">
                                         <a href="{{ $buildSortUrl('cm.created_at') }}">Created {!! $sortIcon('cm.created_at') !!}</a>
                                     </th>
+                                    @if($showMatterPersonResponsibleCol)
+                                    <th class="sortable-header">
+                                        <a href="{{ $buildSortUrl('cm.sel_person_responsible') }}">Person responsible {!! $sortIcon('cm.sel_person_responsible') !!}</a>
+                                    </th>
+                                    @endif
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -360,6 +366,11 @@
                                                 <span class="matter-cell-meta">{{ $lastActivityDisplay }}</span>
                                             </td>
                                             <td><span class="matter-date">{{ $createdDisplay }}</span></td>
+                                            @if($showMatterPersonResponsibleCol)
+                                            <td>
+                                                <span class="matter-cell-primary">{{ $staffName($person_responsible) }}</span>
+                                            </td>
+                                            @endif
                                             <td>
                                                 <div class="matter-actions">
                                                     <a href="{{ $matterDetailUrl }}" class="matter-action-btn" title="Open matter">
@@ -385,7 +396,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="6">
+                                        <td colspan="{{ $showMatterPersonResponsibleCol ? 7 : 6 }}">
                                             <div class="matters-empty">
                                                 <i class="fa-regular fa-folder-open"></i>
                                                 <p>No matters found</p>
