@@ -111,6 +111,25 @@
         selectEl.tomselect.setValue(v, true);
     }
 
+    function readChangeMatterSelectValue(selector) {
+        var el = $inChangeMatterModal(selector)[0];
+        if (!el) {
+            return '';
+        }
+        if (el.tomselect && typeof el.tomselect.getValue === 'function') {
+            var fromTs = el.tomselect.getValue();
+            if (fromTs === null || fromTs === undefined) {
+                return '';
+            }
+            return Array.isArray(fromTs) ? String(fromTs[0] || '') : String(fromTs);
+        }
+        var raw = $(el).val();
+        if (raw === null || raw === undefined) {
+            return '';
+        }
+        return Array.isArray(raw) ? String(raw[0] || '') : String(raw);
+    }
+
     function getChangeMatterStream() {
         var $sel = $inChangeMatterModal('#change_sel_matter_id');
         if (!$sel.length) {
@@ -203,7 +222,7 @@
 
     window.prepareChangeMatterAssigneeSubmit = function () {
         var $ourRole = $inChangeMatterModal('#change_matter_our_party_role');
-        var ourRole = $.trim($ourRole.val() || '');
+        var ourRole = $.trim(readChangeMatterSelectValue('#change_matter_our_party_role') || '');
         if ($ourRole.length && ourRole === '') {
             if (typeof iziToast !== 'undefined' && iziToast.warning) {
                 iziToast.warning({ title: 'Required', message: 'Our client\'s role is required.', position: 'topRight' });
@@ -220,7 +239,7 @@
         $inChangeMatterModal('#change_matter_opposing_parties_json').val(JSON.stringify(rows));
 
         var init = $inChangeMatterModal('#change_matter_initial_sel_matter_id').val();
-        var now = $inChangeMatterModal('#change_sel_matter_id').val();
+        var now = readChangeMatterSelectValue('#change_sel_matter_id');
         if (init && now && String(init) !== String(now)) {
             var confirmPromise = typeof window.crmConfirm === 'function'
                 ? window.crmConfirm({

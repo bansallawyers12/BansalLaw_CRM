@@ -3965,6 +3965,36 @@ body > .ts-dropdown {
     border: 1px solid #fde68a;
 }
 
+.dashboard-section-icon-badge--responsible {
+    background: #eef2ff;
+    color: #3730a3;
+    border: 1px solid #e0e7ff;
+}
+
+.responsible-matters {
+    min-height: 0 !important;
+    margin-bottom: 28px;
+    width: 100%;
+}
+
+.responsible-matters .case-list-container {
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+.responsible-matters .case-details .client-name {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+}
+
+.responsible-matters .case-details .client-name a {
+    color: #0f172a !important;
+    font-family: inherit !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+}
+
 .dashboard-section-sub {
     font-size: 0.74rem;
     color: #64748b;

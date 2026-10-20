@@ -222,6 +222,10 @@
             @endif
         </section>
         @endif
+
+        <div id="responsible-matters-mount">
+            <x-dashboard.responsible-matters :matters="$personResponsibleMatters ?? collect()" />
+        </div>
     </main>
 
     {{-- Loading Overlay --}}

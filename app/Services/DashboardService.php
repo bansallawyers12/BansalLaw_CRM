@@ -7,10 +7,13 @@ use App\Models\Staff;
 use App\Models\Notification;
 use App\Models\CheckinLog;
 use App\Models\ActivitiesLog;
+use App\Models\Matter;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use App\Support\StaffClientVisibility;
 
@@ -93,6 +96,11 @@ class DashboardService
             'casesData' => $casesPage['items'],
         ])->render();
 
+        $responsibleMatters = $this->getPersonResponsibleMatters($user);
+        $responsibleMattersHtml = view('components.dashboard.responsible-matters', [
+            'matters' => $responsibleMatters,
+        ])->render();
+
         return [
             'kpis' => [
                 'active_matters' => $this->getActiveMatterCount($user),
@@ -114,6 +122,7 @@ class DashboardService
                 'per_page' => $casesPage['per_page'],
                 'total' => $casesPage['total'],
             ],
+            'responsible_matters_html' => $responsibleMattersHtml,
         ];
     }
 
@@ -141,7 +150,149 @@ class DashboardService
             'count_note_deadline' => $notesPage['total'],
             'count_cases_requiring_attention_data' => $casesPage['total'],
             'dashboardAssignableStaff' => $this->getAssignableStaffForPopover(),
+            'personResponsibleMatters' => $this->getPersonResponsibleMatters($user),
         ];
+    }
+
+    /**
+     * Active matters where this staff member is person responsible.
+     * Empty when they are not person responsible for any open matter.
+     *
+     * @return Collection<int, ClientMatter>
+     */
+    public function getPersonResponsibleMatters($user): Collection
+    {
+        $uid = (int) ($user->id ?? 0);
+        if ($uid <= 0) {
+            return collect();
+        }
+
+        $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
+
+        $query = ClientMatter::query()
+            ->select('client_matters.*')
+            ->with([
+                'client:id,first_name,last_name,client_id,is_company',
+                'client.company:id,admin_id,company_name',
+                'matter:id,title',
+            ])
+            ->where('client_matters.sel_person_responsible', $uid)
+            ->where('client_matters.matter_status', 1)
+            ->whereNotNull('client_matters.client_unique_matter_no')
+            ->where('client_matters.client_unique_matter_no', '!=', '')
+            ->whereHas('client', function ($q) use ($user) {
+                $q->where('is_archived', '0')
+                    ->whereIn('type', ['client', 'lead'])
+                    ->whereNull('is_deleted');
+
+                if (! $this->viewerSeesAllMattersAndTasks($user)) {
+                    StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q, $user);
+                }
+            });
+
+        if (Schema::hasTable('workflow_stages')) {
+            $query->leftJoin('workflow_stages as ws', 'client_matters.workflow_stage_id', '=', 'ws.id')
+                ->where(function ($q) use ($closedStages) {
+                    $q->whereNull('ws.name')
+                        ->orWhereRaw(
+                            'LOWER(TRIM(ws.name)) NOT IN ('.implode(',', array_fill(0, count($closedStages), '?')).')',
+                            $closedStages
+                        );
+                });
+        }
+
+        $matters = $query
+            ->orderByDesc('client_matters.updated_at')
+            ->orderByDesc('client_matters.id')
+            ->get();
+
+        $this->attachPrimaryOpposingPartyNames($matters);
+
+        foreach ($matters as $matter) {
+            $matter->dashboard_display_name = $this->personResponsibleMatterDisplayName($matter);
+            $ref = trim((string) ($matter->client_unique_matter_no ?? ''));
+            $title = Matter::displayTitleFromJoinedRow($matter->matter->title ?? null);
+            $matter->dashboard_matter_label = $ref !== '' ? $title.' ('.$ref.')' : $title;
+        }
+
+        return $matters;
+    }
+
+    /**
+     * @param  Collection<int, ClientMatter>  $matters
+     */
+    private function attachPrimaryOpposingPartyNames(Collection $matters): void
+    {
+        if ($matters->isEmpty() || ! Schema::hasTable('client_matter_opposing_parties')) {
+            return;
+        }
+
+        $matterIds = $matters->pluck('id')->map(fn ($id) => (int) $id)->filter(fn (int $id) => $id > 0)->values()->all();
+        if ($matterIds === []) {
+            return;
+        }
+
+        $partyColumns = ['client_matter_id', 'name'];
+        if (Schema::hasColumn('client_matter_opposing_parties', 'party_role')) {
+            $partyColumns[] = 'party_role';
+        }
+        if (Schema::hasColumn('client_matter_opposing_parties', 'sort_order')) {
+            $partyColumns[] = 'sort_order';
+        }
+
+        $partiesQuery = DB::table('client_matter_opposing_parties')
+            ->whereIn('client_matter_id', $matterIds);
+        if (Schema::hasColumn('client_matter_opposing_parties', 'sort_order')) {
+            $partiesQuery->orderBy('sort_order');
+        }
+        $partiesQuery->orderBy('id');
+
+        $parties = $partiesQuery->get($partyColumns);
+        $names = [];
+        $defendantLocked = [];
+        foreach ($parties as $party) {
+            $matterId = (int) $party->client_matter_id;
+            $name = trim((string) ($party->name ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $role = strtolower(trim((string) ($party->party_role ?? '')));
+            if ($role === 'defendant') {
+                $names[$matterId] = $name;
+                $defendantLocked[$matterId] = true;
+                continue;
+            }
+
+            if (! isset($names[$matterId]) && empty($defendantLocked[$matterId])) {
+                $names[$matterId] = $name;
+            }
+        }
+
+        foreach ($matters as $matter) {
+            $matter->opposing_party_name = $names[(int) $matter->id] ?? '';
+        }
+    }
+
+    private function personResponsibleMatterDisplayName(ClientMatter $matter): string
+    {
+        $party = trim((string) ($matter->opposing_party_name ?? ''));
+        if ($party !== '') {
+            return $party;
+        }
+
+        $client = $matter->client;
+        $name = trim((string) (($client->first_name ?? '').' '.($client->last_name ?? '')));
+        if ($name === '' && $client && ! empty($client->is_company)) {
+            $name = trim((string) (optional($client->company)->company_name ?? ''));
+        }
+        if ($name !== '') {
+            return $name;
+        }
+
+        $ref = trim((string) ($client->client_id ?? ''));
+
+        return $ref !== '' ? $ref : 'Matter';
     }
 
     /**

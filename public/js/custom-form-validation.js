@@ -824,13 +824,28 @@ function customValidate(formName, savetype = '')
                             return;
                         }
                         // Sync Tom Select dropdown values to underlying selects so FormData includes changed options
-                        var selectIds = ['change_sel_legal_practitioner_id', 'change_sel_person_responsible_id', 'change_sel_person_assisting_id', 'change_office_id'];
+                        var selectIds = [
+                            'change_sel_legal_practitioner_id',
+                            'change_sel_person_responsible_id',
+                            'change_sel_person_assisting_id',
+                            'change_office_id',
+                            'change_sel_matter_id',
+                            'change_matter_our_party_role'
+                        ];
                         for (var s = 0; s < selectIds.length; s++) {
                             var selEl = document.getElementById(selectIds[s]);
-                            if (selEl) {
-                                var chosen = $('#' + selectIds[s]).val();
-                                selEl.value = (chosen === null || chosen === undefined) ? '' : (Array.isArray(chosen) ? (chosen[0] || '') : chosen);
+                            if (!selEl) {
+                                continue;
                             }
+                            var chosen;
+                            if (selEl.tomselect && typeof selEl.tomselect.getValue === 'function') {
+                                chosen = selEl.tomselect.getValue();
+                            } else {
+                                chosen = $('#' + selectIds[s]).val();
+                            }
+                            selEl.value = (chosen === null || chosen === undefined)
+                                ? ''
+                                : (Array.isArray(chosen) ? (chosen[0] || '') : String(chosen));
                         }
                         var fd = new FormData(myform);
                         var postUrl = $("form[name=\"change_matter_assignee\"]").attr('action');
