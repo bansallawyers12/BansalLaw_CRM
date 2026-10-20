@@ -202,6 +202,10 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant matter team access management.', 422);
             }
 
+            if (! Staff::canGrantFullCrmAllocationAccessPermission($storeActor instanceof Staff ? $storeActor : null) && $request->has('has_full_crm_allocation_access')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant full CRM access.', 422);
+            }
+
             $canGrantFinalInvoiceEdit = Staff::canGrantFinalInvoiceEditPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
@@ -341,6 +345,10 @@ class StaffController extends Controller
 
             if (! Staff::canGrantManageMatterTeamAccessPermission($actor instanceof Staff ? $actor : null) && $request->has('can_manage_matter_team_access')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant matter team access management.', 422);
+            }
+
+            if (! Staff::canGrantFullCrmAllocationAccessPermission($actor instanceof Staff ? $actor : null) && $request->has('has_full_crm_allocation_access')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin can grant full CRM access.', 422);
             }
 
             if (! Staff::canGrantFinalInvoiceEditPermission($actor instanceof Staff ? $actor : null) && $request->has('can_edit_final_invoice')) {
@@ -654,6 +662,13 @@ class StaffController extends Controller
         );
         if ($canGrantMatterTeamAccess && Schema::hasColumn('staff', 'can_manage_matter_team_access')) {
             $obj->can_manage_matter_team_access = $request->boolean('can_manage_matter_team_access');
+        }
+
+        $canGrantFullCrmAllocationAccess = Staff::canGrantFullCrmAllocationAccessPermission(
+            $actor instanceof Staff ? $actor : null
+        );
+        if ($canGrantFullCrmAllocationAccess && Schema::hasColumn('staff', 'has_full_crm_allocation_access')) {
+            $obj->has_full_crm_allocation_access = $request->boolean('has_full_crm_allocation_access');
         }
 
         $canGrantFinalInvoiceEdit = Staff::canGrantFinalInvoiceEditPermission(

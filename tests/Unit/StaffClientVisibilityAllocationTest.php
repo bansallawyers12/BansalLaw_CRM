@@ -65,6 +65,35 @@ class StaffClientVisibilityAllocationTest extends TestCase
         $this->assertSame(['show_quick' => false, 'show_supervisor' => false], $enriched['access_ui']);
     }
 
+    public function test_full_crm_allocation_grant_sees_all_client_matters(): void
+    {
+        config(['crm_access.allocation_enabled' => true]);
+
+        $staff = new Staff([
+            'role' => 13,
+            'status' => 1,
+            'has_full_crm_allocation_access' => true,
+        ]);
+        $staff->id = 42;
+
+        $this->assertTrue(StaffClientVisibility::seesAllClientMatters($staff));
+        $this->assertTrue(StaffClientVisibility::isExemptFromAllocation($staff));
+    }
+
+    public function test_full_crm_allocation_grant_inactive_staff_does_not_bypass(): void
+    {
+        config(['crm_access.allocation_enabled' => true]);
+
+        $staff = new Staff([
+            'role' => 13,
+            'status' => 0,
+            'has_full_crm_allocation_access' => true,
+        ]);
+        $staff->id = 42;
+
+        $this->assertFalse(StaffClientVisibility::seesAllClientMatters($staff));
+    }
+
     public function test_super_admin_only_locked_client_check_is_independent_of_allocation_flag(): void
     {
         config([

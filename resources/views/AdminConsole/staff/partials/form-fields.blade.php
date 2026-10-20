@@ -43,6 +43,9 @@
     $canGrantMatterTeamAccess = \App\Models\Staff::canGrantManageMatterTeamAccessPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
+    $canGrantFullCrmAllocationAccess = \App\Models\Staff::canGrantFullCrmAllocationAccessPermission(
+        $actor instanceof \App\Models\Staff ? $actor : null
+    );
     $permissionArr = [];
     if ($isEdit && $fetchedData && !empty($fetchedData->permission)) {
         $permissionArr = strpos($fetchedData->permission, ',') !== false
@@ -317,6 +320,18 @@
                         <span>Can manage matter team access</span>
                     </label>
                     <small class="text-muted d-block mt-1">Shows the Matter team access panel on client detail so this staff member can grant temporary access, assign LP/PR/PA, and remove staff from matters. Super Admin always has this; only Super Admin can turn it on for others.</small>
+                </div>
+                @endif
+
+                @if($canGrantFullCrmAllocationAccess && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'has_full_crm_allocation_access'))
+                <div class="form-group">
+                    <input type="hidden" name="has_full_crm_allocation_access" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="has_full_crm_allocation_access" value="1"
+                            @checked(old('has_full_crm_allocation_access', $isEdit ? ($fetchedData->has_full_crm_allocation_access ?? false) : false))>
+                        <span>Full CRM access (all clients, leads, matters &amp; email)</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Bypasses allocation and matter-team restrictions so this staff member can open any client, lead, matter, documents, and synced mailbox mail. Only native Super Admin can enable this.</small>
                 </div>
                 @endif
 

@@ -111,6 +111,10 @@ final class MatterScopedAccess
             return false;
         }
 
+        if ($user->hasFullCrmAllocationAccess()) {
+            return true;
+        }
+
         $role = (int) ($user->role ?? 0);
         $allowed = config('crm_access.matter_scope_bypass_role_ids', [1]);
 
