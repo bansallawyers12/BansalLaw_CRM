@@ -69,6 +69,7 @@ class Staff extends Authenticatable
         'can_close_discontinue_matter',
         'can_edit_final_invoice',
         'can_manage_matter_team_access',
+        'has_full_crm_allocation_access',
     ];
 
     /**
@@ -99,6 +100,7 @@ class Staff extends Authenticatable
         'can_close_discontinue_matter' => 'boolean',
         'can_edit_final_invoice' => 'boolean',
         'can_manage_matter_team_access' => 'boolean',
+        'has_full_crm_allocation_access' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -465,6 +467,10 @@ class Staff extends Authenticatable
             return true;
         }
 
+        if ($this->hasFullCrmAllocationAccess()) {
+            return true;
+        }
+
         return (bool) ($this->can_view_all_synced_inbox_mail ?? false);
     }
 
@@ -677,6 +683,43 @@ class Staff extends Authenticatable
         $ids = config('crm.close_discontinue_role_ids', [1, 16, 17]);
 
         return is_array($ids) ? array_values(array_map('intval', $ids)) : [1, 16, 17];
+    }
+
+    /**
+     * Role IDs that may grant {@see hasFullCrmAllocationAccess()} on staff profiles.
+     * Default: native Super Admin (1) only.
+     *
+     * @return list<int>
+     */
+    public static function fullCrmAllocationAccessGrantRoleIds(): array
+    {
+        $ids = config('crm_access.full_crm_allocation_grant_role_ids', [1]);
+
+        return is_array($ids) ? array_values(array_map('intval', (array) $ids)) : [1];
+    }
+
+    /**
+     * Whether the actor may toggle full CRM visibility (all clients, leads, matters, synced mail).
+     */
+    public static function canGrantFullCrmAllocationAccessPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self || (int) ($actor->status ?? 0) !== 1) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::fullCrmAllocationAccessGrantRoleIds(), true);
+    }
+
+    /**
+     * Super Admin grant: bypass allocation, matter-team scoping, and assignment-only filters.
+     */
+    public function hasFullCrmAllocationAccess(): bool
+    {
+        if ((int) ($this->status ?? 0) !== 1) {
+            return false;
+        }
+
+        return (bool) ($this->has_full_crm_allocation_access ?? false);
     }
 
     /**

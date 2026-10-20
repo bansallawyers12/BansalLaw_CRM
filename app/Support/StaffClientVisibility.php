@@ -142,6 +142,10 @@ final class StaffClientVisibility
             return true;
         }
 
+        if ($user instanceof Staff && $user->hasFullCrmAllocationAccess()) {
+            return true;
+        }
+
         $staffId = (int) ($user->id ?? 0);
         if ($staffId > 0 && in_array($staffId, config('crm_access.exempt_staff_ids', []), true)) {
             return true;
@@ -168,6 +172,10 @@ final class StaffClientVisibility
         }
 
         if ($user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        if ($user instanceof Staff && $user->hasFullCrmAllocationAccess()) {
             return true;
         }
 
