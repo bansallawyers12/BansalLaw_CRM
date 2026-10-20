@@ -6439,7 +6439,9 @@ class ClientsController extends Controller
                         $clientScoped->where(function ($m) {
                             $m->whereNull('client_matter_id')->orWhere('client_matter_id', 0);
                         })->where(function ($t) {
-                            $t->whereNull('type')->orWhere('type', 'client');
+                            $t->whereNull('type')
+                                ->orWhere('type', 'client')
+                                ->orWhere('type', '');
                         });
                     });
                 });

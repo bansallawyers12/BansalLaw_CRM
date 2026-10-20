@@ -420,57 +420,6 @@
             });
         }
 
-        $(document).on('click.mattersSpa', '.assign-office-btn, .edit-office-btn', function (e) {
-            e.preventDefault();
-            var matterId = $(this).data('matter-id');
-            var matterNo = $(this).data('matter-no');
-            var matterTitle = $(this).data('matter-title');
-            var officeId = $(this).data('office-id') || '';
-
-            $('#edit_matter_id').val(matterId);
-            $('#modal_matter_number').text(matterNo);
-            $('#modal_matter_title').text(matterTitle || 'N/A');
-            $('#edit_office_id').val(officeId).trigger('change');
-            $('#editMatterOfficeModal').modal('show');
-        });
-
-        $('#editMatterOfficeForm').on('submit.mattersSpa', function (e) {
-            e.preventDefault();
-            var formData = $(this).serialize();
-            var submitBtn = $(this).find('button[type="submit"]');
-            var originalText = submitBtn.html();
-            submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
-
-            $.ajax({
-                url: $(this).attr('action') || window.mattersUpdateOfficeUrl || '',
-                method: 'POST',
-                data: formData,
-                dataType: 'json',
-                success: function (response) {
-                    if (response.success) {
-                        if (typeof iziToast !== 'undefined') {
-                            iziToast.success({ title: 'Success', message: response.message, position: 'topRight' });
-                        }
-                        $('#editMatterOfficeModal').modal('hide');
-                        var params = buildQueryFromForm($('#matterFilterForm'));
-                        loadSpaContent(currentTab(), params, { pushState: false });
-                    } else {
-                        if (typeof iziToast !== 'undefined') {
-                            iziToast.error({ title: 'Error', message: response.message || 'Failed to update office', position: 'topRight' });
-                        }
-                        submitBtn.prop('disabled', false).html(originalText);
-                    }
-                },
-                error: function (xhr) {
-                    var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred. Please try again.';
-                    if (typeof iziToast !== 'undefined') {
-                        iziToast.error({ title: 'Error', message: errorMsg, position: 'topRight' });
-                    }
-                    submitBtn.prop('disabled', false).html(originalText);
-                }
-            });
-        });
-
         $(document).on('click.mattersSpa', '.closed-matter-reopen', function (e) {
             e.preventDefault();
             var matterId = $(this).data('matter-id');

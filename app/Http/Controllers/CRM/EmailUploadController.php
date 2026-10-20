@@ -832,7 +832,8 @@ class EmailUploadController extends Controller
                 )
             );
             $mailReport->mail_type = 1;
-            $mailReport->type = $request->type; // Set type to 'client' or 'lead' as required by filter
+            $recordType = strtolower(trim((string) ($request->type ?? '')));
+            $mailReport->type = in_array($recordType, ['client', 'lead'], true) ? $recordType : 'client';
             $mailReport->client_id = $clientId;
             $mailReport->conversion_type = $docType;
             $mailReport->mail_body_type = $mailType;

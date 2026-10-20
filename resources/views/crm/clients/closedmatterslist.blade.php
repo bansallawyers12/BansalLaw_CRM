@@ -83,10 +83,6 @@
     $staffById = $staffIds
         ? \App\Models\Staff::query()->whereIn('id', $staffIds)->get(['id', 'first_name', 'last_name'])->keyBy('id')
         : collect();
-    $officeIds = collect($lists->items())->pluck('office_id')->filter()->unique()->values()->all();
-    $officesById = $officeIds
-        ? \App\Models\Branch::query()->whereIn('id', $officeIds)->get()->keyBy('id')
-        : collect();
 @endphp
 <div id="matters-listing-root"
      class="listing-container matters-listing"
@@ -309,7 +305,6 @@
                                     <th>Status</th>
                                     <th class="sortable-header"><a href="{{ $buildSortUrl('cm.updated_at') }}">Closed {!! $sortIcon('cm.updated_at') !!}</a></th>
                                     <th>Reason</th>
-                                    <th>Office</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -321,7 +316,6 @@
                                             $person_responsible = $staffById->get($list->sel_person_responsible);
                                             $person_assisting = $staffById->get($list->sel_person_assisting);
                                             $closed_by_info = $list->closed_by ? $staffById->get($list->closed_by) : null;
-                                            $matter_office = $list->office_id ? $officesById->get($list->office_id) : null;
                                             $statusLabel = \App\Support\MatterCompletionChecklist::closureStatusLabel($list);
                                             $statusClass = \App\Support\MatterCompletionChecklist::closureStatusBadgeClass($list);
                                             $isDiscontinued = ($list->matter_status ?? 1) == 0;
@@ -397,19 +391,6 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <div class="matter-office">
-                                                    @if($matter_office)
-                                                        <span class="matter-office-badge is-set">
-                                                            <i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}
-                                                        </span>
-                                                    @else
-                                                        <span class="matter-office-badge is-unset">
-                                                            <i class="fa-solid fa-circle-exclamation"></i> Not assigned
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </td>
-                                            <td>
                                                 <div class="matter-actions">
                                                     <a href="{{ $matterDetailUrl }}" class="matter-action-btn" title="Open matter">
                                                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -445,7 +426,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="8">
+                                        <td colspan="7">
                                             <div class="matters-empty">
                                                 <i class="fa-regular fa-folder-open"></i>
                                                 <p>No closed matters found</p>
