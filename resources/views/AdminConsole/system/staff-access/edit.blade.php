@@ -874,7 +874,6 @@
     document.querySelectorAll('[data-sa-mode]').forEach(function (input) {
         input.addEventListener('change', syncModeCards);
     });
-
     function syncNavCard(card) {
         var enable = card.querySelector('[data-sa-nav-enable]');
         var actionInputs = card.querySelectorAll('[data-sa-nav-action-input]');

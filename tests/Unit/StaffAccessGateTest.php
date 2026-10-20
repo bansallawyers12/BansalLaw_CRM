@@ -61,10 +61,44 @@ class StaffAccessGateTest extends TestCase
         $this->assertFalse(StaffClientVisibility::isExemptFromAllocation(new Staff(['id' => 2, 'role' => 17])));
     }
 
+    public function test_named_staff_exceptions_do_not_bypass_when_restricted_access_enabled(): void
+    {
+        $kabir = new Staff([
+            'id' => 50,
+            'first_name' => 'Kabir',
+            'last_name' => 'Makkar',
+            'role' => 13,
+            'status' => 1,
+        ]);
+
+        $this->assertFalse(StaffClientVisibility::seesAllClientMatters($kabir));
+
+        config(['crm_access.restricted_access.enabled' => false]);
+        $this->assertTrue(StaffClientVisibility::seesAllClientMatters($kabir));
+    }
+
+    public function test_full_crm_allocation_grant_unifies_with_restricted_access_gate(): void
+    {
+        $gate = app(StaffAccessGate::class);
+        $staff = new Staff([
+            'id' => 99,
+            'role' => 18,
+            'status' => 1,
+            'has_full_crm_allocation_access' => true,
+        ]);
+
+        $this->assertTrue($gate->hasFullCrmAccess($staff));
+        $this->assertFalse($gate->isRestricted($staff));
+        $this->assertTrue($gate->canClientOrLead($staff, 999999, 'client'));
+        $this->assertTrue(StaffClientVisibility::seesAllClientMatters($staff));
+        $this->assertTrue(StaffClientVisibility::isExemptFromAllocation($staff));
+    }
+
     public function test_feature_off_restores_admin_exempt_via_config_roles(): void
     {
         config([
             'crm_access.restricted_access.enabled' => false,
+            'crm_access.assignment_only_access_enabled' => false,
             'crm_access.exempt_role_ids' => [1, 17],
         ]);
 
