@@ -111,6 +111,40 @@
         selectEl.tomselect.setValue(v, true);
     }
 
+    var CHANGE_MATTER_ASSIGNEE_TS_SELECT_IDS = [
+        'change_sel_legal_practitioner_id',
+        'change_sel_person_responsible_id',
+        'change_sel_person_assisting_id',
+        'change_office_id',
+        'change_sel_matter_id',
+        'change_matter_our_party_role'
+    ];
+
+    function syncTomSelectValueToNativeSelect(selEl) {
+        if (!selEl) {
+            return;
+        }
+        var chosen;
+        if (selEl.tomselect && typeof selEl.tomselect.getValue === 'function') {
+            chosen = selEl.tomselect.getValue();
+        } else {
+            chosen = $(selEl).val();
+        }
+        selEl.value = (chosen === null || chosen === undefined)
+            ? ''
+            : (Array.isArray(chosen) ? (chosen[0] || '') : String(chosen));
+    }
+
+    window.syncChangeMatterAssigneeFormTomSelect = function (formEl) {
+        if (!formEl) {
+            return;
+        }
+        CHANGE_MATTER_ASSIGNEE_TS_SELECT_IDS.forEach(function (id) {
+            var selEl = formEl.querySelector('#' + id);
+            syncTomSelectValueToNativeSelect(selEl);
+        });
+    };
+
     function readChangeMatterSelectValue(selector) {
         var el = $inChangeMatterModal(selector)[0];
         if (!el) {
@@ -237,6 +271,11 @@
             ? window.OtherPartyPicker.collectRows(container)
             : [];
         $inChangeMatterModal('#change_matter_opposing_parties_json').val(JSON.stringify(rows));
+
+        var assigneeForm = document.getElementById('change_matter_assignee');
+        if (assigneeForm && typeof window.syncChangeMatterAssigneeFormTomSelect === 'function') {
+            window.syncChangeMatterAssigneeFormTomSelect(assigneeForm);
+        }
 
         var init = $inChangeMatterModal('#change_matter_initial_sel_matter_id').val();
         var now = readChangeMatterSelectValue('#change_sel_matter_id');
