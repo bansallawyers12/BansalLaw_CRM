@@ -116,7 +116,9 @@ class ClientImportService
             $client->zip = $clientData['zip'] ?? null;
             
             // Passport
-            $client->country_passport = $clientData['country_passport'] ?? null;
+            if (Schema::hasColumn('admins', 'country_passport') && array_key_exists('country_passport', $clientData)) {
+                $client->country_passport = $clientData['country_passport'];
+            }
             if (Schema::hasColumn('admins', 'passport_number') && isset($clientData['passport_number'])) {
                 $client->passport_number = $clientData['passport_number'];
             }

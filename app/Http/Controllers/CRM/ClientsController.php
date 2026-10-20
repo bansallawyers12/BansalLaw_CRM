@@ -2365,7 +2365,7 @@ class ClientsController extends Controller
             Log::info('Header search query: ' . $squery);
 
             /**
-             * 1. Search for composite references (client_id + matter_no format like "SHAL2500295-JRP_1")
+             * 1. Search for composite references (client_id + matter_no, format "<client_id>-<matter_no>")
              * Optimized: Use JOIN instead of N+1 queries
              */
             if (strpos($squery, '-') !== false) {

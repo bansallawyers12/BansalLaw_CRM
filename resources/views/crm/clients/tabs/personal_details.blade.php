@@ -371,38 +371,6 @@
                     ])
 
                     <style>
-                        .eoi-table{
-                            width: 100%;
-                            min-width: 600px;
-                            border-collapse: collapse;
-                            margin-top: 10px;
-                            table-layout: fixed;
-                        }
-                        .eoi-table th, .eoi-table td {
-                            padding: 10px;
-                            border-bottom: 1px solid #dee2e6;
-                            text-align: left;
-                            word-break: normal;
-                            white-space: normal;
-                        }
-                        .eoi-table th {
-                            background-color: #f8f9fa;
-                            font-weight: 600;
-                            color: #6c757d !important;
-                            white-space: normal;
-                            word-wrap: break-word;
-                            overflow-wrap: break-word;
-                            overflow: visible;
-                            text-overflow: clip;
-                        }
-                        
-                        .eoi-table tbody tr:hover {
-                            background-color: #f1f5f9;
-                        }
-                        .eoi-table td {
-                            color: #212529;
-                        }
-                        
                         /* Tag spacing and layout */
                         .ui.label {
                             margin: 5px 5px 5px 0 !important;
