@@ -132,19 +132,26 @@ class MatterScopedAccessTest extends TestCase
     }
 
     #[Test]
-    public function only_super_admin_role_may_manage_matter_access_grants(): void
+    public function only_super_admin_ajay_and_khushi_may_manage_matter_access_grants(): void
     {
-        $superAdmin = Staff::factory()->create(['status' => 1, 'role' => 1]);
-        $other = Staff::factory()->create(['status' => 1, 'role' => 14, 'grant_super_admin_access' => 1]);
-        $delegated = Staff::factory()->create([
+        config(['crm_access.matter_temp_manager_names' => ['Ajay Bansal', 'Khushi Sangroya']]);
+
+        $superAdmin = Staff::factory()->create(['status' => 1, 'role' => 1, 'first_name' => 'Other', 'last_name' => 'Admin']);
+        $ajay = Staff::factory()->create(['status' => 1, 'role' => 14, 'first_name' => 'Ajay', 'last_name' => 'Bansal']);
+        $khushi = Staff::factory()->create(['status' => 1, 'role' => 14, 'first_name' => 'Khushi', 'last_name' => 'Sangroya']);
+        $other = Staff::factory()->create([
             'status' => 1,
             'role' => 14,
+            'first_name' => 'Sam',
+            'last_name' => 'Lee',
+            'grant_super_admin_access' => 1,
             'can_manage_matter_team_access' => true,
         ]);
 
         $this->assertTrue(MatterScopedAccess::canManageTemporaryGrants($superAdmin));
+        $this->assertTrue(MatterScopedAccess::canManageTemporaryGrants($ajay));
+        $this->assertTrue(MatterScopedAccess::canManageTemporaryGrants($khushi));
         $this->assertFalse(MatterScopedAccess::canManageTemporaryGrants($other));
-        $this->assertTrue(MatterScopedAccess::canManageTemporaryGrants($delegated));
     }
 
     #[Test]

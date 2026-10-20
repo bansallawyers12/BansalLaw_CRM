@@ -263,7 +263,7 @@ final class MatterScopedAccess
     }
 
     /**
-     * Super Admin (config: matter_temp_manager_role_ids) or staff with can_manage_matter_team_access may
+     * Super Admin, Ajay Bansal, or Khushi Sangroya may
      * assign or revoke matter team / temporary access for others.
      */
     public static function canManageTemporaryGrants(?Authenticatable $user = null): bool

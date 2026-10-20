@@ -417,7 +417,7 @@ class CrmAccessService
         string $matterRoleKey
     ): ?ClientAccessGrant {
         if (! MatterScopedAccess::canManageTemporaryGrants($actor)) {
-            throw new CrmAccessDeniedException('Only Super Admin or authorised users may grant temporary matter access.');
+            throw new CrmAccessDeniedException('Only Super Admin, Ajay Bansal, or Khushi Sangroya may grant temporary matter access.');
         }
 
         if (! MatterScopedAccess::isValidMatterTeamRoleKey($matterRoleKey)) {
@@ -507,7 +507,7 @@ class CrmAccessService
         string $matterRoleKey
     ): void {
         if (! MatterScopedAccess::canManageTemporaryGrants($actor)) {
-            throw new CrmAccessDeniedException('Only Super Admin or authorised users may assign matter team roles.');
+            throw new CrmAccessDeniedException('Only Super Admin, Ajay Bansal, or Khushi Sangroya may assign matter team roles.');
         }
 
         $matterId = (int) $matter->id;
@@ -534,7 +534,7 @@ class CrmAccessService
     public function revokeTemporaryMatterAccess(Staff $actor, int $grantId): ClientAccessGrant
     {
         if (! MatterScopedAccess::canManageTemporaryGrants($actor)) {
-            throw new CrmAccessDeniedException('Only Super Admin or authorised users may revoke temporary matter access.');
+            throw new CrmAccessDeniedException('Only Super Admin, Ajay Bansal, or Khushi Sangroya may revoke temporary matter access.');
         }
 
         $grant = ClientAccessGrant::query()->where('id', $grantId)->first();
@@ -578,7 +578,7 @@ class CrmAccessService
         string $removalMode = 'temporary'
     ): int {
         if (! MatterScopedAccess::canManageTemporaryGrants($actor)) {
-            throw new CrmAccessDeniedException('Only Super Admin or authorised users may revoke temporary matter access.');
+            throw new CrmAccessDeniedException('Only Super Admin, Ajay Bansal, or Khushi Sangroya may revoke temporary matter access.');
         }
 
         if (! MatterScopedAccess::isValidMatterTeamRoleKey($matterRoleKey)) {

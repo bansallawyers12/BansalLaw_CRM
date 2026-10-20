@@ -311,15 +311,9 @@
 
                 @include('AdminConsole.staff.partials.default-calendar-type')
 
-                @if($canGrantMatterTeamAccess && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_manage_matter_team_access'))
+                @if($canGrantMatterTeamAccess)
                 <div class="form-group">
-                    <input type="hidden" name="can_manage_matter_team_access" value="0">
-                    <label class="staff-checkbox-row">
-                        <input type="checkbox" name="can_manage_matter_team_access" value="1"
-                            @checked(old('can_manage_matter_team_access', $isEdit ? ($fetchedData->can_manage_matter_team_access ?? false) : false))>
-                        <span>Can manage matter team access</span>
-                    </label>
-                    <small class="text-muted d-block mt-1">Shows the Matter team access panel on client detail so this staff member can grant temporary access, assign LP/PR/PA, and remove staff from matters. Super Admin always has this; only Super Admin can turn it on for others.</small>
+                    <small class="text-muted d-block">Temporary matter access on a client file is limited to Super Admin, Ajay Bansal, and Khushi Sangroya.</small>
                 </div>
                 @endif
 

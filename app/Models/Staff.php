@@ -788,7 +788,8 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Whether this staff member may grant/revoke matter team access on client detail (Super Admin or delegated).
+     * Whether this staff member may grant/revoke matter team access on client detail.
+     * Super Admin, plus the named staff in crm_access.matter_temp_manager_names.
      */
     public function canManageMatterTeamAccess(): bool
     {
@@ -800,7 +801,35 @@ class Staff extends Authenticatable
             return true;
         }
 
-        return (bool) ($this->can_manage_matter_team_access ?? false);
+        return self::isNamedMatterTempManager($this->first_name ?? null, $this->last_name ?? null);
+    }
+
+    public static function isNamedMatterTempManager(?string $firstName, ?string $lastName): bool
+    {
+        $name = self::normalizePersonName(trim((string) $firstName).' '.(string) $lastName);
+        if ($name === '') {
+            return false;
+        }
+
+        $allowed = config('crm_access.matter_temp_manager_names', []);
+        if (! is_array($allowed)) {
+            return false;
+        }
+
+        foreach ($allowed as $entry) {
+            if (self::normalizePersonName((string) $entry) === $name) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function normalizePersonName(string $name): string
+    {
+        $name = preg_replace('/\s+/', ' ', strtolower(trim($name))) ?? '';
+
+        return trim($name);
     }
 
     /**

@@ -10190,16 +10190,38 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   border-top: 1px solid #e2e8f0;
 }
 
-#personaldetails-tab .cdn-ov-matter-temp__head-actions {
+#personaldetails-tab .cdn-ov-matter-temp__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp__bar-status {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  flex-shrink: 0;
+  gap: 0.4rem;
+  min-width: 0;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp__bar-status i {
+  color: #22c55e;
+  font-size: 0.85rem;
 }
 
 #personaldetails-tab .cdn-ov-matter-temp__toggle {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
+  margin-left: auto;
   padding: 0;
   border: 0;
   background: transparent;
@@ -10241,6 +10263,19 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-ov-matter-temp.is-open .cdn-ov-matter-temp__knob {
   transform: translateX(14px);
+}
+
+#personaldetails-tab .cdn-ov-matter-temp:not(.is-open) .cdn-ov-matter-temp__panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  gap: 0;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp.is-open .cdn-ov-matter-temp__bar {
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
 }
 
 #personaldetails-tab .cdn-ov-matter-temp__body {

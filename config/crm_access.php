@@ -78,6 +78,9 @@ return [
     // Staff roles that may grant/revoke matter team access on the client detail card (default: Super Admin only).
     'matter_temp_manager_role_ids' => $intList('CRM_ACCESS_MATTER_TEMP_MANAGER_ROLE_IDS', '1', [1]),
 
+    // Named staff who may use that panel in addition to the roles above.
+    'matter_temp_manager_names' => ['Ajay Bansal', 'Khushi Sangroya'],
+
     // Keys are form values; values are duration in minutes.
     'matter_temp_duration_minutes' => [
         '1_hour' => 60,

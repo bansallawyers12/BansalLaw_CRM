@@ -11,31 +11,40 @@
     $teamByKey = collect($matterTeamOverview['team'] ?? [])->keyBy('key');
 @endphp
 @if($canGrantMatterAccess && $matterId > 0 && $durationOptions !== [])
-<section class="cdn-ov-block cdn-ov-matter-temp{{ $activeGrantCount > 0 ? ' is-open' : '' }}" id="matterTemporaryAccessSection">
+<section class="cdn-ov-block cdn-ov-matter-temp" id="matterTemporaryAccessSection">
     <div class="cdn-ov-block__head">
         <p class="cdn-ov-section-label mb-0"><i class="fa-solid fa-clock" aria-hidden="true"></i> Temporary matter access</p>
-        <div class="cdn-ov-matter-temp__head-actions">
+        @if($activeGrantCount > 0)
+            <span class="cdn-ov-count" title="Active temporary grants">{{ $activeGrantCount }}</span>
+        @endif
+    </div>
+
+    <p class="cdn-ov-matter-temp__lede">
+        Assign a position and staff member. That user can open this client file and work on the selected matter for the duration you choose.
+        <span class="cdn-ov-matter-temp__badge">Super Admin, Ajay, and Khushi</span>
+    </p>
+
+    <div class="cdn-ov-matter-temp__panel">
+        <div class="cdn-ov-matter-temp__bar">
             @if($activeGrantCount > 0)
-                <span class="cdn-ov-count" title="Active temporary grants">{{ $activeGrantCount }}</span>
+                <span class="cdn-ov-matter-temp__bar-status">{{ $activeGrantCount }} active</span>
+            @else
+                <span class="cdn-ov-matter-temp__bar-status">
+                    <i class="fa-regular fa-circle-check" aria-hidden="true"></i>
+                    No active temporary access
+                </span>
             @endif
             <button type="button"
                     class="cdn-ov-matter-temp__toggle"
                     id="matterTemporaryAccessToggle"
-                    aria-expanded="{{ $activeGrantCount > 0 ? 'true' : 'false' }}"
-                    aria-controls="matterTemporaryAccessBody">
+                    aria-expanded="false"
+                    aria-controls="matterTemporaryAccessBody"
+                    aria-label="Show temporary matter access">
                 <span class="cdn-ov-matter-temp__switch" aria-hidden="true"><span class="cdn-ov-matter-temp__knob"></span></span>
-                <span class="visually-hidden">{{ $activeGrantCount > 0 ? 'Hide temporary matter access' : 'Show temporary matter access' }}</span>
             </button>
         </div>
-    </div>
 
-    <div id="matterTemporaryAccessBody" class="cdn-ov-matter-temp__body" @if($activeGrantCount === 0) hidden @endif>
-    <p class="cdn-ov-matter-temp__lede">
-        Super Admin assigns a position and staff member. That user can open this client file and work on the selected matter for the duration you choose.
-        <span class="cdn-ov-matter-temp__badge">Super Admin only</span>
-    </p>
-
-    <div class="cdn-ov-matter-temp__panel">
+        <div id="matterTemporaryAccessBody" class="cdn-ov-matter-temp__body" hidden>
         @if($activeMatterGrants->isNotEmpty())
             <ul class="cdn-ov-matter-temp__list" id="matterTemporaryAccessList">
                 @foreach($activeMatterGrants as $grant)
@@ -75,11 +84,6 @@
                     </li>
                 @endforeach
             </ul>
-        @else
-            <div class="cdn-ov-matter-temp__empty" id="matterTemporaryAccessEmpty">
-                <i class="fa-regular fa-circle-check" aria-hidden="true"></i>
-                <span>No active temporary access</span>
-            </div>
         @endif
 
         <form id="matterTemporaryAccessForm" class="cdn-ov-matter-temp__form">
@@ -158,14 +162,13 @@
                 <p class="cdn-ov-matter-temp__hint" id="matterTemporaryAccessRevokeHint">Uses the position and staff selected above.</p>
             </div>
         </form>
-    </div>
+        </div>
     </div>
 </section>
 @push('scripts')
 <script>
 (function () {
     var matterId = @json($matterId);
-    var storageKey = 'matterTempAccessOpen:' + matterId;
     var section = document.getElementById('matterTemporaryAccessSection');
     var body = document.getElementById('matterTemporaryAccessBody');
     var toggle = document.getElementById('matterTemporaryAccessToggle');
@@ -175,23 +178,11 @@
         body.hidden = !open;
         section.classList.toggle('is-open', open);
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        var label = toggle.querySelector('.visually-hidden');
-        if (label) {
-            label.textContent = open ? 'Hide temporary matter access' : 'Show temporary matter access';
-        }
-        try {
-            localStorage.setItem(storageKey, open ? '1' : '0');
-        } catch (e) {}
+        toggle.setAttribute('aria-label', open ? 'Hide temporary matter access' : 'Show temporary matter access');
     }
 
     if (toggle && body) {
-        var savedOpen = null;
-        try {
-            savedOpen = localStorage.getItem(storageKey);
-        } catch (e) {}
-        if (savedOpen === '1' || savedOpen === '0') {
-            setAccessPanelOpen(savedOpen === '1');
-        }
+        setAccessPanelOpen(false);
         toggle.addEventListener('click', function () {
             setAccessPanelOpen(body.hidden);
         });
