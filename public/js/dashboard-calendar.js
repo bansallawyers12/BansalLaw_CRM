@@ -2119,7 +2119,7 @@
                     day: 'Day',
                     list: 'List',
                 },
-                height: '100%',
+                height: 'auto',
                 expandRows: true,
                 fixedWeekCount: false,
                 timeZone: tz,

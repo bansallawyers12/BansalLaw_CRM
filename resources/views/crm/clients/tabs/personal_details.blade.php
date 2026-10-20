@@ -306,6 +306,9 @@
                                     </div>
                                     <div class="cdn-ov-team-list cdn-ov-team-list--matter">
                                         @foreach($matterTeamOverview['team'] as $slot)
+                                            @if(! empty($slot['is_office']))
+                                                @continue
+                                            @endif
                                             <div class="cdn-ov-member-card cdn-ov-member-card--matter{{ $slot['status'] !== 'assigned' ? ' is-empty' : '' }}" title="{{ $slot['role_title'] }}">
                                                 <div class="cdn-ov-member-avatar cdn-ov-member-avatar--{{ $slot['avatar_variant'] }}{{ $slot['status'] !== 'assigned' ? ' is-empty' : '' }}" title="{{ $slot['role_title'] }}">
                                                     @if(! empty($slot['is_office']))
@@ -332,9 +335,6 @@
                                 </section>
 
                                 <section class="cdn-ov-block">
-                                    <div class="cdn-ov-block__head">
-                                        <p class="cdn-ov-section-label"><i class="fa-solid fa-folder-tree"></i> Case Details</p>
-                                    </div>
                                     @if(count($matterTeamOverview['case_details']) > 0)
                                         <div class="cdn-ov-case-grid">
                                             @foreach($matterTeamOverview['case_details'] as $mdRow)

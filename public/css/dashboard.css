@@ -274,9 +274,9 @@
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
     align-items: stretch;
     gap: 0;
-    height: 460px;
-    min-height: 460px;
-    max-height: 460px;
+    height: auto;
+    min-height: 0;
+    max-height: none;
     padding: 0;
     background: var(--background-color);
 }
@@ -1927,9 +1927,9 @@
 
     .dashboard-calendar-body {
         grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
-        height: 440px;
-        min-height: 440px;
-        max-height: 440px;
+        height: auto;
+        min-height: 0;
+        max-height: none;
     }
 }
 
@@ -1942,9 +1942,9 @@
     }
 
     .dashboard-calendar-wrapper {
-        height: 400px;
-        min-height: 400px;
-        max-height: 400px;
+        height: auto;
+        min-height: 0;
+        max-height: none;
         padding: 20px;
         overflow: hidden;
     }
@@ -5106,10 +5106,30 @@ a.responsible-matters-primary:hover {
 }
 
 .dashboard-calendar-body {
-    height: 460px !important;
-    min-height: 460px !important;
-    max-height: 460px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     background: #fff !important;
+    align-items: stretch !important;
+}
+
+.dashboard-calendar-wrapper,
+.dashboard-calendar-surface,
+.dashboard-calendar-container {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
+}
+
+.dashboard-calendar-container .fc-scroller,
+.dashboard-calendar-container .fc-scroller-harness,
+.dashboard-calendar-container .fc-scroller-liquid-absolute,
+.dashboard-calendar-container .fc-view-harness,
+.dashboard-calendar-container .fc-view-harness-active {
+    overflow: visible !important;
+    height: auto !important;
 }
 
 .dashboard-calendar-wrapper,
@@ -5136,7 +5156,7 @@ a.responsible-matters-primary:hover {
 }
 
 .dashboard-calendar-container .fc-daygrid-day-frame {
-    min-height: 2.6rem !important;
+    min-height: 5.5rem !important;
 }
 
 .dashboard-calendar-container .fc-col-header-cell-cushion {
@@ -5382,25 +5402,12 @@ a.responsible-matters-primary:hover {
     border-color: #c9ddd2 !important;
 }
 
-@media (max-width: 1200px) {
-    .dashboard-calendar-body {
-        height: 440px !important;
-        min-height: 440px !important;
-        max-height: 440px !important;
-    }
-}
-
 @media (max-width: 992px) {
-    .dashboard-calendar-body {
+    .dashboard-calendar-body,
+    .dashboard-calendar-wrapper {
         height: auto !important;
         min-height: 0 !important;
         max-height: none !important;
-    }
-
-    .dashboard-calendar-wrapper {
-        height: 400px !important;
-        min-height: 400px !important;
-        max-height: 400px !important;
     }
 }
 

@@ -19,11 +19,6 @@
         @endif
     </div>
 
-    <p class="cdn-ov-matter-temp__lede">
-        Assign a position and staff member. That user can open this client file and work on the selected matter for the duration you choose.
-        <span class="cdn-ov-matter-temp__badge">Super Admin, Ajay, and Khushi</span>
-    </p>
-
     <div class="cdn-ov-matter-temp__panel">
         <div class="cdn-ov-matter-temp__bar">
             @if($activeGrantCount > 0)
