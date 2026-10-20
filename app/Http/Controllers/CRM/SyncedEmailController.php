@@ -239,12 +239,28 @@ class SyncedEmailController extends Controller
             abort(403, 'You do not have permission to view unassigned synced emails.');
         }
 
-        if (! $staff->canViewAllSyncedInboxMail()) {
+        $accessGate = app(\App\Services\CrmAccess\StaffAccessGate::class);
+        $restrictedGranted = $accessGate->isFeatureEnabled()
+            && $accessGate->isRestricted($staff)
+            && ! $accessGate->hasFullCrmAccess($staff)
+            && $accessGate->hasActiveGrants($staff);
+
+        if (! $staff->canViewAllSyncedInboxMail() && ! $restrictedGranted) {
             $unassignedCount = IncomingEmailSyncService::countUnassignedSyncedInboxMail($staff);
 
             if ($unassignedCount === 0) {
                 return redirect()->route('dashboard')->with('error', 'You currently have no unassigned emails.');
             }
+        }
+
+        if ($accessGate->isFeatureEnabled()
+            && $accessGate->isRestricted($staff)
+            && ! $accessGate->hasFullCrmAccess($staff)
+            && ! $accessGate->hasActiveGrants($staff)) {
+            return redirect()->route('dashboard')->with(
+                'error',
+                'You need a client, lead, or matter grant before you can view related mail.'
+            );
         }
 
         $initialData = null;

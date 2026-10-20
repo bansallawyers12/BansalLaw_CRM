@@ -124,9 +124,11 @@
                             <li class="nav-item">
                                 <a class="nav-link active" href="{{ route('clients.clientsmatterslist') }}">Active Matters</a>
                             </li>
+                            @if(!isset($canSeeClosedMattersTab) || $canSeeClosedMattersTab)
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('clients.closedmatterslist') }}">Closed Matters</a>
                             </li>
+                            @endif
                         </ul>
                     </div>
 

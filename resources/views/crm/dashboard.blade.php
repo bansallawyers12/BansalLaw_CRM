@@ -8,18 +8,32 @@
         $dashboardNow = now()->timezone($dashboardTz);
         $hour = (int) $dashboardNow->format('G');
         $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
+        $dw = $dashboardWidgets ?? [
+            'restricted' => false,
+            'shell_only' => false,
+            'active_matters' => true,
+            'closed_matters' => true,
+            'tasks' => true,
+            'recent_activity' => true,
+            'calendar' => true,
+            'access_approvals' => true,
+            'new_client' => true,
+        ];
+        $showKpis = !empty($dw['active_matters']) || !empty($dw['closed_matters']) || !empty($dw['tasks']) || !empty($dw['recent_activity']);
+        $showPriority = !empty($dw['tasks']) || !empty($dw['recent_activity']);
     @endphp
     <main class="main-content" id="dashboardRoot"
           data-clients-url="{{ url('/clients/get-allclients') }}"
           data-personal-task-url="{{ route('clients.tasks.personal.store') }}"
           data-matter-reminder-url="{{ route('clients.matterTask.store') }}"
-          data-personal-calendar-enabled="{{ auth('admin')->user() instanceof \App\Models\Staff && auth('admin')->user()->canAccessPersonalCalendar() ? '1' : '0' }}">
+          data-personal-calendar-enabled="{{ !empty($canAccessPersonalCalendar) ? '1' : '0' }}"
+          data-dashboard-shell-only="{{ !empty($dw['shell_only']) ? '1' : '0' }}">
         <header class="dashboard-welcome-banner">
             <div class="dashboard-welcome-content">
                 <div class="dashboard-welcome-text">
                     <div class="dashboard-welcome-badge">
                         <span class="dashboard-welcome-badge__dot"></span>
-                        <span class="dashboard-welcome-label">Workspace Overview</span>
+                        <span class="dashboard-welcome-label">{{ !empty($dw['shell_only']) ? 'Workspace' : 'Workspace Overview' }}</span>
                     </div>
                     <div class="dashboard-welcome-heading">
                         <h1 id="dashboardGreeting" data-first-name="{{ $staffFirstName }}">{{ $greeting }}, {{ $staffFirstName }}</h1>
@@ -32,18 +46,36 @@
                     </div>
                 </div>
                 <div class="header-actions">
+                    @if(!empty($dw['new_client']))
                     <a href="{{ route('adminconsole.system.clients.createclient') }}" class="action-btn action-btn-primary">
                         <i class="fa-solid fa-user-plus"></i> New client
                     </a>
+                    @endif
+                    @if(empty($dw['shell_only']))
                     <button type="button" class="action-btn action-btn-secondary" id="refreshDashboard" title="Refresh Dashboard (Alt+R)">
                         <i class="fa-solid fa-rotate"></i> Refresh
                     </button>
+                    @endif
                 </div>
             </div>
         </header>
 
+        @if(!empty($dw['shell_only']))
+        <section class="dashboard-restricted-shell" style="max-width: 40rem; margin: 2rem auto; text-align: center; padding: 2rem 1.5rem;">
+            <div style="font-size: 2rem; color: #94a3b8; margin-bottom: 0.75rem;" aria-hidden="true">
+                <i class="fa-regular fa-folder-open"></i>
+            </div>
+            <h2 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem;">No modules assigned yet</h2>
+            <p style="color: #64748b; margin: 0; line-height: 1.5;">
+                You can use your profile from the menu. Ask a Super Admin to grant access to specific clients, leads, matters, or dashboard widgets.
+            </p>
+        </section>
+        @endif
+
+        @if($showKpis)
         {{-- KPI Cards Section --}}
         <section class="kpi-cards">
+            @if(!empty($dw['active_matters']))
             <x-dashboard.kpi-card 
                 :title="'Active Matters'" 
                 :count="$count_active_matter" 
@@ -53,7 +85,9 @@
                 icon-class="icon-active"
                 data-kpi="active_matters"
             />
+            @endif
 
+            @if(!empty($dw['closed_matters']))
             <x-dashboard.kpi-card 
                 :title="'Closed Matters'" 
                 :count="$count_closed_matter" 
@@ -63,7 +97,9 @@
                 icon-class="icon-closed"
                 data-kpi="closed_matters"
             />
+            @endif
             
+            @if(!empty($dw['tasks']))
             <x-dashboard.kpi-card 
                 :title="'Urgent Notes Deadlines'" 
                 :count="$count_note_deadline"
@@ -73,7 +109,9 @@
                 icon-class="icon-pending"
                 data-kpi="note_deadline"
             />
+            @endif
             
+            @if(!empty($dw['recent_activity']))
             <x-dashboard.kpi-card 
                 :title="'Recent Matter Activity'" 
                 :count="$count_cases_requiring_attention_data"
@@ -83,9 +121,11 @@
                 icon-class="icon-pending"
                 data-kpi="recent_activity"
             />
+            @endif
         </section>
+        @endif
 
-        @if(!empty($canAccessPersonalCalendar))
+        @if(!empty($canAccessPersonalCalendar) && !empty($dw['calendar']))
         <x-dashboard.staff-calendar
             :stats="$calendarStats ?? ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0]"
             :timezone="$dashboardTz"
@@ -98,10 +138,14 @@
         @include('crm.booking.appointments.partials.event-modals')
         @endif
 
+        @if(!empty($dw['access_approvals']))
         @include('crm.partials.access-approvals-dashboard')
+        @endif
 
+        @if($showPriority)
         {{-- Priority Focus Section --}}
         <section class="priority-focus">
+            @if(!empty($dw['tasks']))
             {{-- My Tasks (Microsoft To Do Style) --}}
             <div class="focus-container todo-container">
                 <div class="todo-header">
@@ -147,7 +191,9 @@
                     <x-dashboard.todo-list-content :notes-data="$notesData" :count-note-deadline="$count_note_deadline" />
                 </div>
             </div>
+            @endif
 
+            @if(!empty($dw['recent_activity']))
             {{-- Recent Matter Activity --}}
             <div class="focus-container dashboard-scroll-anchor" id="recent-matter-activity">
                 <div class="focus-header">
@@ -173,7 +219,9 @@
                     <x-dashboard.cases-list-content :cases-data="$cases_requiring_attention_data" />
                 </div>
             </div>
+            @endif
         </section>
+        @endif
     </main>
 
     {{-- Loading Overlay --}}
@@ -204,6 +252,7 @@
 
 @push('scripts')
 @once
+@if(empty(($dashboardWidgets ?? [])['shell_only']))
 <script src="{{URL::to('/')}}/js/components/dropdown-multi-select.js"></script>
 <script src="{{ asset('js/components/task-description-mentions.js') }}?v={{ @filemtime(public_path('js/components/task-description-mentions.js')) ?: time() }}"></script>
 <script>
@@ -236,6 +285,26 @@
 @if(!empty($canAccessPersonalCalendar))
 <script src="{{ asset('js/booking-appointment-modal.js') }}?v={{ @filemtime(public_path('js/booking-appointment-modal.js')) ?: time() }}"></script>
 <script src="{{ asset('js/dashboard-calendar.js') }}?v={{ @filemtime(public_path('js/dashboard-calendar.js')) ?: time() }}"></script>
+@endif
+@else
+<script>
+    (function () {
+        var el = document.getElementById('dashboardDateTime');
+        if (!el) return;
+        var tz = el.getAttribute('data-timezone') || undefined;
+        function tick() {
+            try {
+                var now = new Date();
+                var opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz };
+                var datePart = now.toLocaleDateString(undefined, opts);
+                var timePart = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZone: tz });
+                el.textContent = datePart + ' · ' + timePart;
+            } catch (e) {}
+        }
+        tick();
+        setInterval(tick, 30000);
+    })();
+</script>
 @endif
 @endonce
 @endpush

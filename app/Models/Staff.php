@@ -8,6 +8,7 @@ use App\Support\EmailSignatureHtml;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
@@ -156,6 +157,22 @@ class Staff extends Authenticatable
     public function assignedClients(): HasMany
     {
         return $this->hasMany(Admin::class, 'agent_id');
+    }
+
+    /**
+     * Restricted-access profile (full vs restricted + dashboard widgets).
+     */
+    public function accessProfile(): HasOne
+    {
+        return $this->hasOne(StaffAccessProfile::class, 'staff_id');
+    }
+
+    /**
+     * Explicit client / lead / matter grants for restricted staff.
+     */
+    public function recordGrants(): HasMany
+    {
+        return $this->hasMany(StaffRecordGrant::class, 'staff_id');
     }
 
     /**
@@ -312,15 +329,37 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Whether this staff member may access Admin Console (/adminconsole).
+     * Role / elevation based Admin Console access (no restricted-profile grants).
      */
-    public function canAccessAdminConsole(): bool
+    public function canAccessAdminConsoleByRole(): bool
     {
         if ($this->hasEffectiveSuperAdminPrivileges()) {
             return true;
         }
 
         return in_array((int) ($this->role ?? 0), self::adminConsoleRoleIds(), true);
+    }
+
+    /**
+     * Whether this staff member may access Admin Console (/adminconsole).
+     * Restricted staff may also get access via Staff Access profile grants.
+     */
+    public function canAccessAdminConsole(): bool
+    {
+        if ($this->canAccessAdminConsoleByRole()) {
+            return true;
+        }
+
+        try {
+            $gate = app(\App\Services\CrmAccess\StaffAccessGate::class);
+            if ($gate->isFeatureEnabled() && $gate->isRestricted($this)) {
+                return $gate->canAdminConsole($this);
+            }
+        } catch (\Throwable) {
+            // Fall through when container/gate unavailable (e.g. early boot).
+        }
+
+        return false;
     }
 
     /**
@@ -712,6 +751,8 @@ class Staff extends Authenticatable
 
     /**
      * Super Admin grant: bypass allocation, matter-team scoping, and assignment-only filters.
+     * When restricted access is enabled, {@see \App\Services\CrmAccess\StaffRestrictedAccessService::hasFullCrmAccess()}
+     * also honors this flag so Staff form and Staff Access stay aligned.
      */
     public function hasFullCrmAllocationAccess(): bool
     {

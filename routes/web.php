@@ -117,7 +117,7 @@ Route::get('/logout', [AdminLoginController::class, 'showLogoutConfirmation'])->
 | SECTION: CRM Application Routes (Protected)
 |--------------------------------------------------*/
 // Main CRM routes at root level with auth:admin middleware
-Route::middleware(['auth:admin'])->group(function () {
+Route::middleware(['auth:admin', 'restricted.access'])->group(function () {
 
     Route::post('/session/super-admin-mode', [SuperAdminElevationController::class, 'update'])->name('crm.session.super-admin-mode');
     Route::redirect('/calendar', '/booking/calendar', 301);
@@ -356,7 +356,7 @@ require __DIR__ . '/documents.php';
 /*--------------------------------------------------
 | SECTION: System Error & Breakdown Monitor (Protected - Login Required)
 |--------------------------------------------------*/
-Route::middleware(['auth:admin'])->prefix('system-errors')->name('system_errors.')->group(function () {
+Route::middleware(['auth:admin', 'restricted.access'])->prefix('system-errors')->name('system_errors.')->group(function () {
     Route::get('/', [\App\Http\Controllers\SystemBreakdownController::class, 'index'])->name('index');
     Route::get('/api/stats', [\App\Http\Controllers\SystemBreakdownController::class, 'apiStats'])->name('stats');
     Route::get('/details/{id}', [\App\Http\Controllers\SystemBreakdownController::class, 'show'])->name('show');

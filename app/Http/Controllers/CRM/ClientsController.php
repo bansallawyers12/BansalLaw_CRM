@@ -28,6 +28,7 @@ use App\Models\AccountClientReceipt;
 
 use App\Models\Matter;
 use App\Models\ClientMatter;
+use App\Models\StaffRecordGrant;
 use App\Models\Branch;
 use App\Support\CrmListingTextSearch;
 use App\Support\MatterStreamHelper;
@@ -400,6 +401,40 @@ class ClientsController extends Controller
         $sortField = $request->get('sort', 'cm.id');
         $sortDirection = $request->get('direction', 'desc');
 
+        $staffUser = auth('admin')->user();
+        $accessGate = app(\App\Services\CrmAccess\StaffAccessGate::class);
+        $restrictedClosedMatterIds = [];
+        $canSeeClosedMattersTab = true;
+        if ($staffUser instanceof \App\Models\Staff
+            && $accessGate->isFeatureEnabled()
+            && $accessGate->isRestricted($staffUser)
+            && ! $accessGate->hasFullCrmAccess($staffUser)) {
+            $canSeeClosedMattersTab = $accessGate->hasClosedMatterGrants($staffUser);
+            if ($isClosed && ! $canSeeClosedMattersTab) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You do not have access to closed matters.',
+                    ], 403);
+                }
+
+                return redirect()
+                    ->route('dashboard')
+                    ->with('error', 'You do not have access to closed matters. Ask a Super Admin to grant a closed matter.');
+            }
+            if ($isClosed && $canSeeClosedMattersTab) {
+                $restrictedClosedMatterIds = StaffRecordGrant::query()
+                    ->active()
+                    ->where('staff_id', (int) $staffUser->id)
+                    ->where('resource_type', StaffRecordGrant::TYPE_CLOSED_MATTER)
+                    ->pluck('resource_id')
+                    ->map(fn ($v) => (int) $v)
+                    ->filter(fn (int $id) => $id > 0)
+                    ->values()
+                    ->all();
+            }
+        }
+
         if ($this->hasClientListModuleAccess()) {
             $query = DB::table('client_matters as cm')
                 ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
@@ -439,6 +474,12 @@ class ClientsController extends Controller
                                 $closedStages
                             );
                     });
+            }
+
+            if ($isClosed && $restrictedClosedMatterIds !== []) {
+                $query->whereIn('cm.id', $restrictedClosedMatterIds);
+            } elseif ($isClosed && $restrictedClosedMatterIds === [] && ! $canSeeClosedMattersTab) {
+                $query->whereRaw('0 = 1');
             }
 
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
@@ -549,6 +590,12 @@ class ClientsController extends Controller
                     });
             }
 
+            if ($isClosed && $restrictedClosedMatterIds !== []) {
+                $query->whereIn('cm.id', $restrictedClosedMatterIds);
+            } elseif ($isClosed && ! $canSeeClosedMattersTab) {
+                $query->whereRaw('0 = 1');
+            }
+
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
             $query->orderBy($sortField, $sortDirection);
             $totalData = 0;
@@ -565,6 +612,7 @@ class ClientsController extends Controller
             'listTab' => $listTab,
             'activeUrl' => route('clients.clientsmatterslist'),
             'closedUrl' => route('clients.closedmatterslist'),
+            'canSeeClosedMattersTab' => $canSeeClosedMattersTab,
         ];
 
         if ($request->boolean('spa')) {
@@ -1759,6 +1807,22 @@ class ClientsController extends Controller
 
                 $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
 
+                $matterIdForEmailScope = null;
+                if (! empty($id1) && is_numeric($id1)) {
+                    $matterIdForEmailScope = (int) $id1;
+                } elseif (! empty($activeClientMatterId)) {
+                    $matterIdForEmailScope = (int) $activeClientMatterId;
+                }
+                $canAccessEmails = StaffClientVisibility::canAccessEmails(
+                    (int) $id,
+                    Auth::user(),
+                    $matterIdForEmailScope
+                );
+
+                if (! $canAccessEmails && strtolower((string) $activeTab) === 'emails') {
+                    $activeTab = 'personaldetails';
+                }
+
                 return view('crm.clients.detail', compact(
                     'fetchedData',
                     'encodeId', 'id1', 'activeTab',
@@ -1772,7 +1836,8 @@ class ClientsController extends Controller
                     'accountTabData', 'clientAddresses', 'clientContacts', 'emails',
                     'matter_cnt', 'crmDetailNavIsLead', 'crmShowMatterDocsForConvertedLead',
                     'hideMatterDocumentsForBankMatter', 'showMatterDocumentsTab', 'showMatterBundleTabs',
-                    'isMatterIdInUrl'
+                    'isMatterIdInUrl',
+                    'canAccessEmails'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
@@ -3634,6 +3699,11 @@ class ClientsController extends Controller
             ], 422);
         }
 
+        $this->ensureEmailAccess(
+            (int) $clientId,
+            ! empty($clientMatterId) ? (int) $clientMatterId : null
+        );
+
         $query = \App\Models\EmailLog::query();
         $this->applyIncomingInboxScope($query);
         $this->applyUnreadEmailScope($query);
@@ -3770,7 +3840,10 @@ class ClientsController extends Controller
             }
 
             if ($logClientId > 0) {
-                $this->ensureCrmRecordAccess($logClientId);
+                $this->ensureEmailAccess(
+                    $logClientId,
+                    ! empty($emailLog->client_matter_id) ? (int) $emailLog->client_matter_id : null
+                );
             } else {
                 if (! ($user instanceof \App\Models\Staff && ($user->canViewSyncedInboxMail() || $user->canSyncInboxEmails() || $user->hasEffectiveSuperAdminPrivileges()))) {
                     return response()->json([
@@ -6091,6 +6164,11 @@ class ClientsController extends Controller
         $client_id = $request->client_id;
         $client_matter_id = $request->client_matter_id;
 
+        $this->ensureEmailAccess(
+            (int) $client_id,
+            $client_matter_id ? (int) $client_matter_id : null
+        );
+
         $query = \App\Models\EmailLog::where('client_id', $client_id);
         if ($client_matter_id) {
             $query->where('client_matter_id', $client_matter_id);
@@ -6115,13 +6193,24 @@ class ClientsController extends Controller
             }
 
             if ($clientId > 0) {
-                $this->ensureCrmRecordAccess($clientId);
+                $this->ensureEmailAccess(
+                    $clientId,
+                    ! empty($emailLog->client_matter_id) ? (int) $emailLog->client_matter_id : null
+                );
             } else {
                 $staff = auth('admin')->user();
                 if (! ($staff instanceof \App\Models\Staff && ($staff->canViewSyncedInboxMail() || $staff->canSyncInboxEmails() || $staff->hasEffectiveSuperAdminPrivileges()))) {
                     return response()->json([
                         'success' => false,
                         'error' => 'Unauthorized access to email log'
+                    ], 403);
+                }
+                $gate = app(\App\Services\CrmAccess\StaffAccessGate::class);
+                if ($gate->isFeatureEnabled() && $gate->isRestricted($staff) && ! $gate->hasFullCrmAccess($staff)) {
+                    // Truly unlinked mail stays blocked; grant-linked mail uses ensureEmailAccess above.
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'You can only open emails linked to clients, leads, or matters you have been granted.',
                     ], 403);
                 }
             }
@@ -6593,6 +6682,16 @@ class ClientsController extends Controller
 
         // Calendar invites / ICS events belong on the calendar, not mail lists.
         \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
+
+        // Restricted staff: only emails linked to granted clients / matters.
+        if ($isGlobalSyncedMailView && $staff instanceof \App\Models\Staff) {
+            $accessGate = app(\App\Services\CrmAccess\StaffAccessGate::class);
+            if ($accessGate->isFeatureEnabled()
+                && $accessGate->isRestricted($staff)
+                && ! $accessGate->hasFullCrmAccess($staff)) {
+                $accessGate->applyGrantedEmailLogFilter($query, $staff);
+            }
+        }
 
         if ($folder === 'all' && ! $isGlobalSyncedMailView) {
             $this->applyClientAllMailDuplicateScope($query);
