@@ -274,9 +274,9 @@
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
     align-items: stretch;
     gap: 0;
-    height: 820px;
-    min-height: 820px;
-    max-height: 820px;
+    height: 460px;
+    min-height: 460px;
+    max-height: 460px;
     padding: 0;
     background: var(--background-color);
 }
@@ -1927,9 +1927,9 @@
 
     .dashboard-calendar-body {
         grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
-        height: 780px;
-        min-height: 780px;
-        max-height: 780px;
+        height: 440px;
+        min-height: 440px;
+        max-height: 440px;
     }
 }
 
@@ -1942,9 +1942,9 @@
     }
 
     .dashboard-calendar-wrapper {
-        height: 720px;
-        min-height: 720px;
-        max-height: 720px;
+        height: 400px;
+        min-height: 400px;
+        max-height: 400px;
         padding: 20px;
         overflow: hidden;
     }
@@ -1955,9 +1955,9 @@
     }
 
     .dashboard-upcoming-panel {
-        height: 560px;
-        max-height: 560px;
-        padding: 20px;
+        height: 280px;
+        max-height: 280px;
+        padding: 12px;
     }
 
     .dashboard-upcoming-list {
@@ -4741,6 +4741,465 @@ body > .ts-dropdown {
     .dashboard-welcome-heading {
         flex-direction: column !important;
         align-items: flex-start !important;
+    }
+}
+
+/* Compact working layout — strips the decorative SaaS chrome */
+.main-content {
+    padding: 12px 14px !important;
+}
+
+.dashboard-welcome-banner {
+    background: var(--primary-color) !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    margin-bottom: 10px !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.dashboard-welcome-banner::after {
+    display: none !important;
+}
+
+.dashboard-welcome-heading h1 {
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+}
+
+.dashboard-header-meta {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dashboard-clock-icon {
+    display: none !important;
+}
+
+.dashboard-welcome-banner .action-btn-primary,
+.dashboard-welcome-banner .action-btn-secondary {
+    border-radius: 3px !important;
+    box-shadow: none !important;
+    padding: 5px 10px !important;
+    font-weight: 600 !important;
+}
+
+.dashboard-welcome-banner .action-btn-primary {
+    background: #fff !important;
+    color: var(--primary-color) !important;
+    border: none !important;
+}
+
+.dashboard-welcome-banner .action-btn-primary:hover,
+.dashboard-welcome-banner .action-btn-secondary:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.kpi-cards {
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+}
+
+.kpi-card-modern {
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    box-shadow: none !important;
+    border-color: var(--border-color) !important;
+}
+
+.kpi-card-modern::before,
+.kpi-card-shine,
+.kpi-card-top,
+.kpi-footer {
+    display: none !important;
+}
+
+.kpi-card-modern--link:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.kpi-title {
+    margin: 2px 0 0 !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: var(--text-muted-color) !important;
+}
+
+.kpi-count-number {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+}
+
+.dashboard-calendar-section {
+    margin-bottom: 10px !important;
+    padding: 0 !important;
+}
+
+.dashboard-calendar-card,
+.focus-container,
+.access-approvals-dashboard {
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    border-color: var(--border-color) !important;
+}
+
+.dashboard-calendar-card {
+    margin-bottom: 10px !important;
+}
+
+.dashboard-calendar-header,
+.todo-header,
+.focus-header,
+.access-approvals-header {
+    background: #fff !important;
+    padding: 7px 12px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.dashboard-calendar-header h2,
+.todo-header h3,
+.focus-header h3 {
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    color: var(--primary-color) !important;
+}
+
+.dashboard-calendar-title-group,
+.todo-header-left,
+.focus-header-left {
+    gap: 8px !important;
+}
+
+.dashboard-section-icon-badge,
+.dashboard-section-sub {
+    display: none !important;
+}
+
+.dashboard-cal-type-pill,
+.dashboard-cal-other-btn,
+.dashboard-cal-add-btn,
+.dashboard-calendar-staff-select {
+    border-radius: 3px !important;
+    box-shadow: none !important;
+}
+
+.dashboard-cal-add-btn:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.dashboard-cal-stat {
+    min-width: 42px !important;
+    padding: 2px 6px !important;
+    border-radius: 3px !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+.dashboard-cal-stat--overdue {
+    background: transparent !important;
+}
+
+.dashboard-calendar-body {
+    height: 460px !important;
+    min-height: 460px !important;
+    max-height: 460px !important;
+    background: #fff !important;
+}
+
+.dashboard-calendar-wrapper,
+.dashboard-upcoming-panel {
+    padding: 8px 10px !important;
+}
+
+.dashboard-calendar-surface,
+.dashboard-upcoming-surface {
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.dashboard-calendar-container .fc .fc-toolbar {
+    margin-bottom: 6px !important;
+}
+
+.dashboard-calendar-container .fc-scrollgrid,
+.dashboard-calendar-container .fc-button {
+    border-radius: 3px !important;
+}
+
+.dashboard-calendar-container .fc-daygrid-day-frame {
+    min-height: 2.6rem !important;
+}
+
+.dashboard-calendar-container .fc-col-header-cell-cushion {
+    padding: 4px 0 !important;
+}
+
+.dashboard-calendar-legend {
+    margin: 6px 0 0 !important;
+    gap: 4px 12px !important;
+}
+
+.dashboard-upcoming-header {
+    padding: 0 0 6px !important;
+    margin-bottom: 0 !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.dashboard-upcoming-count,
+.todo-count-badge,
+.badge-count {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    color: var(--text-muted-color) !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    min-width: 0 !important;
+}
+
+.dashboard-upcoming-list {
+    background: transparent !important;
+    border-radius: 0 !important;
+}
+
+.priority-focus {
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+.responsible-matters {
+    margin-bottom: 10px !important;
+}
+
+.todo-add-btn {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 3px !important;
+    background: var(--primary-color) !important;
+    box-shadow: none !important;
+    font-size: 0.75rem !important;
+}
+
+.todo-add-btn:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    background: var(--secondary-color) !important;
+}
+
+.todo-filter-tabs {
+    gap: 0 !important;
+    padding: 0 6px !important;
+    background: #fff !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.todo-filter-tab {
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: var(--text-muted-color) !important;
+}
+
+.todo-filter-tab:hover,
+.todo-filter-tab.is-active {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--primary-color) !important;
+}
+
+.todo-filter-tab.is-active {
+    border-bottom-color: var(--primary-color) !important;
+}
+
+.todo-task-list-container,
+.case-list-container {
+    padding: 0 !important;
+    max-height: 320px !important;
+}
+
+.responsible-matters .case-list-container {
+    max-height: none !important;
+}
+
+.todo-task-item,
+.case-list-item {
+    border: none !important;
+    border-radius: 0 !important;
+    border-bottom: 1px solid #e4eef6 !important;
+    margin: 0 !important;
+    padding: 6px 12px !important;
+    gap: 8px !important;
+    box-shadow: none !important;
+    background: #fff !important;
+}
+
+.todo-task-item:hover,
+.case-list-item:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    background: #f7fafd !important;
+    border-color: #e4eef6 !important;
+}
+
+.case-urgency-border--danger {
+    box-shadow: inset 3px 0 0 var(--danger-color) !important;
+}
+
+.case-urgency-border--warning {
+    box-shadow: inset 3px 0 0 var(--warning-color) !important;
+}
+
+.case-urgency-border--info {
+    box-shadow: none !important;
+}
+
+.todo-task-title,
+.case-details .client-name,
+.responsible-matters .case-details .client-name a {
+    font-size: 0.84rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 1px !important;
+}
+
+.todo-task-meta,
+.case-info {
+    font-size: 0.75rem !important;
+    margin-top: 0 !important;
+}
+
+.task-client-info {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    gap: 4px !important;
+}
+
+.task-client-info i {
+    display: none !important;
+}
+
+.task-client-code,
+.case-details .client-name a {
+    font-family: inherit !important;
+}
+
+.task-complete-checkbox {
+    width: 15px !important;
+    height: 15px !important;
+    border-radius: 2px !important;
+    border-width: 1px !important;
+}
+
+.todo-task-due,
+.stalled-days,
+.case-activity-badge,
+.activity-signed,
+.activity-upload,
+.activity-note,
+.activity-email,
+.activity-sms,
+.activity-status,
+.activity-stage,
+.activity-appointment,
+.activity-payment,
+.activity-deadline,
+.activity-default {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    font-style: normal !important;
+    font-weight: 600 !important;
+}
+
+.case-activity-badge {
+    gap: 5px !important;
+    font-size: 0.75rem !important;
+    color: var(--text-muted-color) !important;
+}
+
+.case-activity-badge:hover {
+    transform: none !important;
+}
+
+.todo-task-due {
+    font-size: 0.75rem !important;
+    color: var(--text-muted-color) !important;
+}
+
+.todo-task-due i {
+    display: none !important;
+}
+
+.todo-task-due.overdue i {
+    display: inline !important;
+}
+
+.todo-task-due.overdue,
+.stalled-days.text-danger {
+    color: var(--danger-color) !important;
+}
+
+.todo-task-due.today,
+.todo-task-due.tomorrow,
+.stalled-days.text-warning {
+    color: #8a5a10 !important;
+}
+
+.activity-email,
+.activity-upload,
+.activity-sms,
+.activity-note,
+.activity-signed,
+.activity-status,
+.activity-stage,
+.activity-appointment,
+.activity-payment,
+.activity-deadline,
+.activity-default {
+    color: var(--text-muted-color) !important;
+}
+
+@media (max-width: 1200px) {
+    .dashboard-calendar-body {
+        height: 440px !important;
+        min-height: 440px !important;
+        max-height: 440px !important;
+    }
+}
+
+@media (max-width: 992px) {
+    .dashboard-calendar-body {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+
+    .dashboard-calendar-wrapper {
+        height: 400px !important;
+        min-height: 400px !important;
+        max-height: 400px !important;
     }
 }
 

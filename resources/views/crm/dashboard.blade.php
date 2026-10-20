@@ -31,10 +31,6 @@
         <header class="dashboard-welcome-banner">
             <div class="dashboard-welcome-content">
                 <div class="dashboard-welcome-text">
-                    <div class="dashboard-welcome-badge">
-                        <span class="dashboard-welcome-badge__dot"></span>
-                        <span class="dashboard-welcome-label">{{ !empty($dw['shell_only']) ? 'Workspace' : 'Workspace Overview' }}</span>
-                    </div>
                     <div class="dashboard-welcome-heading">
                         <h1 id="dashboardGreeting" data-first-name="{{ $staffFirstName }}">{{ $greeting }}, {{ $staffFirstName }}</h1>
                         <div class="dashboard-header-meta">
@@ -150,13 +146,7 @@
             <div class="focus-container todo-container">
                 <div class="todo-header">
                     <div class="todo-header-left">
-                        <div class="dashboard-section-icon-badge dashboard-section-icon-badge--tasks">
-                            <i class="fa-solid fa-list-check"></i>
-                        </div>
-                        <div>
-                            <h3>My Tasks</h3>
-                            <span class="dashboard-section-sub">Personal and matter deadlines</span>
-                        </div>
+                        <h3>My Tasks</h3>
                         <span class="todo-count-badge">{{ $count_note_deadline }}</span>
                     </div>
                     {{-- Add Task popover template (outside attribute to avoid unescaped & in JS) --}}
@@ -198,13 +188,7 @@
             <div class="focus-container dashboard-scroll-anchor" id="recent-matter-activity">
                 <div class="focus-header">
                     <div class="focus-header-left">
-                        <div class="dashboard-section-icon-badge dashboard-section-icon-badge--activity">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                        </div>
-                        <div>
-                            <h3>Recent Matter Activity</h3>
-                            <span class="dashboard-section-sub">Latest updates across matters</span>
-                        </div>
+                        <h3>Recent Matter Activity</h3>
                     </div>
                     <span class="badge-count" id="cases-attention-badge">{{ $count_cases_requiring_attention_data }}</span>
                 </div>

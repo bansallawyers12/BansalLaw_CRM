@@ -27,19 +27,14 @@
         <div class="dashboard-calendar-header">
             <div class="dashboard-calendar-header-left">
                 <div class="dashboard-calendar-title-group">
-                    <div class="dashboard-section-icon-badge dashboard-section-icon-badge--calendar">
-                        <i class="fa-solid fa-calendar-days"></i>
-                    </div>
-                    <div>
-                        <h2>My Calendar</h2>
-                        <p class="dashboard-calendar-subtitle" id="dashboardCalendarSubtitle">
-                            @if(!empty($canFilterCalendarStaff))
-                                All staff appointments, hearings and deadlines
-                            @else
-                                Your appointments, hearings and deadlines
-                            @endif
-                        </p>
-                    </div>
+                    <h2>My Calendar</h2>
+                    <p class="dashboard-calendar-subtitle visually-hidden" id="dashboardCalendarSubtitle">
+                        @if(!empty($canFilterCalendarStaff))
+                            All staff appointments, hearings and deadlines
+                        @else
+                            Your appointments, hearings and deadlines
+                        @endif
+                    </p>
                 </div>
             </div>
             <div class="dashboard-calendar-header-right">

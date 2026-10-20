@@ -10190,6 +10190,69 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   border-top: 1px solid #e2e8f0;
 }
 
+#personaldetails-tab .cdn-ov-matter-temp__head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp__toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp__toggle:focus-visible {
+  outline: 2px solid rgba(58, 111, 168, 0.55);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp__switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background 0.15s ease;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2);
+  transition: transform 0.15s ease;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp.is-open .cdn-ov-matter-temp__switch {
+  background: #1e3d60;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp.is-open .cdn-ov-matter-temp__knob {
+  transform: translateX(14px);
+}
+
+#personaldetails-tab .cdn-ov-matter-temp__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#personaldetails-tab .cdn-ov-matter-temp__body[hidden] {
+  display: none;
+}
+
 #personaldetails-tab .cdn-ov-matter-temp__lede {
   margin: 0;
   font-size: 0.75rem;
@@ -11242,4 +11305,312 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
     max-width: 100%;
     box-sizing: border-box;
   }
+}
+
+/* Compact client overview — drop the decorative SaaS chrome */
+.crm-container.crm-container--unified {
+  --cdn-radius: 4px;
+  --cdn-shadow: none;
+  --cdn-primary: #1e3d60;
+  --cdn-primary-soft: #eef3f8;
+  padding-top: 8px;
+  padding-bottom: 12px;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__inner {
+  gap: 10px 16px;
+  padding: 10px 12px;
+  align-items: center;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: #1e3d60;
+  color: #fff;
+  font-size: 13px;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__identity {
+  gap: 10px;
+  align-items: center;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__name {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__name-edit {
+  width: 26px;
+  height: 26px;
+  border-radius: 3px;
+  background: transparent;
+  color: #5e7a90;
+  border: 1px solid #c8dcef;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__name-edit:hover {
+  background: #f0f6ff;
+  color: #1e3d60;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__meta,
+.crm-container.crm-container--unified .cdn-client-hero__matter-row,
+.crm-container.crm-container--unified .cdn-client-hero__tags {
+  margin-top: 4px;
+  gap: 4px 10px;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__matter-chip,
+.crm-container.crm-container--unified .cdn-client-hero__tag,
+.crm-container.crm-container--unified .cdn-client-hero__tag-toggle-red {
+  border-radius: 3px;
+  padding: 2px 7px;
+  background: transparent;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__tag-add {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  box-shadow: none;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__tag-add:hover {
+  transform: none;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__action-btn {
+  border-radius: 3px;
+  padding: 5px 10px;
+  min-height: 32px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__action-btn--primary {
+  background: #1e3d60;
+  border-color: #1e3d60;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__action-btn--primary:hover {
+  background: #3a6fa8;
+  border-color: #3a6fa8;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__actions {
+  gap: 6px;
+}
+
+.crm-container.crm-container--unified .cdn-client-hero__last-update {
+  margin: 0;
+  padding-top: 4px;
+}
+
+.crm-container.crm-container--unified .cdn-tabs-strip.cdn-main-tab-bar {
+  margin-top: 8px;
+  box-shadow: none;
+}
+
+.crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button {
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  background: transparent !important;
+  padding: 7px 12px !important;
+  color: #5e7a90 !important;
+  box-shadow: none !important;
+}
+
+.crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button:hover {
+  background: transparent !important;
+  color: #1e3d60 !important;
+  border-bottom-color: #c8dcef !important;
+}
+
+.crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button.active,
+.crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button.active span,
+.crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button.active i {
+  background: transparent !important;
+  color: #1e3d60 !important;
+  border-bottom-color: #1e3d60 !important;
+}
+
+#personaldetails-tab .cdn-overview {
+  gap: 10px !important;
+}
+
+#personaldetails-tab .cdn-overview > .cdn-ov-card.card,
+#personaldetails-tab .cdn-overview .cdn-ov-card.card {
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  border-color: #c8dcef !important;
+}
+
+#personaldetails-tab .cdn-overview > .cdn-ov-card.card:hover,
+#personaldetails-tab .cdn-overview .cdn-ov-card.card:hover {
+  box-shadow: none !important;
+  border-color: #c8dcef !important;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__head {
+  padding: 7px 10px;
+  background: #fff;
+  border-bottom-color: #e4eef6;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__icon {
+  display: none;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__title {
+  gap: 6px;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__head h3 {
+  font-size: 0.86rem !important;
+  font-weight: 600 !important;
+  color: #1e3d60 !important;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__action {
+  padding: 3px 8px;
+  border-radius: 3px;
+  box-shadow: none;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-card__body {
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+#personaldetails-tab .cdn-overview #clientMattersListCard .cdn-ov-card__body,
+#personaldetails-tab .cdn-overview #conflictPartiesCard .cdn-ov-card__body {
+  padding-top: 8px;
+}
+
+#personaldetails-tab .cdn-ov-demographics-row {
+  gap: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0 0 6px;
+  border-bottom: 1px solid #e4eef6;
+}
+
+#personaldetails-tab .cdn-ov-demo-tile__label i,
+#personaldetails-tab .cdn-ov-field__label i,
+#personaldetails-tab .cdn-ov-contact-link i,
+#personaldetails-tab .cdn-ov-address-icon,
+#personaldetails-tab .cdn-ov-pulse-dot {
+  display: none;
+}
+
+#personaldetails-tab .cdn-ov-contact-row,
+#personaldetails-tab .cdn-ov-address-row,
+#personaldetails-tab .cdn-ov-member-card,
+#personaldetails-tab .cdn-ov-matter-card-inner,
+#personaldetails-tab .cdn-ov-matter-temp__panel,
+#personaldetails-tab .cdn-ov-conflict-status-card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid #e4eef6;
+  box-shadow: none;
+  padding: 6px 0;
+}
+
+#personaldetails-tab .cdn-ov-contact-row:hover,
+#personaldetails-tab .cdn-ov-member-card:hover,
+#personaldetails-tab .cdn-ov-matter-card-inner:hover {
+  background: transparent;
+  border-color: #e4eef6;
+}
+
+#personaldetails-tab .cdn-ov-matter-card-inner {
+  border-left: 3px solid #1e3d60;
+  padding-left: 8px;
+  gap: 4px;
+}
+
+#personaldetails-tab .cdn-ov-team-list--matter {
+  gap: 0;
+}
+
+#personaldetails-tab .cdn-ov-member-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  background: #1e3d60 !important;
+}
+
+#personaldetails-tab .cdn-ov-card--matter .cdn-ov-member-card--matter {
+  padding: 5px 0;
+  background: transparent;
+}
+
+#personaldetails-tab .cdn-ov-role-pill,
+#personaldetails-tab .cdn-ov-active-matter-pill,
+#personaldetails-tab .cdn-ov-matter-role-tag,
+#personaldetails-tab .cdn-ov-matter-stream-tag,
+#personaldetails-tab .cdn-ov-matter-ref,
+#personaldetails-tab .cdn-overview .cdn-ov-verify-badge {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+#personaldetails-tab .cdn-ov-matter-code,
+#personaldetails-tab .cdn-overview .cdn-ov-matter-ref {
+  font-family: inherit;
+}
+
+#personaldetails-tab .cdn-ov-conflict-status-card__icon {
+  display: none;
+}
+
+#personaldetails-tab .cdn-ov-conflict-status-card {
+  gap: 2px;
+}
+
+#personaldetails-tab .cdn-ov-conflict-status-card.is-checked,
+#personaldetails-tab .cdn-ov-conflict-status-card.is-conflict_found {
+  background: transparent;
+}
+
+#personaldetails-tab .cdn-ov-copy-btn,
+#personaldetails-tab .cdn-ov-map-link {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+}
+
+#personaldetails-tab .cdn-overview .cdn-ov-section-label {
+  letter-spacing: 0.02em;
+  padding-top: 0.2rem;
+}
+
+#personaldetails-tab .cdn-ov-parties-empty-state,
+#personaldetails-tab .cdn-ov-matter-temp__empty {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 6px 0;
+  align-items: flex-start;
+  text-align: left;
+}
+
+#personaldetails-tab .cdn-ov-parties-count-badge,
+#personaldetails-tab .cdn-overview .cdn-ov-count {
+  background: transparent;
+  border-radius: 0;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  color: #5e7a90;
 }
