@@ -751,6 +751,8 @@ class Staff extends Authenticatable
 
     /**
      * Super Admin grant: bypass allocation, matter-team scoping, and assignment-only filters.
+     * When restricted access is enabled, {@see \App\Services\CrmAccess\StaffRestrictedAccessService::hasFullCrmAccess()}
+     * also honors this flag so Staff form and Staff Access stay aligned.
      */
     public function hasFullCrmAllocationAccess(): bool
     {

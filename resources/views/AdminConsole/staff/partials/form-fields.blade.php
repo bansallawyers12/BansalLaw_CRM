@@ -331,7 +331,7 @@
                             @checked(old('has_full_crm_allocation_access', $isEdit ? ($fetchedData->has_full_crm_allocation_access ?? false) : false))>
                         <span>Full CRM access (all clients, leads, matters &amp; email)</span>
                     </label>
-                    <small class="text-muted d-block mt-1">Bypasses allocation and matter-team restrictions so this staff member can open any client, lead, matter, documents, and synced mailbox mail. Only native Super Admin can enable this.</small>
+                    <small class="text-muted d-block mt-1">Bypasses allocation and matter-team restrictions so this staff member can open any client, lead, matter, documents, and synced mailbox mail. Incompatible with Staff Access restricted (grants-only) mode — saving restricted profile clears this flag. Only native Super Admin can enable this.</small>
                 </div>
                 @endif
 

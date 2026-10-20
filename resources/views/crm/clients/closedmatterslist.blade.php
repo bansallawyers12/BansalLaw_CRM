@@ -330,7 +330,6 @@
                                             $closedByName = $closed_by_info
                                                 ? $staffName($closed_by_info)
                                                 : ($isDiscontinued ? 'Unknown' : '—');
-                                            $clientDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
                                             $matterDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)) . '/' . $list->client_unique_matter_no);
                                             $matterRefForName = trim((string) ($list->client_unique_matter_no ?? ''));
                                             $clientName = trim((string) ($list->opposing_party_name ?? ''));
@@ -351,7 +350,7 @@
                                                 <span class="matter-cell-meta matter-cell-meta--chip">{{ $list->client_unique_matter_no ?: 'No matter no.' }}</span>
                                             </td>
                                             <td>
-                                                <a class="matter-cell-primary" href="{{ $clientDetailUrl }}" title="Open client">
+                                                <a class="matter-cell-primary" href="{{ $matterDetailUrl }}" title="Open matter">
                                                     {{ $clientName }}
                                                 </a>
                                                 <span class="matter-cell-meta">{{ $list->client_unique_id ?: ('#' . $list->client_id) }}</span>

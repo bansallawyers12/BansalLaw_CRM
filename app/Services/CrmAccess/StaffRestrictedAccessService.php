@@ -157,7 +157,9 @@ class StaffRestrictedAccessService
     }
 
     /**
-     * Super Admin only for full CRM bypass under restricted-access mode.
+     * Full CRM bypass under restricted-access mode: native Super Admin, effective super admin,
+     * or the per-staff {@see Staff::hasFullCrmAllocationAccess()} grant (same flag as Staff form
+     * and Staff Access "see all records").
      */
     public function hasFullCrmAccess(Staff $staff): bool
     {
@@ -175,7 +177,37 @@ class StaffRestrictedAccessService
             return true;
         }
 
+        if (method_exists($staff, 'hasFullCrmAllocationAccess') && $staff->hasFullCrmAllocationAccess()) {
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * After Staff save: if full allocation access is on, ensure profile is not stuck in restricted mode.
+     */
+    public function syncFullCrmAllocationAccessAfterStaffSave(Staff $target, bool $enabled, ?Staff $actor = null): void
+    {
+        if (! $enabled || ! $this->isFeatureEnabled() || ! Schema::hasTable('staff_access_profiles')) {
+            return;
+        }
+
+        $profile = StaffAccessProfile::query()->where('staff_id', (int) $target->id)->first();
+        if (! $profile || $profile->access_mode !== StaffAccessProfile::MODE_RESTRICTED) {
+            return;
+        }
+
+        $this->updateAccessProfile(
+            $target,
+            StaffAccessProfile::MODE_FULL,
+            [],
+            (bool) ($profile->can_view_own_profile ?? true),
+            (bool) ($profile->can_view_dashboard ?? true),
+            $actor,
+            [],
+            []
+        );
     }
 
     /**
@@ -375,6 +407,12 @@ class StaffRestrictedAccessService
         $before = $profile->exists ? $profile->toArray() : null;
 
         $restricted = $accessMode === StaffAccessProfile::MODE_RESTRICTED;
+
+        if ($restricted && Schema::hasColumn('staff', 'has_full_crm_allocation_access') && $target->hasFullCrmAllocationAccess()) {
+            $target->forceFill(['has_full_crm_allocation_access' => false]);
+            $target->save();
+        }
+
         $profile->access_mode = $accessMode;
         $profile->dashboard_widgets = $restricted ? $widgets : [];
         $profile->nav_modules = $restricted ? $navModules : [];

@@ -223,7 +223,13 @@ class StaffController extends Controller
             }
 
             $storeActorStaff = $storeActor instanceof Staff ? $storeActor : null;
-            app(StaffRestrictedAccessService::class)->syncProfileIfRestrictedRole($obj->fresh(), $storeActorStaff);
+            $freshStaff = $obj->fresh();
+            app(StaffRestrictedAccessService::class)->syncProfileIfRestrictedRole($freshStaff, $storeActorStaff);
+            app(StaffRestrictedAccessService::class)->syncFullCrmAllocationAccessAfterStaffSave(
+                $freshStaff,
+                (bool) ($freshStaff->has_full_crm_allocation_access ?? false),
+                $storeActorStaff
+            );
 
             app(StaffMailboxService::class)->syncFromStaff(
                 $obj->fresh(),
@@ -377,10 +383,16 @@ class StaffController extends Controller
 
             if ($saved) {
                 $actorStaff = $actor instanceof Staff ? $actor : null;
-                app(StaffRestrictedAccessService::class)->syncProfileIfRestrictedRole($staff->fresh(), $actorStaff);
+                $freshStaff = $staff->fresh();
+                app(StaffRestrictedAccessService::class)->syncProfileIfRestrictedRole($freshStaff, $actorStaff);
+                app(StaffRestrictedAccessService::class)->syncFullCrmAllocationAccessAfterStaffSave(
+                    $freshStaff,
+                    (bool) ($freshStaff->has_full_crm_allocation_access ?? false),
+                    $actorStaff
+                );
 
                 app(StaffMailboxService::class)->syncFromStaff(
-                    $staff->fresh(),
+                    $freshStaff,
                     $requestData['zoho_app_password'] ?? null,
                     $previousEmail
                 );
