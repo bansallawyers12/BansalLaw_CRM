@@ -136,9 +136,9 @@ return [
     |--------------------------------------------------------------------------
     | Preserve unread state in Zoho / Outlook during sync
     |--------------------------------------------------------------------------
-    | When true, CRM uses IMAP BODY.PEEK so fetching mail for import does not
-    | set the \Seen flag on the mailbox. Read/unread in the CRM is tracked
-    | separately via email_logs.mail_is_read.
+    | When true, CRM fetches message bodies with IMAP BODY.PEEK[] so importing
+    | mail does not set the \Seen flag. Outlook then keeps new Zoho mail unread.
+    | Read/unread inside the CRM is tracked separately via email_logs.mail_is_read.
     */
     'use_peek_fetch' => env('MAIL_SYNC_USE_PEEK_FETCH', true),
 

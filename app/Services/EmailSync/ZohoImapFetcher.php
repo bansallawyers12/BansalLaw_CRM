@@ -188,6 +188,11 @@ class ZohoImapFetcher
             $candidateUids = array_map(static fn (array $row): int => (int) $row['uid'], $headerRows);
             $seenByUid = $this->readSeenFlagsFromClient($client, $candidateUids);
             $skipUids = $knownMessageFilter->knownUidsWithoutBodyFetch($mailbox, $mailBodyType, $headerRows);
+            $bodyUids = array_values(array_filter(
+                $candidateUids,
+                static fn (int $uid): bool => ! isset($skipUids[$uid])
+            ));
+            $rawByUid = $this->fetchBodiesWithoutMarkingSeen($client, $bodyUids);
 
             foreach ($headerRows as $row) {
                 $uid = (int) $row['uid'];
@@ -210,8 +215,7 @@ class ZohoImapFetcher
                     continue;
                 }
 
-                $this->ensureMessageBodyFetched($message);
-                $rawEml = $this->buildRawEml($message);
+                $rawEml = $rawByUid[$uid] ?? '';
                 if ($rawEml === '') {
                     continue;
                 }
@@ -259,12 +263,18 @@ class ZohoImapFetcher
 
         $query = $this->buildFolderQuery($folder, $afterUid, $limit, $since);
         $query = $this->applyPeekFetch($query);
+        if ($this->usePeekFetch() && method_exists($query, 'setFetchBody')) {
+            // Library body fetch uses RFC822.TEXT, which sets \Seen. Headers only here.
+            $query->setFetchBody(false);
+        }
 
         /** @var MessageCollection $messages */
         $messages = $query->get();
         if ($since === null && $afterUid <= 0) {
             $messages = $messages->reverse();
         }
+
+        $pending = [];
 
         /** @var Message $message */
         foreach ($messages as $message) {
@@ -273,27 +283,42 @@ class ZohoImapFetcher
                 continue;
             }
 
-            $isSeen = $this->usePeekFetch()
-                ? (bool) ($seenByUid[$uid] ?? false)
-                : $this->messageIsSeen($message);
+            $pending[] = [
+                'uid' => $uid,
+                'message' => $message,
+                'is_seen' => $this->usePeekFetch()
+                    ? (bool) ($seenByUid[$uid] ?? false)
+                    : $this->messageIsSeen($message),
+            ];
 
-            $rawEml = $this->buildRawEml($message);
+            if (count($pending) >= $limit) {
+                break;
+            }
+        }
+
+        $rawByUid = $this->usePeekFetch()
+            ? $this->fetchBodiesWithoutMarkingSeen($client, array_map(static fn (array $row): int => $row['uid'], $pending))
+            : [];
+
+        foreach ($pending as $row) {
+            /** @var Message $message */
+            $message = $row['message'];
+            $uid = (int) $row['uid'];
+            $rawEml = $this->usePeekFetch()
+                ? ($rawByUid[$uid] ?? '')
+                : $this->rawEmlFromLoadedMessage($message);
             if ($rawEml === '') {
                 continue;
             }
 
-            $this->restoreUnreadStateIfNeeded($message, $isSeen);
+            $this->restoreUnreadStateIfNeeded($message, (bool) $row['is_seen']);
 
             $results[] = [
                 'uid' => $uid,
                 'raw_eml' => $rawEml,
                 'subject' => (string) ($message->getSubject()?->toString() ?? ''),
-                'is_seen' => $isSeen,
+                'is_seen' => (bool) $row['is_seen'],
             ];
-
-            if (count($results) >= $limit) {
-                break;
-            }
         }
 
         usort($results, static fn (array $a, array $b) => $a['uid'] <=> $b['uid']);
@@ -346,6 +371,97 @@ class ZohoImapFetcher
         }
 
         return '';
+    }
+
+    /**
+     * Download full messages with BODY.PEEK[] so Zoho does not set \Seen.
+     *
+     * webklex content() fetches RFC822.TEXT, which IMAP defines as BODY[TEXT]
+     * and which marks the message read. Outlook then syncs that flag.
+     *
+     * @param  list<int>  $uids
+     * @return array<int, string> uid => raw RFC822 message
+     */
+    protected function fetchBodiesWithoutMarkingSeen(Client $client, array $uids): array
+    {
+        if (! $this->usePeekFetch()) {
+            return [];
+        }
+
+        $uids = array_values(array_unique(array_filter(
+            array_map('intval', $uids),
+            static fn (int $uid): bool => $uid > 0
+        )));
+        if ($uids === []) {
+            return [];
+        }
+
+        $connection = $client->getConnection();
+        $rawByUid = [];
+
+        foreach (array_chunk($uids, 10) as $chunk) {
+            $tag = null;
+            $response = $connection->sendRequest(
+                'UID FETCH',
+                [implode(',', $chunk), '(UID BODY.PEEK[])'],
+                $tag
+            );
+            $tokens = [];
+            while (! $connection->readLine($response, $tokens, (string) $tag)) {
+                if (! is_array($tokens) || ($tokens[1] ?? null) !== 'FETCH' || ! is_array($tokens[2] ?? null)) {
+                    continue;
+                }
+
+                $parsed = self::rawMessageFromFetchPayload($tokens[2]);
+                if ($parsed === null) {
+                    continue;
+                }
+
+                $rawByUid[$parsed['uid']] = $parsed['raw'];
+            }
+        }
+
+        return $rawByUid;
+    }
+
+    /**
+     * @param  array<int, mixed>  $payload
+     * @return array{uid: int, raw: string}|null
+     */
+    public static function rawMessageFromFetchPayload(array $payload): ?array
+    {
+        $uid = 0;
+        $body = null;
+        $count = count($payload);
+
+        for ($i = 0; $i < $count; $i++) {
+            $key = $payload[$i];
+            if (! is_string($key)) {
+                continue;
+            }
+
+            $normalized = strtoupper($key);
+            if ($normalized === 'UID' && isset($payload[$i + 1]) && is_scalar($payload[$i + 1])) {
+                $uid = (int) $payload[$i + 1];
+            }
+
+            if (str_starts_with($normalized, 'BODY') && isset($payload[$i + 1]) && is_string($payload[$i + 1])) {
+                $body = $payload[$i + 1];
+            }
+        }
+
+        if ($uid <= 0 || ! is_string($body) || $body === '') {
+            return null;
+        }
+
+        return ['uid' => $uid, 'raw' => $body];
+    }
+
+    protected function rawEmlFromLoadedMessage(Message $message): string
+    {
+        $this->ensureMessageBodyFetched($message);
+
+        return $this->buildRawEml($message);
     }
 
     protected function ensureMessageBodyFetched(Message $message): void
@@ -560,7 +676,9 @@ class ZohoImapFetcher
                 }
 
                 $isSeen = $this->messageIsSeen($message);
-                $rawEml = $this->buildRawEml($message);
+                $rawEml = $this->usePeekFetch()
+                    ? ($this->fetchBodiesWithoutMarkingSeen($client, [(int) $message->getUid()])[(int) $message->getUid()] ?? '')
+                    : $this->rawEmlFromLoadedMessage($message);
                 $this->restoreUnreadStateIfNeeded($message, $isSeen);
 
                 if ($rawEml === '') {
@@ -581,7 +699,9 @@ class ZohoImapFetcher
                 $message = $this->findMessageByUid($folder, $uid);
                 if ($message instanceof Message) {
                     $isSeen = $this->messageIsSeen($message);
-                    $rawEml = $this->buildRawEml($message);
+                    $rawEml = $this->usePeekFetch()
+                    ? ($this->fetchBodiesWithoutMarkingSeen($client, [(int) $message->getUid()])[(int) $message->getUid()] ?? '')
+                    : $this->rawEmlFromLoadedMessage($message);
                     $this->restoreUnreadStateIfNeeded($message, $isSeen);
                     if ($rawEml !== '') {
                         return [
@@ -641,7 +761,9 @@ class ZohoImapFetcher
         return [
             'fetch' => $this->usePeekFetch() ? IMAP::FT_PEEK : IMAP::FT_UID,
             'sequence' => IMAP::ST_UID,
-            'fetch_body' => true,
+            // Bodies are loaded with BODY.PEEK[] below. The library's RFC822.TEXT
+            // fetch sets \Seen, which makes new Zoho mail show as read in Outlook.
+            'fetch_body' => ! $this->usePeekFetch(),
             'fetch_flags' => true,
             // Prevents SINCE "11-Aug-2026" (quoted) which Zoho IMAP rejects.
             'unescaped_search_dates' => true,
@@ -965,7 +1087,11 @@ class ZohoImapFetcher
     {
         if (method_exists($folder, 'query')) {
             try {
-                $messages = $folder->query()->where('CUSTOM UID '.$uid)->limit(1)->get();
+                $lookup = $folder->query()->where('CUSTOM UID '.$uid)->limit(1);
+                if ($this->usePeekFetch() && method_exists($lookup, 'setFetchBody')) {
+                    $lookup->setFetchBody(false);
+                }
+                $messages = $lookup->get();
                 $message = $messages->first();
                 if ($message instanceof Message) {
                     return $message;
@@ -975,7 +1101,11 @@ class ZohoImapFetcher
 
             try {
                 if (method_exists($folder->query(), 'whereUid')) {
-                    $messages = $folder->query()->whereUid($uid)->limit(1)->get();
+                    $lookup = $folder->query()->whereUid($uid)->limit(1);
+                    if ($this->usePeekFetch() && method_exists($lookup, 'setFetchBody')) {
+                        $lookup->setFetchBody(false);
+                    }
+                    $messages = $lookup->get();
                     $message = $messages->first();
                     if ($message instanceof Message) {
                         return $message;

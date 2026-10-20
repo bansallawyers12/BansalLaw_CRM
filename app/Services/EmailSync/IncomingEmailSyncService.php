@@ -727,6 +727,10 @@ class IncomingEmailSyncService
                 $storeImapUid = null;
             }
 
+            // Read state follows the IMAP folder, not the filing type. A firm-domain
+            // sender found in INBOX is still new mail for that mailbox and stays unread.
+            $mailIsRead = $defaultMailType === 'sent';
+
             if ($mailType === 'sent' && $this->isBeforeSentAvailabilityFloor($parsedData)) {
                 InboxSyncLogger::info('Skipped sent mail before Sent availability floor', [
                     'mailbox' => $mailbox->email,
@@ -755,7 +759,8 @@ class IncomingEmailSyncService
                     $staffUserId,
                     $storeImapUid,
                     $messageId,
-                    $fileHash
+                    $fileHash,
+                    $mailIsRead
                 );
             }
 
@@ -802,9 +807,10 @@ class IncomingEmailSyncService
                     'imap_uid' => $storeImapUid,
                     'message_id' => $messageId,
                     'sync_source' => $this->currentSyncSource,
-                    // New incoming mail must always appear unread in the CRM; the IMAP
-                    // \Seen flag is unreliable (body fetch or webmail access sets it).
-                    'mail_is_read' => $mailType === 'sent',
+                    // New INBOX mail must stay unread. The IMAP \Seen flag is unreliable
+                    // (body fetch or webmail access sets it), and filing type is not
+                    // the same as the folder the message was fetched from.
+                    'mail_is_read' => $mailIsRead,
                 ],
                 $parsedData
             );
@@ -845,7 +851,8 @@ class IncomingEmailSyncService
         int $staffUserId,
         ?int $storeImapUid,
         string $messageId,
-        string $fileHash
+        string $fileHash,
+        bool $mailIsRead = false
     ): array {
         $importedAny = false;
         $errors = [];
@@ -896,7 +903,7 @@ class IncomingEmailSyncService
                     'imap_uid' => $storeImapUid,
                     'message_id' => $messageId,
                     'sync_source' => $this->currentSyncSource,
-                    'mail_is_read' => $mailType === 'sent',
+                    'mail_is_read' => $mailIsRead,
                 ],
                 $parsedData
             );
