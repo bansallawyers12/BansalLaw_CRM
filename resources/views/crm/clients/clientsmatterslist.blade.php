@@ -71,10 +71,6 @@
     $staffById = $staffIds
         ? \App\Models\Staff::query()->whereIn('id', $staffIds)->get(['id', 'first_name', 'last_name'])->keyBy('id')
         : collect();
-    $officeIds = collect($lists->items())->pluck('office_id')->filter()->unique()->values()->all();
-    $officesById = $officeIds
-        ? \App\Models\Branch::query()->whereIn('id', $officeIds)->get()->keyBy('id')
-        : collect();
 @endphp
 
 <div id="matters-listing-root"
@@ -307,7 +303,6 @@
                                     <th class="sortable-header">
                                         <a href="{{ $buildSortUrl('cm.created_at') }}">Created {!! $sortIcon('cm.created_at') !!}</a>
                                     </th>
-                                    <th>Office</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -318,7 +313,6 @@
                                             $legal_practitioner_info = $staffById->get($list->sel_legal_practitioner);
                                             $person_responsible = $staffById->get($list->sel_person_responsible);
                                             $person_assisting = $staffById->get($list->sel_person_assisting);
-                                            $matter_office = $list->office_id ? $officesById->get($list->office_id) : null;
                                             $clientDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
                                             $matterDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)) . '/' . $list->client_unique_matter_no);
                                             $dobDisplay = ! empty($list->dob) && strtotime($list->dob)
@@ -367,36 +361,6 @@
                                             </td>
                                             <td><span class="matter-date">{{ $createdDisplay }}</span></td>
                                             <td>
-                                                <div class="matter-office">
-                                                    @if($matter_office)
-                                                        <span class="matter-office-badge is-set">
-                                                            <i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}
-                                                        </span>
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-outline-primary matter-office-btn edit-office-btn"
-                                                            data-matter-id="{{ $list->id }}"
-                                                            data-matter-no="{{ $list->client_unique_matter_no }}"
-                                                            data-matter-title="{{ $list->title }}"
-                                                            data-office-id="{{ $list->office_id }}"
-                                                            title="Change office">
-                                                            <i class="fa-solid fa-pen-to-square"></i> Change
-                                                        </button>
-                                                    @else
-                                                        <span class="matter-office-badge is-unset">
-                                                            <i class="fa-solid fa-circle-exclamation"></i> Not assigned
-                                                        </span>
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-success matter-office-btn assign-office-btn"
-                                                            data-matter-id="{{ $list->id }}"
-                                                            data-matter-no="{{ $list->client_unique_matter_no }}"
-                                                            data-matter-title="{{ $list->title }}"
-                                                            title="Assign office">
-                                                            <i class="fa-solid fa-plus"></i> Assign
-                                                        </button>
-                                                    @endif
-                                                </div>
-                                            </td>
-                                            <td>
                                                 <div class="matter-actions">
                                                     <a href="{{ $matterDetailUrl }}" class="matter-action-btn" title="Open matter">
                                                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -421,7 +385,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="7">
+                                        <td colspan="6">
                                             <div class="matters-empty">
                                                 <i class="fa-regular fa-folder-open"></i>
                                                 <p>No matters found</p>
@@ -449,7 +413,6 @@
     </section>
 </div>
 
-@include('crm.clients.modals.edit-matter-office')
 @endsection
 
 @push('scripts')
@@ -473,60 +436,6 @@ jQuery(document).ready(function($){
 
     $('#filterToggleBtn, .matters-listing .filter_btn').on('click', function(){
         $('#matterFilterPanel').toggleClass('is-open');
-    });
-
-    $(document).on('click', '.assign-office-btn, .edit-office-btn', function(e) {
-        e.preventDefault();
-        var matterId = $(this).data('matter-id');
-        var matterNo = $(this).data('matter-no');
-        var matterTitle = $(this).data('matter-title');
-        var officeId = $(this).data('office-id') || '';
-
-        $('#edit_matter_id').val(matterId);
-        $('#modal_matter_number').text(matterNo);
-        $('#modal_matter_title').text(matterTitle || 'N/A');
-        $('#edit_office_id').val(officeId).trigger('change');
-        $('#editMatterOfficeModal').modal('show');
-    });
-
-    $('#editMatterOfficeForm').on('submit', function(e) {
-        e.preventDefault();
-        var formData = $(this).serialize();
-        var submitBtn = $(this).find('button[type="submit"]');
-        var originalText = submitBtn.html();
-        submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
-
-        $.ajax({
-            url: '{{ route("matters.update-office") }}',
-            method: 'POST',
-            data: formData,
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    if (typeof iziToast !== 'undefined') {
-                        iziToast.success({ title: 'Success', message: response.message, position: 'topRight' });
-                    }
-                    setTimeout(function() { location.reload(); }, 900);
-                } else {
-                    if (typeof iziToast !== 'undefined') {
-                        iziToast.error({ title: 'Error', message: response.message || 'Failed to update office', position: 'topRight' });
-                    }
-                    submitBtn.prop('disabled', false).html(originalText);
-                }
-            },
-            error: function(xhr) {
-                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred. Please try again.';
-                if (typeof iziToast !== 'undefined') {
-                    iziToast.error({ title: 'Error', message: errorMsg, position: 'topRight' });
-                }
-                submitBtn.prop('disabled', false).html(originalText);
-            }
-        });
-    });
-
-    $('#editMatterOfficeModal').on('hidden.bs.modal', function() {
-        $('#editMatterOfficeForm')[0].reset();
-        $('#edit_office_id').val('').trigger('change');
     });
 });
 </script>

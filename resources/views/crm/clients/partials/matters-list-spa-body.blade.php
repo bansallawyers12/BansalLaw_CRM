@@ -71,10 +71,6 @@
     $staffById = $staffIds
         ? \App\Models\Staff::query()->whereIn('id', $staffIds)->get(['id', 'first_name', 'last_name'])->keyBy('id')
         : collect();
-    $officeIds = collect($lists->items())->pluck('office_id')->filter()->unique()->values()->all();
-    $officesById = $officeIds
-        ? \App\Models\Branch::query()->whereIn('id', $officeIds)->get()->keyBy('id')
-        : collect();
 @endphp
 
 <div class="filter_panel{{ $activeMatterFilters > 0 ? ' is-open' : '' }}" id="matterFilterPanel">
@@ -255,7 +251,6 @@
                     <th>Status</th>
                     <th class="sortable-header"><a href="{{ $buildSortUrl('cm.updated_at') }}">Closed {!! $sortIcon('cm.updated_at') !!}</a></th>
                     <th>Reason</th>
-                    <th>Office</th>
                     <th class="text-end">Actions</th>
                 </tr>
             @else
@@ -275,7 +270,6 @@
                     <th class="sortable-header">
                         <a href="{{ $buildSortUrl('cm.created_at') }}">Created {!! $sortIcon('cm.created_at') !!}</a>
                     </th>
-                    <th>Office</th>
                     <th class="text-end">Actions</th>
                 </tr>
             @endif
@@ -287,7 +281,6 @@
                         $legal_practitioner_info = $staffById->get($list->sel_legal_practitioner);
                         $person_responsible = $staffById->get($list->sel_person_responsible);
                         $person_assisting = $staffById->get($list->sel_person_assisting);
-                        $matter_office = $list->office_id ? $officesById->get($list->office_id) : null;
                         $clientDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)));
                         $matterDetailUrl = URL::to('/clients/detail/' . base64_encode(convert_uuencode($list->client_id)) . '/' . $list->client_unique_matter_no);
                         $matterRefForName = trim((string) ($list->client_unique_matter_no ?? ''));
@@ -367,19 +360,6 @@
                                 @endif
                             </td>
                             <td>
-                                <div class="matter-office">
-                                    @if($matter_office)
-                                        <span class="matter-office-badge is-set">
-                                            <i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}
-                                        </span>
-                                    @else
-                                        <span class="matter-office-badge is-unset">
-                                            <i class="fa-solid fa-circle-exclamation"></i> Not assigned
-                                        </span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td>
                                 <div class="matter-actions">
                                     <a href="{{ $matterDetailUrl }}" class="matter-action-btn" title="Open matter">
                                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -450,36 +430,6 @@
                             </td>
                             <td><span class="matter-date">{{ $createdDisplay }}</span></td>
                             <td>
-                                <div class="matter-office">
-                                    @if($matter_office)
-                                        <span class="matter-office-badge is-set">
-                                            <i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}
-                                        </span>
-                                        <button type="button"
-                                            class="btn btn-sm btn-outline-primary matter-office-btn edit-office-btn"
-                                            data-matter-id="{{ $list->id }}"
-                                            data-matter-no="{{ $list->client_unique_matter_no }}"
-                                            data-matter-title="{{ $list->title }}"
-                                            data-office-id="{{ $list->office_id }}"
-                                            title="Change office">
-                                            <i class="fa-solid fa-pen-to-square"></i> Change
-                                        </button>
-                                    @else
-                                        <span class="matter-office-badge is-unset">
-                                            <i class="fa-solid fa-circle-exclamation"></i> Not assigned
-                                        </span>
-                                        <button type="button"
-                                            class="btn btn-sm btn-success matter-office-btn assign-office-btn"
-                                            data-matter-id="{{ $list->id }}"
-                                            data-matter-no="{{ $list->client_unique_matter_no }}"
-                                            data-matter-title="{{ $list->title }}"
-                                            title="Assign office">
-                                            <i class="fa-solid fa-plus"></i> Assign
-                                        </button>
-                                    @endif
-                                </div>
-                            </td>
-                            <td>
                                 <div class="matter-actions">
                                     <a href="{{ $matterDetailUrl }}" class="matter-action-btn" title="Open matter">
                                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -505,7 +455,7 @@
                 @endforeach
             @else
                 <tr>
-                    <td colspan="{{ $isClosed ? 8 : 7 }}">
+                    <td colspan="{{ $isClosed ? 7 : 6 }}">
                         <div class="matters-empty">
                             <i class="fa-regular fa-folder-open"></i>
                             <p>{{ $isClosed ? 'No closed matters found' : 'No matters found' }}</p>
