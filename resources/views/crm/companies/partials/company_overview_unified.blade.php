@@ -90,23 +90,6 @@
             </span>
         </div>
         @endif
-    </div>
-    @if(!empty($cdnHeroLastUpdateOn))
-    <footer class="cdn-ov-card__foot">
-        Last update on {{ $cdnHeroLastUpdateOn }}
-    </footer>
-    @endif
-</article>
-
-{{-- Company Phone & Email Card --}}
-<article class="card cdn-ov-card">
-    <header class="cdn-ov-card__head">
-        <div class="cdn-ov-card__title">
-            <span class="cdn-ov-card__icon" aria-hidden="true"><i class="fa-solid fa-phone"></i></span>
-            <h3>Contact Information</h3>
-        </div>
-    </header>
-    <div class="cdn-ov-card__body cdn-ov-card__body--grid cdn-ov-card__body--scroll">
         <div class="cdn-ov-field">
             <span class="cdn-ov-field__label">Phone</span>
             <span class="cdn-ov-field__value cdn-ov-field__value--stack">
@@ -148,7 +131,6 @@
                 }?>
             </span>
         </div>
-
         <div class="cdn-ov-field">
             <span class="cdn-ov-field__label">Email</span>
             <span class="cdn-ov-field__value cdn-ov-field__value--stack">
@@ -182,6 +164,11 @@
             </span>
         </div>
     </div>
+    @if(!empty($cdnHeroLastUpdateOn))
+    <footer class="cdn-ov-card__foot">
+        Last update on {{ $cdnHeroLastUpdateOn }}
+    </footer>
+    @endif
 </article>
 
 @php $contactPerson = optional($fetchedData->company)->contactPerson; @endphp
