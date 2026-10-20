@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Models\UserRole;
 use App\Services\CrmAccess\CrmAccessService;
+use App\Services\CrmAccess\StaffRestrictedAccessService;
 use App\Services\StaffMailboxService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -221,6 +222,9 @@ class StaffController extends Controller
                 throw new \RuntimeException(config('constants.server_error'));
             }
 
+            $storeActorStaff = $storeActor instanceof Staff ? $storeActor : null;
+            app(StaffRestrictedAccessService::class)->syncProfileIfRestrictedRole($obj->fresh(), $storeActorStaff);
+
             app(StaffMailboxService::class)->syncFromStaff(
                 $obj->fresh(),
                 $requestData['zoho_app_password'] ?? null
@@ -372,6 +376,9 @@ class StaffController extends Controller
             $saved = $staff->save();
 
             if ($saved) {
+                $actorStaff = $actor instanceof Staff ? $actor : null;
+                app(StaffRestrictedAccessService::class)->syncProfileIfRestrictedRole($staff->fresh(), $actorStaff);
+
                 app(StaffMailboxService::class)->syncFromStaff(
                     $staff->fresh(),
                     $requestData['zoho_app_password'] ?? null,

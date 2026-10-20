@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DashboardRequest;
 use App\Models\AppointmentConsultant;
 use App\Models\Staff;
+use App\Services\CrmAccess\StaffAccessGate;
 use App\Services\DashboardService;
 use App\Services\StaffPersonalCalendarFeedService;
 use Illuminate\Http\Request;
@@ -18,13 +19,17 @@ class DashboardController extends Controller
 
     protected StaffPersonalCalendarFeedService $personalCalendarFeed;
 
+    protected StaffAccessGate $accessGate;
+
     public function __construct(
         DashboardService $dashboardService,
-        StaffPersonalCalendarFeedService $personalCalendarFeed
+        StaffPersonalCalendarFeedService $personalCalendarFeed,
+        StaffAccessGate $accessGate
     ) {
         $this->middleware('auth:admin');
         $this->dashboardService = $dashboardService;
         $this->personalCalendarFeed = $personalCalendarFeed;
+        $this->accessGate = $accessGate;
     }
 
     /**
@@ -32,11 +37,23 @@ class DashboardController extends Controller
      */
     public function index(DashboardRequest $request)
     {
-        $dashboardData = $this->dashboardService->getDashboardData($request);
         $staff = Auth::guard('admin')->user();
+        $widgetFlags = $this->accessGate->dashboardWidgetFlags($staff instanceof Staff ? $staff : null);
+
+        $needsWidgetData = $widgetFlags['active_matters']
+            || $widgetFlags['closed_matters']
+            || $widgetFlags['tasks']
+            || $widgetFlags['recent_activity'];
+
+        $dashboardData = $needsWidgetData
+            ? $this->dashboardService->getDashboardData($request)
+            : $this->emptyDashboardPayload();
+
+        $dashboardData['dashboardWidgets'] = $widgetFlags;
 
         if ($staff instanceof Staff) {
-            $canAccessPersonalCalendar = $staff->canAccessPersonalCalendar();
+            $canAccessPersonalCalendar = $staff->canAccessPersonalCalendar()
+                && $this->accessGate->canDashboardWidget($staff, 'calendar');
             $dashboardData['canAccessPersonalCalendar'] = $canAccessPersonalCalendar;
             $dashboardData['calendarStats'] = null;
             $dashboardData['bookingCalendarType'] = $canAccessPersonalCalendar
@@ -70,20 +87,90 @@ class DashboardController extends Controller
     }
 
     /**
+     * Minimal payload when restricted users have no dashboard widgets.
+     *
+     * @return array<string, mixed>
+     */
+    protected function emptyDashboardPayload(): array
+    {
+        return [
+            'notesData' => [],
+            'notes_current_page' => 1,
+            'notes_last_page' => 1,
+            'notes_per_page' => 10,
+            'cases_requiring_attention_data' => [],
+            'cases_current_page' => 1,
+            'cases_last_page' => 1,
+            'cases_per_page' => 10,
+            'count_active_matter' => 0,
+            'count_closed_matter' => 0,
+            'count_note_deadline' => 0,
+            'count_cases_requiring_attention_data' => 0,
+            'dashboardAssignableStaff' => collect(),
+        ];
+    }
+
+    /**
      * JSON summary for AJAX dashboard refresh (KPIs, lists, calendar stats).
      */
     public function summary(Request $request)
     {
         $user = Auth::guard('admin')->user() ?: Auth::user();
+        $staff = $user instanceof Staff ? $user : null;
+        $widgetFlags = $this->accessGate->dashboardWidgetFlags($staff);
+
+        if ($widgetFlags['shell_only']) {
+            return response()->json([
+                'success' => true,
+                'kpis' => [
+                    'active_matters' => 0,
+                    'closed_matters' => 0,
+                    'note_deadline' => 0,
+                    'recent_activity' => 0,
+                ],
+                'calendar_stats' => null,
+                'widgets' => $widgetFlags,
+            ]);
+        }
+
         $perPage = max(1, min(50, (int) $request->input('per_page', config('crm.dashboard.list_per_page', 10))));
         $fresh = $request->boolean('fresh', true);
 
         $payload = $this->dashboardService->getRefreshSummary($user, $perPage, $fresh);
 
-        $staff = $user instanceof Staff ? $user : null;
-        $payload['calendar_stats'] = ($staff && $staff->canAccessPersonalCalendar())
+        if (! $widgetFlags['active_matters']) {
+            $payload['kpis']['active_matters'] = 0;
+        }
+        if (! $widgetFlags['closed_matters']) {
+            $payload['kpis']['closed_matters'] = 0;
+        }
+        if (! $widgetFlags['tasks']) {
+            $payload['kpis']['note_deadline'] = 0;
+            $payload['tasks'] = [
+                'html' => '',
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => $perPage,
+                'total' => 0,
+            ];
+        }
+        if (! $widgetFlags['recent_activity']) {
+            $payload['kpis']['recent_activity'] = 0;
+            $payload['cases'] = [
+                'html' => '',
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => $perPage,
+                'total' => 0,
+            ];
+        }
+
+        $payload['calendar_stats'] = ($staff
+            && $widgetFlags['calendar']
+            && $staff->canAccessPersonalCalendar())
             ? $this->personalCalendarFeed->statsForViewer($staff, $request)
             : null;
+        $payload['widgets'] = $widgetFlags;
 
         return response()->json(array_merge(['success' => true], $payload));
     }
@@ -96,6 +183,13 @@ class DashboardController extends Controller
         $staff = Auth::guard('admin')->user();
         if (! $staff instanceof Staff) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if (! $this->accessGate->canDashboardWidget($staff, 'calendar')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Calendar widget is not enabled for your account.',
+            ], 403);
         }
 
         if (! $staff->canAccessPersonalCalendar()) {
@@ -150,6 +244,13 @@ class DashboardController extends Controller
     public function tasks(Request $request)
     {
         $user = Auth::guard('admin')->user() ?: Auth::user();
+        if ($user instanceof Staff && ! $this->accessGate->canDashboardWidget($user, 'tasks')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tasks widget is not enabled for your account.',
+            ], 403);
+        }
+
         $page = max(1, (int) $request->input('page', 1));
         $perPage = max(1, min(50, (int) $request->input('per_page', 10)));
 
@@ -177,6 +278,13 @@ class DashboardController extends Controller
     public function casesRequiringAttention(Request $request)
     {
         $user = Auth::guard('admin')->user() ?: Auth::user();
+        if ($user instanceof Staff && ! $this->accessGate->canDashboardWidget($user, 'recent_activity')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Recent activity widget is not enabled for your account.',
+            ], 403);
+        }
+
         $page = max(1, (int) $request->input('page', 1));
         $perPage = max(1, min(50, (int) $request->input('per_page', 10)));
 
@@ -239,6 +347,14 @@ class DashboardController extends Controller
     public function extendDeadlineDate(Request $request)
     {
         try {
+            $user = Auth::guard('admin')->user() ?: Auth::user();
+            if ($user instanceof Staff && ! $this->accessGate->canDashboardWidget($user, 'tasks')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tasks widget is not enabled for your account.',
+                ], 403);
+            }
+
             $this->validate($request, [
                 'note_id' => 'required|integer',
                 'unique_group_id' => 'nullable|string',
@@ -248,7 +364,6 @@ class DashboardController extends Controller
 
             Log::info('Extend deadline request data:', $request->all());
 
-            $user = Auth::guard('admin')->user() ?: Auth::user();
             $result = $this->dashboardService->extendNoteDeadline($request->all(), $user);
             
             Log::info('Extend deadline result:', $result);
@@ -281,6 +396,14 @@ class DashboardController extends Controller
     public function completeTask(Request $request)
     {
         try {
+            $user = Auth::guard('admin')->user() ?: Auth::user();
+            if ($user instanceof Staff && ! $this->accessGate->canDashboardWidget($user, 'tasks')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tasks widget is not enabled for your account.',
+                ], 403);
+            }
+
             Log::info('Update action completed request data:', $request->all());
             
             $this->validate($request, [
@@ -289,7 +412,6 @@ class DashboardController extends Controller
                 'completion_notes' => 'nullable|string|max:5000'
             ]);
 
-            $user = Auth::guard('admin')->user() ?: Auth::user();
             $result = $this->dashboardService->completeTask(
                 $request->id,
                 $request->unique_group_id ?? '',

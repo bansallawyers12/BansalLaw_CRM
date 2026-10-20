@@ -159,4 +159,28 @@ trait EnsuresCrmRecordAccess
             $this->ensureCrmRecordAccess($clientAdminId);
         }
     }
+
+    /**
+     * Abort 403 unless the current staff may access emails for this client/lead
+     * (and optional matter). Restricted users need an active record grant.
+     */
+    protected function ensureEmailAccess(int $adminId, ?int $matterId = null): void
+    {
+        $this->ensureCrmRecordAccess($adminId);
+
+        $user = Auth::guard('admin')->user();
+        if (StaffClientVisibility::canAccessEmails($adminId, $user, $matterId)) {
+            return;
+        }
+
+        $payload = array_merge(StaffClientVisibility::unauthorizedPayload(), [
+            'message' => 'You do not have email access for this record. Ask a Super Admin to grant client, lead, or matter access.',
+        ]);
+
+        if (request()->expectsJson() || request()->ajax()) {
+            throw new HttpResponseException(response()->json($payload, 403));
+        }
+
+        abort(403, $payload['message']);
+    }
 }

@@ -89,4 +89,45 @@ return [
 
     // Days after which un-actioned pending supervisor requests are auto-expired by the scheduled job.
     'pending_ttl_days' => max(1, (int) env('CRM_ACCESS_PENDING_TTL_DAYS', 14)),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Restricted staff access (Step 1+ — local feature flag)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, staff with access_mode=restricted only see own profile,
+    | a bare dashboard shell, and explicit staff_record_grants.
+    | Full CRM bypass is Super Admin only (role 1 and/or effective super-admin).
+    | Admin (e.g. role 12) is NOT full-access under this mode.
+    |
+    */
+    'restricted_access' => [
+        'enabled' => filter_var(env('CRM_RESTRICTED_ACCESS_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+
+        // Native Super Admin role id(s). Admin role must NOT be listed here.
+        'full_access_role_ids' => $intList('CRM_RESTRICTED_FULL_ACCESS_ROLE_IDS', '1', [1]),
+
+        // Also treat Staff::hasEffectiveSuperAdminPrivileges() as full access.
+        'honor_effective_super_admin' => filter_var(
+            env('CRM_RESTRICTED_HONOR_EFFECTIVE_SUPER_ADMIN', true),
+            FILTER_VALIDATE_BOOLEAN
+        ),
+
+        // Restricted User role (empty module_access). Resolve by id if set, else by name.
+        'restricted_role_name' => env('CRM_RESTRICTED_ROLE_NAME', 'Restricted User'),
+        'restricted_role_id' => (int) env('CRM_RESTRICTED_ROLE_ID', 0),
+
+        // Empty object encoded as {} — no Clients/Leads/Billing/etc. modules.
+        'default_module_access' => [],
+
+        // Default dashboard widgets for a new restricted profile (empty = shell only).
+        // Known keys: active_matters, closed_matters, tasks, recent_activity, calendar, access_approvals.
+        // Note: tasks/calendar/recent_activity/active_matters also auto-unlock once any record grant exists.
+        // closed_matters stays off unless a closed_matter grant exists (and the widget is enabled).
+        'default_dashboard_widgets' => [],
+
+        // Default scopes when Super Admin grants a client/lead/matter without choosing scopes.
+        // View grants also allow related emails for that record in assigned/unassigned mail.
+        'default_grant_scopes' => ['view'],
+    ],
 ];
