@@ -29,6 +29,8 @@
     $authStaff = auth()->guard('admin')->user();
     $canDeleteEmail = $authStaff instanceof \App\Models\Staff
         && $authStaff->canDeleteEmailWithAttachments();
+    $canRemoveEmail = $authStaff instanceof \App\Models\Staff
+        && ($canDeleteEmail || \App\Support\StaffClientVisibility::seesAllClientMatters($authStaff));
     $canSyncInbox = $authStaff instanceof \App\Models\Staff
         && $authStaff->canSyncInboxEmails();
     $canAssignBySubject = $authStaff instanceof \App\Models\Staff
@@ -128,6 +130,7 @@
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"
     data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}"
+    data-can-remove-email="{{ $canRemoveEmail ? '1' : '0' }}"
     data-personal-folders='@json($emailUploadPersonalFolders)'
     data-matter-folders='@json($emailUploadMatterFolders)'>
     
@@ -553,6 +556,11 @@
                             <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
                         </button>
                         <div class="gmail-read-topbar__actions">
+                            @if($canRemoveEmail)
+                            <button type="button" class="gmail-icon-btn" id="gmailIconRemove" title="Remove marketing or duplicate" hidden>
+                                <i class="fa-solid fa-ban" aria-hidden="true"></i>
+                            </button>
+                            @endif
                             @if($canDeleteEmail)
                             <button type="button" class="gmail-icon-btn" id="gmailIconDelete" title="Delete" hidden>
                                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
@@ -607,6 +615,11 @@
                     @if($canUnlinkSyncedEmail)
                     <button type="button" class="action-btn action-btn--warning" id="btnUnlinkFromClient" hidden title="Reassign this email to another client or move it to Unassigned Mail">
                         <i class="fa-solid fa-arrow-right-arrow-left"></i> Reassign Client
+                    </button>
+                    @endif
+                    @if($canRemoveEmail)
+                    <button type="button" class="action-btn action-btn--warning" id="btnRemoveEmail" title="Hide a marketing or duplicate email from this list">
+                        <i class="fa-solid fa-ban"></i> Remove
                     </button>
                     @endif
                     @if($canDeleteEmail)
@@ -1141,6 +1154,10 @@
         </div>
     </div>
 </div>
+@endif
+
+@if($canRemoveEmail)
+@include('crm.partials.email_remove_modal')
 @endif
 
 @include('partials.staff-signature-script')

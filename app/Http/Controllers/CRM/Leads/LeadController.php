@@ -1952,7 +1952,9 @@ class LeadController extends Controller
             $fetchedData = Lead::withArchived()->where('id', $id)->first();
             
             if ($fetchedData) {
-                return view('crm.leads.history', compact('fetchedData'));
+                $canAccessEmails = StaffClientVisibility::canAccessEmails((int) $id, Auth::user());
+
+                return view('crm.leads.history', compact('fetchedData', 'canAccessEmails'));
             } else {
                 return Redirect::to('/leads')->with('error', 'Lead does not exist');
             }

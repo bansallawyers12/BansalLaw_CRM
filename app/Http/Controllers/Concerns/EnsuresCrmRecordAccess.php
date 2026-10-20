@@ -174,7 +174,7 @@ trait EnsuresCrmRecordAccess
         }
 
         $payload = array_merge(StaffClientVisibility::unauthorizedPayload(), [
-            'message' => 'You do not have email access for this record. Ask a Super Admin to grant client, lead, or matter access.',
+            'message' => 'The Emails tab is only available to Super Admin, full CRM access, and the Calling Team.',
         ]);
 
         if (request()->expectsJson() || request()->ajax()) {

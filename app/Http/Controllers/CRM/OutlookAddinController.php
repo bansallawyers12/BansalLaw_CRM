@@ -498,7 +498,7 @@ class OutlookAddinController extends EmailUploadController
             }
 
             $actor = Auth::guard('admin')->user();
-            if ($actor instanceof Staff && ! StaffClientVisibility::canAccessEmails(
+            if ($actor instanceof Staff && ! StaffClientVisibility::canFileEmailOnRecord(
                 $clientId,
                 $actor,
                 $clientMatterId > 0 ? $clientMatterId : null
@@ -909,7 +909,7 @@ class OutlookAddinController extends EmailUploadController
             return StaffClientVisibility::canAccessClientOrLead($clientId, $actor);
         }
 
-        return StaffClientVisibility::canAccessEmails(
+        return StaffClientVisibility::canFileEmailOnRecord(
             $clientId,
             $actor,
             $matterId > 0 ? $matterId : null

@@ -691,10 +691,33 @@ final class StaffClientVisibility
     }
 
     /**
-     * Whether staff may view/manage CRM emails for a client/lead (optional matter).
-     * Restricted users need an active grant on that client/lead/matter.
+     * Whether the client/lead Emails tab and its mail APIs are available.
+     * Only the broad-visibility group: Super Admin (including elevation), full CRM
+     * allocation, Calling Team (role or department), and the named exceptions
+     * while restricted access is off. Being on the matter team, or holding a
+     * client/matter grant, does not open this tab.
      */
     public static function canAccessEmails(int $adminId, ?Authenticatable $user = null, ?int $matterId = null): bool
+    {
+        $user = self::currentStaff($user);
+
+        if (! $user instanceof Staff || $adminId <= 0) {
+            return false;
+        }
+
+        if (! self::seesAllClientMatters($user)) {
+            return false;
+        }
+
+        return self::canAccessClientOrLead($adminId, $user);
+    }
+
+    /**
+     * Whether staff may file an Outlook message onto a client/lead.
+     * This is separate from the Emails tab: assigned staff can still file mail,
+     * and restricted staff still need an email grant.
+     */
+    public static function canFileEmailOnRecord(int $adminId, ?Authenticatable $user = null, ?int $matterId = null): bool
     {
         $user = self::currentStaff($user);
 

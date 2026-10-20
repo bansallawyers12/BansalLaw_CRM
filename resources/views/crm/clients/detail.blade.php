@@ -543,7 +543,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                     <i class="fa-solid fa-file-signature" aria-hidden="true"></i>
                     <span>Legal Forms</span>
                 </button>
-                @if(!isset($canAccessEmails) || $canAccessEmails)
+                @if(!empty($canAccessEmails))
                 <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button{{ $cdnNavSelected === 'emails' ? ' active' : '' }}" data-tab="emails" aria-selected="{{ $cdnNavSelected === 'emails' ? 'true' : 'false' }}" aria-controls="emails-tab">
                     <i class="fa-solid fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
@@ -583,7 +583,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                     <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>
-                @if(!isset($canAccessEmails) || $canAccessEmails)
+                @if(!empty($canAccessEmails))
                 <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button{{ $cdnNavSelected === 'emails' ? ' active' : '' }}" data-tab="emails" aria-selected="{{ $cdnNavSelected === 'emails' ? 'true' : 'false' }}" aria-controls="emails-tab">
                     <i class="fa-solid fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
@@ -673,7 +673,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
             {{-- Emails + Billing: available for leads/clients even before a matter exists. --}}
             @php
                 $cdnMailAndBillingTabs = ['account' => 'crm.clients.tabs.account'];
-                if (!isset($canAccessEmails) || $canAccessEmails) {
+                if (!empty($canAccessEmails)) {
                     $cdnMailAndBillingTabs['emails'] = 'crm.clients.tabs.emails';
                 }
             @endphp

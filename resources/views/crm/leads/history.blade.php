@@ -143,11 +143,13 @@
 										<i class="fa-solid fa-clock-rotate-left"></i> History
 									</a>
 								</li>
+								@if(!empty($canAccessEmails))
 								<li class="nav-item" role="presentation">
 									<a class="nav-link" id="lh-emails-tab" href="#emails" data-bs-toggle="tab" role="tab" aria-controls="emails" aria-selected="false">
 										<i class="fa-solid fa-inbox"></i> Emails
 									</a>
 								</li>
+								@endif
 							</ul>
 							<div class="tab-content lh-tab-content">
 								<div class="tab-pane fade show active" id="timeline" role="tabpanel" aria-labelledby="lh-history-tab">
@@ -167,9 +169,11 @@
 										</button>
 									</div>
 								</div>
+								@if(!empty($canAccessEmails))
 								<div class="tab-pane fade" id="emails" role="tabpanel" aria-labelledby="lh-emails-tab">
 									@include('crm.emails_lead')
 								</div>
+								@endif
 							</div>
 						</div>
 					</div>

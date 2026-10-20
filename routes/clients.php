@@ -137,6 +137,7 @@ Route::post('/clients/email-senders', [ClientsController::class, 'getEmailSender
 Route::delete('/email-logs/{id}', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete');
 // POST alias: some hosts/WAFs block HTTP DELETE; UI uses this route.
 Route::post('/email-logs/{id}/delete', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete-post');
+Route::post('/email-logs/{id}/remove', [ClientsController::class, 'removeEmailLog'])->name('email-logs.remove');
 Route::post('/mail/enhance', [ClientsController::class, 'enhanceMessage'])->name('mail.enhance');
 
 /*---------- Email Labels (CRM runtime: list / apply / remove on email logs) ----------*/

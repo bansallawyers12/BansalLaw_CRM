@@ -2780,6 +2780,59 @@
         }
     }
 
+    async function handleRemoveEmail(email) {
+        if (!email || !email.id) {
+            showNotification('No email selected to remove', 'error');
+            return;
+        }
+        const container = document.querySelector('.email-interface-container');
+        if (!container || container.dataset.canRemoveEmail !== '1') {
+            showNotification('You do not have permission to remove emails', 'error');
+            return;
+        }
+        const reason = typeof window.askEmailRemovalReason === 'function'
+            ? await window.askEmailRemovalReason(email)
+            : null;
+        if (reason !== 'marketing' && reason !== 'duplicate') {
+            return;
+        }
+        try {
+            const payload = { reason: reason };
+            const matterId = getMatterId();
+            const clientId = getClientId();
+            if (matterId) {
+                payload.client_matter_id = matterId;
+            }
+            if (clientId) {
+                payload.client_id = clientId;
+            }
+            const response = await fetch(crmUrl('/email-logs/' + email.id + '/remove'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken()
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json().catch(function () { return {}; });
+            if (response.ok && data.success) {
+                showNotification(data.message || 'Email removed from the list', 'success');
+                const emailContentView = document.getElementById('emailContentView');
+                const emailContentPlaceholder = document.getElementById('emailContentPlaceholder');
+                if (emailContentView && emailContentPlaceholder) {
+                    emailContentView.style.display = 'none';
+                    emailContentPlaceholder.style.display = 'block';
+                }
+                loadEmailsFromServer();
+                return;
+            }
+            showNotification(data.message || ('Failed to remove email (' + response.status + ')'), 'error');
+        } catch (error) {
+            showNotification('Failed to remove email: ' + error.message, 'error');
+        }
+    }
+
     /**
      * Show context menu at specified coordinates
      */
@@ -2964,6 +3017,12 @@
                 case 'delete':
                     if (currentContextEmail) {
                         handleDeleteEmail(currentContextEmail);
+                    }
+                    hideContextMenu();
+                    break;
+                case 'remove':
+                    if (currentContextEmail) {
+                        handleRemoveEmail(currentContextEmail);
                     }
                     hideContextMenu();
                     break;

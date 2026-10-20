@@ -88,4 +88,50 @@ class AssignmentOnlyAccessTest extends TestCase
         $this->assertTrue(MatterScopedAccess::canAccessMatterByReference((int) $client->id, 'LAB_1', $pr));
         $this->assertContains((int) $matter->id, MatterScopedAccess::accessibleMatterIdsForClient((int) $client->id, $pr));
     }
+
+    #[Test]
+    public function emails_tab_is_limited_to_broad_visibility_staff(): void
+    {
+        config([
+            'crm_access.restricted_access.enabled' => false,
+            'crm_access.quick_access_only_role_ids' => [14],
+            'crm_access.matter_scope_bypass_role_ids' => [1],
+        ]);
+
+        $assigned = Staff::factory()->create([
+            'status' => 1,
+            'role' => 2,
+            'first_name' => 'Priya',
+            'last_name' => 'Sharma',
+            'email' => 'priya.sharma.emails@example.test',
+        ]);
+        $calling = Staff::factory()->create([
+            'status' => 1,
+            'role' => 14,
+            'first_name' => 'Reception',
+            'last_name' => 'Desk',
+            'email' => 'reception.desk.emails@example.test',
+        ]);
+        $fullCrm = Staff::factory()->create([
+            'status' => 1,
+            'role' => 2,
+            'first_name' => 'Office',
+            'last_name' => 'Manager',
+            'email' => 'office.manager.emails@example.test',
+            'has_full_crm_allocation_access' => true,
+        ]);
+        $client = Admin::factory()->create(['type' => 'client']);
+
+        ClientMatter::create([
+            'client_id' => $client->id,
+            'matter_status' => 1,
+            'client_unique_matter_no' => 'EML-1',
+            'sel_person_responsible' => $assigned->id,
+        ]);
+
+        $this->assertTrue(StaffClientVisibility::canAccessClientOrLead((int) $client->id, $assigned));
+        $this->assertFalse(StaffClientVisibility::canAccessEmails((int) $client->id, $assigned));
+        $this->assertTrue(StaffClientVisibility::canAccessEmails((int) $client->id, $calling));
+        $this->assertTrue(StaffClientVisibility::canAccessEmails((int) $client->id, $fullCrm));
+    }
 }

@@ -23,6 +23,10 @@ class EmailLog extends Authenticatable
 
     public const SYNC_SOURCE_MANUAL = 'manual';
 
+    public const REMOVAL_MARKETING = 'marketing';
+
+    public const REMOVAL_DUPLICATE = 'duplicate';
+
     public const SYNC_SOURCE_CRON = 'cron';
 
     public const SYNC_SOURCE_COMPOSE = 'compose';
@@ -191,6 +195,10 @@ class EmailLog extends Authenticatable
      */
     public static function applyExcludeCalendarInvitesFromMailLists($query): void
     {
+        if (Schema::hasColumn('email_logs', 'removed_at')) {
+            $query->whereNull('removed_at');
+        }
+
         $invitationPhrase = self::calendarInvitationBodyMarker();
         $hearingFloor = self::hearingMailListAvailableFrom();
         $hearingFloorSql = $hearingFloor?->format('Y-m-d H:i:s');
@@ -452,7 +460,10 @@ class EmailLog extends Authenticatable
         'received_date',
         'file_hash',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'removed_at',
+        'removed_by',
+        'removal_reason',
     ];
 
 	public $sortable = ['id', 'created_at', 'updated_at', 'subject', 'from_mail'];
@@ -467,6 +478,7 @@ class EmailLog extends Authenticatable
         'failed_at' => 'datetime',
         'received_date' => 'datetime',
         'mail_is_read' => 'boolean',
+        'removed_at' => 'datetime',
     ];
 
     /**

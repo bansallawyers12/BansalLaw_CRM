@@ -3840,10 +3840,7 @@ class ClientsController extends Controller
             }
 
             if ($logClientId > 0) {
-                $this->ensureEmailAccess(
-                    $logClientId,
-                    ! empty($emailLog->client_matter_id) ? (int) $emailLog->client_matter_id : null
-                );
+                $this->ensureCrmRecordAccess($logClientId);
             } else {
                 if (! ($user instanceof \App\Models\Staff && ($user->canViewSyncedInboxMail() || $user->canSyncInboxEmails() || $user->hasEffectiveSuperAdminPrivileges()))) {
                     return response()->json([
@@ -3947,6 +3944,112 @@ class ClientsController extends Controller
                 'message' => 'Failed to delete email: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Hide a marketing or duplicate email from mail lists without deleting the row or its attachments.
+     */
+    public function removeEmailLog(Request $request, $id)
+    {
+        $user = Auth::guard('admin')->user();
+        if (! $user instanceof Staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: You do not have permission to remove emails.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|in:marketing,duplicate',
+        ]);
+
+        if (! Schema::hasColumn('email_logs', 'removed_at')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email removal is not available until the latest database update is applied.',
+            ], 500);
+        }
+
+        $emailLog = \App\Models\EmailLog::find($id);
+        if (! $emailLog) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email not found.',
+            ], 404);
+        }
+
+        $logClientId = (int) ($emailLog->client_id ?? 0);
+        if ($logClientId <= 0 && ! empty($emailLog->client_matter_id)) {
+            $logClientId = (int) \App\Models\ClientMatter::where('id', $emailLog->client_matter_id)->value('client_id');
+        }
+
+        $matterId = ! empty($emailLog->client_matter_id) ? (int) $emailLog->client_matter_id : null;
+        $mayRemove = $user->canDeleteEmailWithAttachments()
+            || ($logClientId > 0 && StaffClientVisibility::canAccessEmails($logClientId, $user, $matterId))
+            || ($logClientId <= 0 && StaffClientVisibility::seesAllClientMatters($user));
+
+        if (! $mayRemove) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: You do not have permission to remove emails.',
+            ], 403);
+        }
+
+        if ($logClientId > 0) {
+            $this->ensureCrmRecordAccess($logClientId);
+        }
+
+        $requestMatterId = $request->input('client_matter_id');
+        $requestClientId = $request->input('client_id');
+        if ($requestMatterId !== null && $requestMatterId !== '') {
+            if ((int) $emailLog->client_matter_id !== (int) $requestMatterId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This email does not belong to the open matter.',
+                ], 403);
+            }
+        } elseif ($requestClientId !== null && $requestClientId !== '') {
+            if ($logClientId !== (int) $requestClientId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This email does not belong to the open client or lead.',
+                ], 403);
+            }
+        }
+
+        if ($emailLog->removed_at !== null) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Email is already removed from the list.',
+            ]);
+        }
+
+        $reason = (string) $validated['reason'];
+        $reasonLabel = $reason === \App\Models\EmailLog::REMOVAL_MARKETING ? 'marketing' : 'duplicate';
+        $emailLog->removed_at = now();
+        $emailLog->removed_by = (int) $user->id;
+        $emailLog->removal_reason = $reason;
+        $emailLog->save();
+
+        if ($logClientId > 0) {
+            $subject = trim((string) ($emailLog->subject ?? ''));
+            $displaySubject = $subject !== '' ? $subject : '(no subject)';
+            ClientActivity::log(
+                $logClientId,
+                'Removed email message',
+                ClientActivity::TYPE_EMAIL,
+                'Removed as '.$reasonLabel.': '.e($displaySubject),
+                array_merge(
+                    ['source' => 'crm_emails', 'created_by' => (int) $user->id],
+                    $matterId ? ['use_for' => 'matter'] : []
+                )
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email removed from the list.',
+        ]);
     }
 
     public function checkStarClient(Request $request)

@@ -357,6 +357,7 @@ function crmInitOutlookEmailsInterface() {
         && outlookContainer.getAttribute('data-can-unlink-synced-email') === '1');
     const canViewSyncedInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-view-synced-inbox') === '1');
     const canDeleteEmail = !!(outlookContainer && outlookContainer.dataset.canDeleteEmail === '1');
+    const canRemoveEmail = !!(outlookContainer && outlookContainer.dataset.canRemoveEmail === '1');
     const canSelectSyncMailbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-select-sync-mailbox') === '1');
     const mattersUrl = outlookContainer ? outlookContainer.getAttribute('data-matters-url') : '';
     const btnGmailBack = document.getElementById('btnGmailBack');
@@ -1556,6 +1557,10 @@ function crmInitOutlookEmailsInterface() {
         if (gmailIconDelete) {
             gmailIconDelete.hidden = !canDeleteEmail;
         }
+        const gmailIconRemove = document.getElementById('gmailIconRemove');
+        if (gmailIconRemove) {
+            gmailIconRemove.hidden = !canRemoveEmail;
+        }
         if (gmailIconAssign && btnAssignToClient) {
             gmailIconAssign.hidden = btnAssignToClient.hidden;
         }
@@ -2751,6 +2756,14 @@ function crmInitOutlookEmailsInterface() {
     const btnDeleteEmail = document.getElementById('btnDeleteEmail');
     if (btnDeleteEmail && canDeleteEmail) {
         btnDeleteEmail.addEventListener('click', handleDeleteEmail);
+    }
+    const btnRemoveEmail = document.getElementById('btnRemoveEmail');
+    if (btnRemoveEmail && canRemoveEmail) {
+        btnRemoveEmail.addEventListener('click', handleRemoveEmail);
+    }
+    const gmailIconRemoveBtn = document.getElementById('gmailIconRemove');
+    if (gmailIconRemoveBtn && canRemoveEmail) {
+        gmailIconRemoveBtn.addEventListener('click', handleRemoveEmail);
     }
 
     const gmailMenuReply = document.getElementById('gmailMenuReply');
@@ -7174,6 +7187,61 @@ function crmInitOutlookEmailsInterface() {
             crmToast(data.message || ('Failed to delete email (' + response.status + ')'), 'error');
         } catch (error) {
             crmToast('Failed to delete email: ' + (error && error.message ? error.message : 'Unknown error'), 'error');
+        }
+    }
+
+    async function handleRemoveEmail() {
+        if (!canRemoveEmail || !selectedEmailId) {
+            crmToast('No email selected to remove.', 'warning');
+            return;
+        }
+
+        const email = emails.find(function (item) { return item.id === selectedEmailId; });
+        if (!email) {
+            crmToast('No email selected to remove.', 'warning');
+            return;
+        }
+
+        const reason = typeof window.askEmailRemovalReason === 'function'
+            ? await window.askEmailRemovalReason(email)
+            : null;
+        if (reason !== 'marketing' && reason !== 'duplicate') {
+            return;
+        }
+
+        const payload = { reason: reason };
+        if (clientId) {
+            payload.client_id = clientId;
+        }
+        const removeMatterId = getMatterId();
+        if (removeMatterId) {
+            payload.client_matter_id = removeMatterId;
+        }
+
+        try {
+            const response = await fetch(baseUrl + '/email-logs/' + email.id + '/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken()
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json().catch(function () { return {}; });
+            if (response.ok && data.success) {
+                selectedEmailId = null;
+                selectedEmail = null;
+                readingPane.classList.remove('is-visible');
+                emptyState.style.display = 'flex';
+                setListPaneCollapsed(false, { persist: false });
+                loadEmails();
+                crmToast(data.message || 'Email removed from the list.', 'success');
+                return;
+            }
+            crmToast(data.message || ('Failed to remove email (' + response.status + ')'), 'error');
+        } catch (error) {
+            crmToast('Failed to remove email: ' + (error && error.message ? error.message : 'Unknown error'), 'error');
         }
     }
 

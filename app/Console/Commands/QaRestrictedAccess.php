@@ -91,7 +91,7 @@ class QaRestrictedAccess extends Command
                 );
                 $assert($gate->canClient($staff, $adminId), 'View grant allows canClient');
                 $assert($gate->canEmails($staff, $adminId), 'View grant allows related emails');
-                $assert(StaffClientVisibility::canAccessEmails($adminId, $staff), 'Visibility allows emails with grant');
+                $assert(! StaffClientVisibility::canAccessEmails($adminId, $staff), 'Emails tab stays hidden without broad CRM visibility');
                 $overview = $svc->accessOverview($staff, $gate);
                 $assert(($overview['clients'] ?? 0) === 1, 'Overview shows 1 client grant');
                 $assert(! empty($overview['can_see_emails']), 'Overview shows email access');

@@ -4,8 +4,10 @@
     $authStaff = auth()->guard('admin')->user();
     $canDeleteEmail = $authStaff instanceof \App\Models\Staff
         && $authStaff->canDeleteEmailWithAttachments();
+    $canRemoveEmail = $authStaff instanceof \App\Models\Staff
+        && ($canDeleteEmail || \App\Support\StaffClientVisibility::seesAllClientMatters($authStaff));
 @endphp
-<div class="email-interface-container" data-context="lead" data-client-id="{{ $leadData->id ?? '' }}" data-matter-id="" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}">
+<div class="email-interface-container" data-context="lead" data-client-id="{{ $leadData->id ?? '' }}" data-matter-id="" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}" data-can-remove-email="{{ $canRemoveEmail ? '1' : '0' }}">
     <!-- Top Control Bar (Search & Filters) -->
     <div class="email-control-bar">
         <div class="control-section search-section">
@@ -113,6 +115,13 @@
         <i class="fa-solid fa-share"></i>
         <span>Forward</span>
     </div>
+    @if($canRemoveEmail)
+    <div class="context-menu-separator"></div>
+    <div class="context-menu-item" data-action="remove">
+        <i class="fa-solid fa-ban"></i>
+        <span>Remove</span>
+    </div>
+    @endif
     @if($canDeleteEmail)
     <div class="context-menu-separator"></div>
     <div class="context-menu-item" data-action="delete">
@@ -136,6 +145,9 @@
 <!-- Context Menu Overlay -->
 <div id="contextMenuOverlay" class="context-menu-overlay" style="display: none;"></div>
 
+@if(!empty($canRemoveEmail))
+@include('crm.partials.email_remove_modal')
+@endif
 @if($canDeleteEmail)
 @include('crm.partials.email_delete_confirm_modal')
 @endif
