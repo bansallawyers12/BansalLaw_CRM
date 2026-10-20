@@ -568,10 +568,12 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                     <i class="fa-solid fa-file-signature" aria-hidden="true"></i>
                     <span>Legal Forms</span>
                 </button>
+                @if(!isset($canAccessEmails) || $canAccessEmails)
                 <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button{{ $cdnNavSelected === 'emails' ? ' active' : '' }}" data-tab="emails" aria-selected="{{ $cdnNavSelected === 'emails' ? 'true' : 'false' }}" aria-controls="emails-tab">
                     <i class="fa-solid fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
                 </button>
+                @endif
                 <button type="button" role="tab" id="cdn-tab-account" class="client-nav-button{{ $cdnNavSelected === 'account' ? ' active' : '' }}" data-tab="account" aria-selected="{{ $cdnNavSelected === 'account' ? 'true' : 'false' }}" aria-controls="account-tab">
                     <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
                     <span>Billing</span>
@@ -606,10 +608,12 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                     <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>
+                @if(!isset($canAccessEmails) || $canAccessEmails)
                 <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button{{ $cdnNavSelected === 'emails' ? ' active' : '' }}" data-tab="emails" aria-selected="{{ $cdnNavSelected === 'emails' ? 'true' : 'false' }}" aria-controls="emails-tab">
                     <i class="fa-solid fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
                 </button>
+                @endif
                 <button type="button" role="tab" id="cdn-tab-account" class="client-nav-button{{ $cdnNavSelected === 'account' ? ' active' : '' }}" data-tab="account" aria-selected="{{ $cdnNavSelected === 'account' ? 'true' : 'false' }}" aria-controls="account-tab">
                     <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
                     <span>Billing</span>
@@ -692,7 +696,13 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                 @endif
             @endif
             {{-- Emails + Billing: available for leads/clients even before a matter exists. --}}
-            @foreach (['account' => 'crm.clients.tabs.account', 'emails' => 'crm.clients.tabs.emails'] as $cdnTabSlug => $cdnTabView)
+            @php
+                $cdnMailAndBillingTabs = ['account' => 'crm.clients.tabs.account'];
+                if (!isset($canAccessEmails) || $canAccessEmails) {
+                    $cdnMailAndBillingTabs['emails'] = 'crm.clients.tabs.emails';
+                }
+            @endphp
+            @foreach ($cdnMailAndBillingTabs as $cdnTabSlug => $cdnTabView)
                 @if ($cdnActiveTabSlug === $cdnTabSlug)
                     @include($cdnTabView)
                 @else

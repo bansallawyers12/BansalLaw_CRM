@@ -94,7 +94,7 @@ class ClientEmailFilterController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Lead ID is required'], 400);
             }
 
-            $this->ensureCrmRecordAccess((int) $clientId);
+            $this->ensureEmailAccess((int) $clientId);
 
             $paginator = $this->lists->paginateLeadEmails($request->all(), 5);
 
@@ -170,19 +170,20 @@ class ClientEmailFilterController extends Controller
     {
         $clientId = (int) ClientMatter::where('id', $matterId)->value('client_id');
         if ($clientId > 0) {
-            $this->ensureCrmRecordAccess($clientId);
+            $this->ensureEmailAccess($clientId, $matterId);
         }
     }
 
     private function ensureEmailLogAccess(EmailLog $email): void
     {
         $clientId = (int) ($email->client_id ?? 0);
-        if ($clientId <= 0 && ! empty($email->client_matter_id)) {
-            $clientId = (int) ClientMatter::where('id', $email->client_matter_id)->value('client_id');
+        $matterId = ! empty($email->client_matter_id) ? (int) $email->client_matter_id : null;
+        if ($clientId <= 0 && $matterId) {
+            $clientId = (int) ClientMatter::where('id', $matterId)->value('client_id');
         }
 
         if ($clientId > 0) {
-            $this->ensureCrmRecordAccess($clientId);
+            $this->ensureEmailAccess($clientId, $matterId);
 
             return;
         }
@@ -190,6 +191,15 @@ class ClientEmailFilterController extends Controller
         $staff = Auth::guard('admin')->user();
         if (! ($staff instanceof Staff && ($staff->canViewSyncedInboxMail() || $staff->canSyncInboxEmails() || $staff->hasEffectiveSuperAdminPrivileges()))) {
             throw new HttpResponseException(response()->json(['success' => false, 'error' => 'Unauthorized'], 403));
+        }
+
+        // Restricted staff: unlinked synced mail stays blocked (granted clients use ensureEmailAccess).
+        $gate = app(\App\Services\CrmAccess\StaffAccessGate::class);
+        if ($gate->isFeatureEnabled() && $gate->isRestricted($staff) && ! $gate->hasFullCrmAccess($staff)) {
+            throw new HttpResponseException(response()->json([
+                'success' => false,
+                'error' => 'You can only open emails linked to clients, leads, or matters you have been granted.',
+            ], 403));
         }
     }
 

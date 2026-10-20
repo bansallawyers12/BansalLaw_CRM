@@ -114,7 +114,7 @@ class EmailUploadController extends Controller
         array $attachmentStorage = [],
         array $syncMeta = []
     ): array {
-        $this->ensureCrmRecordAccess($clientId);
+        $this->ensureEmailAccess($clientId, $clientMatterId > 0 ? $clientMatterId : null);
 
         $clientInfo = Admin::select('client_id', 'type')->where('id', $clientId)->first();
         if (! $clientInfo) {
@@ -199,7 +199,8 @@ class EmailUploadController extends Controller
                 return $validationResponse;
             }
 
-            $this->ensureCrmRecordAccess((int) $request->client_id);
+            $uploadMatterId = (int) $request->input('client_matter_id', 0);
+            $this->ensureEmailAccess((int) $request->client_id, $uploadMatterId > 0 ? $uploadMatterId : null);
 
             $clientId = $request->client_id;
             $clientInfo = Admin::select('client_id')->where('id', $clientId)->first();
@@ -392,7 +393,8 @@ class EmailUploadController extends Controller
                 return $validationResponse;
             }
 
-            $this->ensureCrmRecordAccess((int) $request->client_id);
+            $previewMatterId = (int) $request->input('client_matter_id', 0);
+            $this->ensureEmailAccess((int) $request->client_id, $previewMatterId > 0 ? $previewMatterId : null);
 
             $file = $request->file('email_files')[0] ?? null;
             if (! $file) {

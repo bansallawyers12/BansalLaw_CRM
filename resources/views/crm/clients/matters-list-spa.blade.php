@@ -155,10 +155,12 @@
                                     class="matters-tab matters-spa-tab {{ $listTab === 'active' ? 'is-active active' : '' }}"
                                     data-tab="active"
                                     onclick="if(window.MattersListSpa){window.MattersListSpa.loadTab('active',{},true);}return false;">Active Matters</button>
+                            @if(!isset($canSeeClosedMattersTab) || $canSeeClosedMattersTab)
                             <button type="button"
                                     class="matters-tab matters-spa-tab {{ $listTab === 'closed' ? 'is-active active' : '' }}"
                                     data-tab="closed"
                                     onclick="if(window.MattersListSpa){window.MattersListSpa.loadTab('closed',{},true);}return false;">Closed Matters</button>
+                            @endif
                         </div>
                     </div>
 

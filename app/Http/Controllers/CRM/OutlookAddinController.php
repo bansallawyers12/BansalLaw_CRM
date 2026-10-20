@@ -5,7 +5,9 @@ namespace App\Http\Controllers\CRM;
 use App\Models\Admin;
 use App\Models\ClientMatter;
 use App\Models\Staff;
+use App\Services\CrmAccess\StaffAccessGate;
 use App\Services\EmailMatchingService;
+use App\Support\StaffClientVisibility;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -112,11 +114,23 @@ class OutlookAddinController extends EmailUploadController
         $manifestXml = $this->buildManifestXml($baseUrl);
 
         if ($request->boolean('download')) {
-            return $this->manifestDownloadResponse($manifestXml);
+            return $this->manifestDownloadResponse($manifestXml, (string) $request->query('for', ''));
         }
 
         return response($manifestXml, 200, [
             'Content-Type' => 'application/xml; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * Install help page: Classic Outlook vs New Outlook (same web add-in XML).
+     */
+    public function install(Request $request)
+    {
+        return response()->view('outlook_addin.install', [
+            'classicDownloadUrl' => route('outlook-addin.manifest.download', ['for' => 'classic']),
+            'newDownloadUrl' => route('outlook-addin.manifest.download', ['for' => 'new']),
+            'manifestUrl' => route('outlook-addin.manifest'),
         ]);
     }
 
@@ -131,9 +145,14 @@ class OutlookAddinController extends EmailUploadController
         return $this->manifest($request);
     }
 
-    protected function manifestDownloadResponse(string $manifestXml)
+    protected function manifestDownloadResponse(string $manifestXml, string $client = '')
     {
-        $filename = 'manifest-bansallaw-crm.xml';
+        $client = strtolower(trim($client));
+        $filename = match ($client) {
+            'classic' => 'manifest-bansallaw-crm-classic-outlook.xml',
+            'new', 'normal', 'web' => 'manifest-bansallaw-crm-new-outlook.xml',
+            default => 'manifest-bansallaw-crm.xml',
+        };
 
         return response($manifestXml, 200, [
             'Content-Type' => 'application/xml; charset=UTF-8',
@@ -252,6 +271,14 @@ class OutlookAddinController extends EmailUploadController
             }
         }
 
+        $suggestions = $this->filterOutlookEmailSuggestions($suggestions);
+        if ($bestMatch && ! $this->staffMaySaveOutlookEmail(
+            (int) ($bestMatch['client_id'] ?? 0),
+            (int) ($bestMatch['client_matter_id'] ?? 0)
+        )) {
+            $bestMatch = $suggestions[0] ?? null;
+        }
+
         OutlookAddinLogger::info('Match Evaluated', [
             'subject' => $subject,
             'from_email' => $senderEmail,
@@ -293,7 +320,10 @@ class OutlookAddinController extends EmailUploadController
             if (isset($seenMatterIds[$matter->id])) {
                 return;
             }
-            if (!$matter->client || !$this->isOpenMatter($matter)) {
+            if (! $matter->client || ! $this->isOpenMatter($matter)) {
+                return;
+            }
+            if (! $this->staffMaySaveOutlookEmail((int) $matter->client_id, (int) $matter->id)) {
                 return;
             }
             $seenMatterIds[$matter->id] = true;
@@ -303,6 +333,9 @@ class OutlookAddinController extends EmailUploadController
         $pushPersonOnly = function (Admin $person) use (&$results, &$seenPersonOnlyIds): void {
             $personId = (int) $person->id;
             if (isset($seenPersonOnlyIds[$personId])) {
+                return;
+            }
+            if (! $this->staffMaySaveOutlookEmail($personId, 0)) {
                 return;
             }
             $seenPersonOnlyIds[$personId] = true;
@@ -462,6 +495,25 @@ class OutlookAddinController extends EmailUploadController
                         'error' => 'Authentication required: please select your staff profile or log into BansalLaw CRM.',
                     ], 401);
                 }
+            }
+
+            $actor = Auth::guard('admin')->user();
+            if ($actor instanceof Staff && ! StaffClientVisibility::canAccessEmails(
+                $clientId,
+                $actor,
+                $clientMatterId > 0 ? $clientMatterId : null
+            )) {
+                OutlookAddinLogger::error('Save Email Access Denied', [
+                    'reason' => 'Missing emails scope for restricted staff',
+                    'client_id' => $clientId,
+                    'client_matter_id' => $clientMatterId,
+                    'staff_id' => (int) $actor->id,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'error' => 'You do not have email access for this client. Ask a Super Admin to grant the emails scope.',
+                ], 403);
             }
 
             // Prepare attachment storage mapping (folder choices)
@@ -821,6 +873,47 @@ class OutlookAddinController extends EmailUploadController
             }
         }
         $suggestions[] = $newMatch;
+    }
+
+    /**
+     * Restricted staff may only match/save Outlook mail when emails scope is granted.
+     *
+     * @param  list<array<string, mixed>>  $suggestions
+     * @return list<array<string, mixed>>
+     */
+    protected function filterOutlookEmailSuggestions(array $suggestions): array
+    {
+        return array_values(array_filter(
+            $suggestions,
+            fn (array $row) => $this->staffMaySaveOutlookEmail(
+                (int) ($row['client_id'] ?? 0),
+                (int) ($row['client_matter_id'] ?? 0)
+            )
+        ));
+    }
+
+    protected function staffMaySaveOutlookEmail(int $clientId, int $matterId = 0): bool
+    {
+        if ($clientId <= 0) {
+            return false;
+        }
+
+        $actor = Auth::guard('admin')->user();
+        if (! $actor instanceof Staff) {
+            // Unauthenticated match endpoints still run; allow full list (save will auth-gate).
+            return true;
+        }
+
+        $gate = app(StaffAccessGate::class);
+        if (! $gate->isFeatureEnabled() || $gate->hasFullCrmAccess($actor) || ! $gate->isRestricted($actor)) {
+            return StaffClientVisibility::canAccessClientOrLead($clientId, $actor);
+        }
+
+        return StaffClientVisibility::canAccessEmails(
+            $clientId,
+            $actor,
+            $matterId > 0 ? $matterId : null
+        );
     }
 
     /**
