@@ -458,6 +458,11 @@
                     replaceListRoot('cases-attention-list-root', data.cases, reinitCasesPanel);
                 }
 
+                var responsibleMount = document.getElementById('responsible-matters-mount');
+                if (responsibleMount && typeof data.responsible_matters_html === 'string') {
+                    responsibleMount.innerHTML = data.responsible_matters_html;
+                }
+
                 refreshCalendarFeed();
 
                 if (typeof window.refreshCrmNavPendingTaskCount === 'function') {

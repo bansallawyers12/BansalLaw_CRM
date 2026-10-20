@@ -49,6 +49,10 @@ class DashboardController extends Controller
             ? $this->dashboardService->getDashboardData($request)
             : $this->emptyDashboardPayload();
 
+        if (! array_key_exists('personResponsibleMatters', $dashboardData)) {
+            $dashboardData['personResponsibleMatters'] = $this->dashboardService->getPersonResponsibleMatters($staff);
+        }
+
         $dashboardData['dashboardWidgets'] = $widgetFlags;
 
         if ($staff instanceof Staff) {
