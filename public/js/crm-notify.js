@@ -254,7 +254,7 @@
 
     /**
      * CRM confirmation dialog (SweetAlert2). Drop-in replacement for window.confirm().
-     * @param {string|{title?: string, text?: string, html?: string, icon?: string, confirmText?: string, cancelText?: string, confirmColor?: string, cancelColor?: string}} options
+     * @param {string|{title?: string, text?: string, html?: string, icon?: string, confirmText?: string, cancelText?: string, confirmColor?: string, cancelColor?: string, zIndex?: number, didOpen?: function}} options
      * @returns {Promise<boolean>}
      */
     global.crmConfirm = function (options) {
@@ -264,9 +264,11 @@
         var title = opts.title || 'Confirm';
         var text = opts.text || '';
         var html = opts.html || undefined;
+        var userDidOpen = typeof opts.didOpen === 'function' ? opts.didOpen : null;
+        var zIndex = opts.zIndex;
 
         if (typeof global.Swal !== 'undefined' && typeof global.Swal.fire === 'function') {
-            return global.Swal.fire({
+            var swalConfig = {
                 title: title,
                 text: html ? undefined : text,
                 html: html,
@@ -279,7 +281,21 @@
                 confirmButtonColor: opts.confirmColor || '#1e3d60',
                 cancelButtonColor: opts.cancelColor || '#5e7a90',
                 customClass: { popup: 'crm-swal-popup' }
-            }).then(function (result) {
+            };
+            if (zIndex != null && zIndex !== '' && !isNaN(Number(zIndex))) {
+                swalConfig.didOpen = function () {
+                    var container = document.querySelector('.swal2-container');
+                    if (container) {
+                        container.style.zIndex = String(Number(zIndex));
+                    }
+                    if (userDidOpen) {
+                        userDidOpen();
+                    }
+                };
+            } else if (userDidOpen) {
+                swalConfig.didOpen = userDidOpen;
+            }
+            return global.Swal.fire(swalConfig).then(function (result) {
                 return !!(result && result.isConfirmed);
             });
         }

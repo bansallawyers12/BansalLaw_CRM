@@ -7,6 +7,8 @@
 
     var matterOptionsCacheKey = '';
     var matterOptionsCache = null;
+    /** Above #changeMatterAssigneeModal (client-detail.css z-index 12050). */
+    var CHANGE_MATTER_ASSIGNEE_CONFIRM_Z_INDEX = 12100;
 
     function getChangeMatterAssigneeModalEl() {
         var shown = document.querySelector('#changeMatterAssigneeModal.show');
@@ -288,7 +290,8 @@
                     confirmText: 'Yes, continue',
                     cancelText: 'Cancel',
                     confirmColor: '#e08e0b',
-                    cancelColor: '#5e7a90'
+                    cancelColor: '#5e7a90',
+                    zIndex: CHANGE_MATTER_ASSIGNEE_CONFIRM_Z_INDEX
                 })
                 : (typeof Swal !== 'undefined' && typeof Swal.fire === 'function')
                     ? Swal.fire({
@@ -299,7 +302,13 @@
                         confirmButtonText: 'Yes, continue',
                         cancelButtonText: 'Cancel',
                         confirmButtonColor: '#e08e0b',
-                        cancelButtonColor: '#5e7a90'
+                        cancelButtonColor: '#5e7a90',
+                        didOpen: function () {
+                            var container = document.querySelector('.swal2-container');
+                            if (container) {
+                                container.style.zIndex = String(CHANGE_MATTER_ASSIGNEE_CONFIRM_Z_INDEX);
+                            }
+                        }
                     }).then(function(r) { return !!(r && r.isConfirmed); })
                     : Promise.resolve(true);
 
