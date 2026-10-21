@@ -240,15 +240,25 @@ class BroadcastNotificationService
         return $senderCache[$senderId];
     }
 
+    public function broadcastBelongsToSender(string $batchUuid, int $senderId): bool
+    {
+        return Notification::query()
+            ->where('notification_type', 'broadcast')
+            ->where('sender_id', $senderId)
+            ->where('url', $this->formatBroadcastUrl($batchUuid))
+            ->exists();
+    }
+
     /**
      * Retrieve broadcast details (per-recipient status) for a sender.
+     * Broad-visibility viewers may open any sender's batch.
      */
-    public function getBroadcastDetails(string $batchUuid, int $senderId): array
+    public function getBroadcastDetails(string $batchUuid, int $senderId, bool $allowAnySender = false): array
     {
         $notifications = Notification::query()
             ->with(['receiver:id,first_name,last_name,email', 'sender:id,first_name,last_name,email'])
             ->where('notification_type', 'broadcast')
-            ->where('sender_id', $senderId)
+            ->when(! $allowAnySender, fn ($q) => $q->where('sender_id', $senderId))
             ->where('url', $this->formatBroadcastUrl($batchUuid))
             ->orderBy('created_at')
             ->get();

@@ -84,11 +84,16 @@
             @endif
 
             @if(!empty($dw['closed_matters']))
+            @php
+                $_closedListViewer = Auth::user();
+                $_canBrowseClosedMatters = $_closedListViewer instanceof \App\Models\Staff
+                    && \App\Support\StaffClientVisibility::seesAllClientMatters($_closedListViewer);
+            @endphp
             <x-dashboard.kpi-card 
                 :title="'Closed Matters'" 
                 :count="$count_closed_matter" 
-                :route="route('clients.closedmatterslist')"
-                subtitle="Closed matters — go to full list"
+                :route="$_canBrowseClosedMatters ? route('clients.closedmatterslist') : null"
+                :subtitle="$_canBrowseClosedMatters ? 'Closed matters — go to full list' : 'Closed matters on your files'"
                 icon="fa-solid fa-box-archive"
                 icon-class="icon-closed"
                 data-kpi="closed_matters"

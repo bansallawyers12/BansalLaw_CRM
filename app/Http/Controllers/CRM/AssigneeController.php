@@ -215,13 +215,22 @@ class AssigneeController extends Controller
             return response()->json(['status' => false, 'message' => 'Task not found']);
         }
 
+        $this->authorizeNoteManagement($noteData);
+
         $updated = 0;
         if ($uniqueGroupId !== '') {
-            $updated = Note::where('unique_group_id', $uniqueGroupId)
+            $groupNotes = Note::where('unique_group_id', $uniqueGroupId)
                 ->where('unique_group_id', '!=', '')
                 ->whereNotNull('assigned_to')
                 ->whereNotNull('unique_group_id')
-                ->update(['status' => '0']);
+                ->get();
+            $manageableIds = $groupNotes
+                ->filter(fn (Note $groupNote) => $this->mayManageNote($groupNote))
+                ->pluck('id')
+                ->all();
+            if ($manageableIds !== []) {
+                $updated = Note::whereIn('id', $manageableIds)->update(['status' => '0']);
+            }
         }
         if ($updated === 0) {
             $updated = Note::where('id', $noteId)->update(['status' => '0']);
@@ -778,6 +787,30 @@ class AssigneeController extends Controller
     /**
      * Helper to verify staff authorization to delete or manage a task note.
      */
+    protected function mayManageNote(Note $appointment): bool
+    {
+        $actor = Auth::guard('admin')->user();
+        if (!$actor) {
+            return false;
+        }
+
+        $userId = (int) $actor->id;
+        $isCreator = ((int) ($appointment->user_id ?? 0)) === $userId;
+        $isAssignee = ((int) ($appointment->assigned_to ?? 0)) === $userId;
+        $isSuperAdmin = method_exists($actor, 'hasEffectiveSuperAdminPrivileges') && $actor->hasEffectiveSuperAdminPrivileges();
+
+        if (!$isCreator && !$isAssignee && !$isSuperAdmin) {
+            return false;
+        }
+
+        // Assigner and assignee may complete/delete their task without opening the client file.
+        if ($appointment->client_id && ! $isCreator && ! $isAssignee) {
+            return \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $appointment->client_id, $actor);
+        }
+
+        return true;
+    }
+
     protected function authorizeNoteManagement(Note $appointment): void
     {
         $actor = Auth::guard('admin')->user();
@@ -788,15 +821,14 @@ class AssigneeController extends Controller
         $userId = (int) $actor->id;
         $isCreator = ((int) ($appointment->user_id ?? 0)) === $userId;
         $isAssignee = ((int) ($appointment->assigned_to ?? 0)) === $userId;
-        $isSuperAdmin = method_exists($actor, 'hasEffectiveSuperAdminPrivileges') && $actor->hasEffectiveSuperAdminPrivileges();
 
-        if (!$isCreator && !$isAssignee && !$isSuperAdmin) {
+        if (!$this->mayManageNote($appointment)) {
+            // Preserve the client-file check for Super Admin actors so its 403 payload is unchanged.
+            if ($appointment->client_id && ! $isCreator && ! $isAssignee
+                && method_exists($actor, 'hasEffectiveSuperAdminPrivileges') && $actor->hasEffectiveSuperAdminPrivileges()) {
+                $this->ensureCrmRecordAccess((int) $appointment->client_id);
+            }
             abort(403, 'Unauthorized access to task.');
-        }
-
-        // Assigner and assignee may complete/delete their task without opening the client file.
-        if ($appointment->client_id && ! $isCreator && ! $isAssignee) {
-            $this->ensureCrmRecordAccess((int) $appointment->client_id);
         }
     }
 

@@ -176,6 +176,16 @@ class BookingAppointmentsController extends Controller
         return (bool) config('booking_calendar.include_past_in_visible_range', false);
     }
 
+    protected function viewerMayOpenBookingCalendarType(string $type): bool
+    {
+        $viewer = Auth::guard('admin')->user();
+        if (! $viewer instanceof Staff) {
+            return false;
+        }
+
+        return $this->personalCalendarFeed->canViewBookingCalendarType($viewer, $type);
+    }
+
     /**
      * When set, this calendar type uses only CRM rows with the given consultant_id (no public API).
      */
@@ -1260,6 +1270,15 @@ class BookingAppointmentsController extends Controller
         }
 
         if ($request->get('format') === 'calendar') {
+            $feedType = strtolower(trim((string) $request->get('type', '')));
+            if ($feedType === 'michael') {
+                $feedType = 'kunal';
+            }
+            if (\App\Services\StaffPersonalCalendarFeedService::isValidCalendarType($feedType)
+                && ! $this->viewerMayOpenBookingCalendarType($feedType)) {
+                return response()->json(['success' => false, 'message' => 'You can only view your own calendar.'], 403);
+            }
+
             $query = BookingAppointment::with(['client', 'consultant']);
             StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
 
@@ -1386,6 +1405,10 @@ class BookingAppointmentsController extends Controller
             $typeLower = \App\Services\StaffPersonalCalendarFeedService::FALLBACK_CALENDAR_TYPE;
         }
 
+        if (! $this->viewerMayOpenBookingCalendarType($typeLower)) {
+            return response()->json(['success' => false, 'message' => 'You can only view your own calendar.'], 403);
+        }
+
         try {
             $stats = $this->calendarHeaderStatsForType($typeLower);
         } catch (Exception $e) {
@@ -1450,6 +1473,10 @@ class BookingAppointmentsController extends Controller
         }
 
         $type = $typeLower;
+
+        if (! $this->viewerMayOpenBookingCalendarType($type)) {
+            abort(403, 'You can only view your own calendar.');
+        }
 
         $localConsultantId = $this->calendarLocalConsultantIdForType($type);
         $appointmentsQuery = BookingAppointment::with(['client', 'consultant']);

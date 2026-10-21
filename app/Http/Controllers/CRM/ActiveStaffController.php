@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
 use App\Services\ActiveStaffService;
+use App\Support\StaffClientVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -20,6 +22,11 @@ class ActiveStaffController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $viewer = $request->user('admin');
+        if (! $viewer instanceof Staff || ! StaffClientVisibility::seesAllClientMatters($viewer)) {
+            return response()->json(StaffClientVisibility::unauthorizedPayload(), 403);
+        }
+
         $threshold = (int) $request->query('threshold', 5);
         $search = $request->query('search');
         $roleId = $request->query('role_id') ? (int) $request->query('role_id') : null;

@@ -64,7 +64,15 @@ class DocumentPolicy
      */
     public function create(Authenticatable $user): bool
     {
-        return $user instanceof Staff || (isset($user->role) && in_array((int) $user->role, [1, 2, 12, 13, 14, 17], true));
+        if ($user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        if ($user instanceof Staff && $user->hasFullCrmAllocationAccess()) {
+            return true;
+        }
+
+        return in_array((int) ($user->role ?? 0), [1, 2, 12, 13, 14, 17], true);
     }
 
     /**

@@ -65,11 +65,18 @@ class DashboardController extends Controller
                 : null;
             $dashboardData['calendarPersonalLabel'] = trim((string) ($staff->first_name ?? ''))
                 ?: (trim((string) (($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''))) ?: 'My calendar');
-            $dashboardData['calendarTypeOptions'] = $canAccessPersonalCalendar
-                ? StaffPersonalCalendarFeedService::CALENDAR_TYPES
-                : [];
             $canFilterCalendarStaff = $canAccessPersonalCalendar
                 && $this->personalCalendarFeed->canFilterStaffCalendar($staff);
+            $dashboardData['calendarTypeOptions'] = [];
+            if ($canFilterCalendarStaff) {
+                $dashboardData['calendarTypeOptions'] = StaffPersonalCalendarFeedService::CALENDAR_TYPES;
+            } elseif ($canAccessPersonalCalendar && is_string($dashboardData['bookingCalendarType'] ?? null)
+                && isset(StaffPersonalCalendarFeedService::CALENDAR_TYPES[$dashboardData['bookingCalendarType']])) {
+                $ownedType = $dashboardData['bookingCalendarType'];
+                $dashboardData['calendarTypeOptions'] = [
+                    $ownedType => StaffPersonalCalendarFeedService::CALENDAR_TYPES[$ownedType],
+                ];
+            }
             $dashboardData['canFilterCalendarStaff'] = $canFilterCalendarStaff;
             $dashboardData['calendarStaffOptions'] = $canFilterCalendarStaff
                 ? $this->personalCalendarFeed->staffFilterOptions()
@@ -203,6 +210,12 @@ class DashboardController extends Controller
             ], 403);
         }
 
+        $requestedCalendarType = $this->personalCalendarFeed->resolveRequestedCalendarType($request);
+        if ($requestedCalendarType !== null
+            && ! $this->personalCalendarFeed->canViewBookingCalendarType($staff, $requestedCalendarType)) {
+            $requestedCalendarType = null;
+        }
+
         $rows = $this->personalCalendarFeed->eventsForViewerRequest($staff, $request);
         $events = array_map(
             fn (array $row) => $this->personalCalendarFeed->toFullCalendarEvent($row),
@@ -216,7 +229,7 @@ class DashboardController extends Controller
             'data' => $events,
             'stats' => $includeStats ? $this->personalCalendarFeed->statsForViewer($staff, $request) : null,
             'staff_view' => $this->personalCalendarFeed->resolveCalendarView($staff, $request)['mode'],
-            'booking_calendar_type' => $this->personalCalendarFeed->resolveRequestedCalendarType($request)
+            'booking_calendar_type' => $requestedCalendarType
                 ?? $this->personalCalendarFeed->ownedWebsiteCalendarType($staff),
         ]);
     }

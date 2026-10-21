@@ -203,13 +203,18 @@ class StaffPersonalCalendarFeedService
     /**
      * Staff calendars shown in booking nav / calendar switcher.
      * Native Super Admin (role 1) is omitted — e.g. "Admin One" is not a personal calendar entry.
-     * Non–Super Admin viewers only see website booking calendars (Ajay / Michael), not other
-     * staff members' personal calendars.
+     * Viewers who cannot filter staff calendars get no other-calendar rows;
+     * their own calendar stays available via the separate "My Calendar" link.
      *
      * @return list<array{id: int, name: string, booking_calendar_type: ?string}>
      */
     public function staffFilterOptions(?Staff $viewer = null): array
     {
+        $viewer = $viewer ?? Auth::guard('admin')->user();
+        if ($viewer instanceof Staff && ! $this->canFilterStaffCalendar($viewer)) {
+            return [];
+        }
+
         $options = Staff::query()
             ->where('status', 1)
             ->where('role', '!=', 1)
@@ -225,15 +230,27 @@ class StaffPersonalCalendarFeedService
             ->values()
             ->all();
 
-        $viewer = $viewer ?? Auth::guard('admin')->user();
-        if ($viewer instanceof Staff && ! $this->canFilterStaffCalendar($viewer)) {
-            return array_values(array_filter(
-                $options,
-                fn (array $opt) => self::isValidCalendarType($opt['booking_calendar_type'] ?? null)
-            ));
+        return $options;
+    }
+
+    /**
+     * Whether the viewer may open the Ajay / Michael website booking calendar
+     * (route or feed): only that consultant, or a viewer who may filter calendars.
+     */
+    public function canViewBookingCalendarType(Staff $viewer, string $type): bool
+    {
+        $type = strtolower(trim($type));
+        if ($type === 'michael') {
+            $type = 'kunal';
+        }
+        if (! self::isValidCalendarType($type)) {
+            return false;
+        }
+        if ($this->canFilterStaffCalendar($viewer)) {
+            return true;
         }
 
-        return $options;
+        return $this->ownedWebsiteCalendarType($viewer) === $type;
     }
 
     /**
@@ -306,6 +323,11 @@ class StaffPersonalCalendarFeedService
         $staffId = $staff ? (int) $staff->id : null;
         $tz = (string) config('app.timezone');
         $requestedType = $this->resolveRequestedCalendarType($request);
+        $viewer = Auth::guard('admin')->user();
+        if ($requestedType !== null
+            && (! $viewer instanceof Staff || ! $this->canViewBookingCalendarType($viewer, $requestedType))) {
+            $requestedType = null;
+        }
         $ownedType = $staff ? $this->ownedWebsiteCalendarType($staff) : null;
         // Explicit switcher choice, otherwise only that staff member's own website calendar.
         // Do not substitute the Ajay calendar for everyone else.

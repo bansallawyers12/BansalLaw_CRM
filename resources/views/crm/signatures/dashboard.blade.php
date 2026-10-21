@@ -558,11 +558,13 @@
                 <h1>📝 Signature Dashboard</h1>
                 <p class="text-muted-theme">Manage and track document signatures</p>
             </div>
+            @if($staff && $staff->can('create', \App\Models\Document::class))
             <div style="display: flex; gap: 10px;">
                 <a href="{{ route('documents.create') }}" class="btn-primary-custom">
                     <i class="fa-solid fa-plus"></i> Send New Document
                 </a>
             </div>
+            @endif
         </div>
     </div>
 
@@ -801,9 +803,11 @@
                 <i class="fa-solid fa-inbox"></i>
                 <h3>No documents found</h3>
                 <p>Start by sending a new document for signature</p>
+                @if($staff && $staff->can('create', \App\Models\Document::class))
                 <a href="{{ route('documents.create') }}" class="btn-primary-custom" style="margin-top: 20px;">
                     <i class="fa-solid fa-plus"></i> Send New Document
                 </a>
+                @endif
             </div>
             @endif
         </div>

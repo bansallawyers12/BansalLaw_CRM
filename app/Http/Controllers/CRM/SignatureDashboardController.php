@@ -10,6 +10,7 @@ use App\Models\Staff;
 use App\Models\Lead;
 use App\Services\SignatureService;
 use App\Services\SignatureAnalyticsService;
+use App\Support\StaffClientVisibility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -96,12 +97,12 @@ class SignatureDashboardController extends Controller
         // Provide errors variable for the layout
         $errors = $request->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
 
-        // Load staff and leads for attach modal
-        $clients = \App\Models\Staff::query()
-            ->select('id', 'first_name', 'last_name', 'email')
-            ->get();
-        $leads = Lead::select('id', 'first_name', 'last_name', 'email')
-            ->get();
+        // Load staff and leads for attach modal. The JS keys are `clients` (staff
+        // rows used by the attach modal) and `leads`; keep those names.
+        $clients = $this->staffListForAttachModal($staff);
+        $leadQuery = Lead::select('id', 'first_name', 'last_name', 'email');
+        StaffClientVisibility::restrictLeadListQuery($leadQuery);
+        $leads = $leadQuery->get();
 
         return view('crm.signatures.dashboard', compact('documents', 'counts', 'staff', 'errors', 'clients', 'leads'));
     }
@@ -114,8 +115,12 @@ class SignatureDashboardController extends Controller
         $this->authorize('create', Document::class);
         
         // Get clients and leads for association dropdown
-        $clients = Admin::whereIn('type', ['client', 'lead'])->whereNull('is_deleted')->get(['id', 'first_name', 'last_name', 'email']);
-        $leads = Lead::get(['id', 'first_name', 'last_name', 'email']);
+        $clientQuery = Admin::whereIn('type', ['client', 'lead'])->whereNull('is_deleted');
+        StaffClientVisibility::restrictAdminEloquentQuery($clientQuery);
+        $clients = $clientQuery->get(['id', 'first_name', 'last_name', 'email']);
+        $leadQuery = Lead::query();
+        StaffClientVisibility::restrictLeadListQuery($leadQuery);
+        $leads = $leadQuery->get(['id', 'first_name', 'last_name', 'email']);
 
         // Get active email accounts for template picker
         $emailAccounts = \App\Models\Email::where('status', true)
@@ -329,14 +334,14 @@ class SignatureDashboardController extends Controller
             ->orderBy('email')
             ->get();
 
-        // Load staff and leads for attach functionality
-        $clients = \App\Models\Staff::query()
-            ->select('id', 'first_name', 'last_name', 'email')
-            ->orderBy('first_name')
-            ->get();
-        $leads = Lead::select('id', 'first_name', 'last_name', 'email')
-            ->orderBy('first_name')
-            ->get();
+        // Load staff and leads for attach functionality. The JS keys are
+        // `clients` (staff rows used by the attach modal) and `leads`.
+        $staffViewer = Auth::guard('admin')->user();
+        $clients = $this->staffListForAttachModal($staffViewer);
+        $leadQuery = Lead::select('id', 'first_name', 'last_name', 'email')
+            ->orderBy('first_name');
+        StaffClientVisibility::restrictLeadListQuery($leadQuery);
+        $leads = $leadQuery->get();
 
         // Provide errors variable for the layout
         $errors = request()->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
@@ -389,6 +394,24 @@ class SignatureDashboardController extends Controller
         }
 
         return back()->with('error', 'Certificate file could not be found.');
+    }
+
+    /**
+     * Staff rows embedded for the attach modal (exposed to JS as `clients`).
+     * Broad-visibility users keep the full list; everyone else only receives
+     * their own row so other staff emails are not in the page source.
+     */
+    protected function staffListForAttachModal($viewer)
+    {
+        $query = \App\Models\Staff::query()
+            ->select('id', 'first_name', 'last_name', 'email')
+            ->orderBy('first_name');
+
+        if ($viewer && StaffClientVisibility::seesAllClientMatters($viewer instanceof \Illuminate\Contracts\Auth\Authenticatable ? $viewer : null)) {
+            return $query->get();
+        }
+
+        return $query->where('id', (int) ($viewer->id ?? 0))->get();
     }
 
     /**

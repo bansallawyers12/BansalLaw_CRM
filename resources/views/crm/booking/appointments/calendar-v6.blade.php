@@ -52,8 +52,13 @@
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
+                        @php
+                            $_calViewer = auth('admin')->user();
+                            $_calFeedSvc = app(\App\Services\StaffPersonalCalendarFeedService::class);
+                        @endphp
                         @foreach($calendarTypeLabels as $typeKey => $typeLabel)
                             @continue($calendarMode === 'booking' && $type === $typeKey)
+                            @continue(!($_calViewer instanceof \App\Models\Staff && $_calFeedSvc->canViewBookingCalendarType($_calViewer, $typeKey)))
                             <li>
                                 <a class="dropdown-item"
                                    href="{{ route('booking.appointments.calendar', ['type' => $typeKey]) }}">

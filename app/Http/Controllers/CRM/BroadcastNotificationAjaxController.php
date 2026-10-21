@@ -5,6 +5,7 @@ namespace App\Http\Controllers\CRM;
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Services\BroadcastNotificationService;
+use App\Support\StaffClientVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -81,12 +82,20 @@ class BroadcastNotificationAjaxController extends Controller
         ], Response::HTTP_CREATED);
     }
 
+    protected function seesAllBroadcasts(Request $request): bool
+    {
+        $sender = $this->sender($request);
+
+        return $sender instanceof Staff && StaffClientVisibility::seesAllClientMatters($sender);
+    }
+
     public function history(Request $request): JsonResponse
     {
-        // CHANGED: Now returns ALL broadcasts globally, not just sender's broadcasts
-        $history = $this->broadcasts->getAllBroadcastHistory();
-        $currentUserId = (int) $this->sender($request)->id;
         $sender = $this->sender($request);
+        $currentUserId = (int) $sender->id;
+        $history = $this->seesAllBroadcasts($request)
+            ? $this->broadcasts->getAllBroadcastHistory()
+            : $this->broadcasts->getBroadcastHistory($currentUserId);
         $isSuperAdmin = $sender instanceof Staff && $sender->hasEffectiveSuperAdminPrivileges();
 
         return response()->json([
@@ -122,7 +131,11 @@ class BroadcastNotificationAjaxController extends Controller
     public function details(Request $request, string $batchUuid): JsonResponse
     {
         try {
-            $details = $this->broadcasts->getBroadcastDetails($batchUuid, (int) $this->sender($request)->id);
+            $details = $this->broadcasts->getBroadcastDetails(
+                $batchUuid,
+                (int) $this->sender($request)->id,
+                $this->seesAllBroadcasts($request)
+            );
         } catch (\RuntimeException $exception) {
             return response()->json([
                 'message' => $exception->getMessage(),
@@ -161,24 +174,18 @@ class BroadcastNotificationAjaxController extends Controller
     public function delete(Request $request, string $batchUuid): JsonResponse
     {
         $sender = $this->sender($request);
-        
-        if (! ($sender instanceof Staff && $sender->hasEffectiveSuperAdminPrivileges())) {
-            \Log::warning('❌ Non-super admin attempted to delete broadcast', [
-                'user_id' => $sender->id,
-                'role' => $sender->role,
-                'batch_uuid' => $batchUuid
-            ]);
-            
-            return response()->json([
-                'message' => 'Only super administrators can delete broadcasts.',
-            ], Response::HTTP_FORBIDDEN);
-        }
 
-        // Validate UUID format
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $batchUuid)) {
             return response()->json([
                 'message' => 'Invalid broadcast ID format.',
             ], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (! $this->seesAllBroadcasts($request)
+            && ! $this->broadcasts->broadcastBelongsToSender($batchUuid, (int) $sender->id)) {
+            return response()->json([
+                'message' => 'You can only delete broadcasts you sent.',
+            ], Response::HTTP_FORBIDDEN);
         }
 
         try {

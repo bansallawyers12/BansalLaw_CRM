@@ -402,37 +402,22 @@ class ClientsController extends Controller
         $sortDirection = $request->get('direction', 'desc');
 
         $staffUser = auth('admin')->user();
-        $accessGate = app(\App\Services\CrmAccess\StaffAccessGate::class);
-        $restrictedClosedMatterIds = [];
-        $canSeeClosedMattersTab = true;
-        if ($staffUser instanceof \App\Models\Staff
-            && $accessGate->isFeatureEnabled()
-            && $accessGate->isRestricted($staffUser)
-            && ! $accessGate->hasFullCrmAccess($staffUser)) {
-            $canSeeClosedMattersTab = $accessGate->hasClosedMatterGrants($staffUser);
-            if ($isClosed && ! $canSeeClosedMattersTab) {
-                if ($request->ajax() || $request->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'You do not have access to closed matters.',
-                    ], 403);
-                }
+        // Closed Matters browse tab is broad-visibility only, regardless of
+        // restricted-access mode. Assigned staff may still open a closed
+        // matter from their client's record (unchanged detail/hub checks).
+        $canSeeClosedMattersTab = $staffUser instanceof \Illuminate\Contracts\Auth\Authenticatable
+            && StaffClientVisibility::seesAllClientMatters($staffUser);
+        if ($isClosed && ! $canSeeClosedMattersTab) {
+            if ($request->ajax() || $request->wantsJson() || $request->boolean('spa')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have access to the closed matters list.',
+                ], 403);
+            }
 
-                return redirect()
-                    ->route('dashboard')
-                    ->with('error', 'You do not have access to closed matters. Ask a Super Admin to grant a closed matter.');
-            }
-            if ($isClosed && $canSeeClosedMattersTab) {
-                $restrictedClosedMatterIds = StaffRecordGrant::query()
-                    ->active()
-                    ->where('staff_id', (int) $staffUser->id)
-                    ->where('resource_type', StaffRecordGrant::TYPE_CLOSED_MATTER)
-                    ->pluck('resource_id')
-                    ->map(fn ($v) => (int) $v)
-                    ->filter(fn (int $id) => $id > 0)
-                    ->values()
-                    ->all();
-            }
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'You do not have access to the closed matters list.');
         }
 
         if ($this->hasClientListModuleAccess()) {
@@ -474,12 +459,6 @@ class ClientsController extends Controller
                                 $closedStages
                             );
                     });
-            }
-
-            if ($isClosed && $restrictedClosedMatterIds !== []) {
-                $query->whereIn('cm.id', $restrictedClosedMatterIds);
-            } elseif ($isClosed && $restrictedClosedMatterIds === [] && ! $canSeeClosedMattersTab) {
-                $query->whereRaw('0 = 1');
             }
 
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
@@ -588,12 +567,6 @@ class ClientsController extends Controller
                                 $closedStages
                             );
                     });
-            }
-
-            if ($isClosed && $restrictedClosedMatterIds !== []) {
-                $query->whereIn('cm.id', $restrictedClosedMatterIds);
-            } elseif ($isClosed && ! $canSeeClosedMattersTab) {
-                $query->whereRaw('0 = 1');
             }
 
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
@@ -5396,15 +5369,19 @@ class ClientsController extends Controller
     public function getAppointments(Request $request)
     {
         $clientId = $request->input('clientid');
-        
-        if (!$clientId) {
+
+        if (!$clientId || !is_numeric($clientId)) {
             return response()->json(['error' => 'Client ID is required'], 400);
         }
 
         // Get client
-        $client = Admin::find($clientId);
+        $client = Admin::find((int) $clientId);
         if (!$client) {
             return response()->json(['error' => 'Client not found'], 404);
+        }
+
+        if (!StaffClientVisibility::canAccessClientOrLead((int) $clientId, Auth::guard('admin')->user())) {
+            return response()->json(StaffClientVisibility::unauthorizedPayload(), 403);
         }
 
         // Get appointments for this client

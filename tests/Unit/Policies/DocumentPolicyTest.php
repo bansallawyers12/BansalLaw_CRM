@@ -187,9 +187,15 @@ class DocumentPolicyTest extends TestCase
     }
 
     #[Test]
-    public function only_staff_model_instances_can_create_documents()
+    public function only_allowed_roles_can_create_documents()
     {
-        // Policy create() checks instanceof Staff
+        // Policy create() is limited to roles [1, 2, 12, 13, 14, 17],
+        // effective Super Admin, or the full-CRM flag.
+        \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
+            ['id' => 14, 'name' => 'Calling Team', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 16, 'name' => 'Solicitor', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
         $staff = Staff::factory()->create(['role' => 1]);
         $regularStaff = Staff::factory()->create(['role' => 2]);
         $client = Admin::factory()->create(); // Client portal user (Admin model)
@@ -197,6 +203,30 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->create($staff));
         $this->assertTrue($this->policy->create($regularStaff));
         $this->assertFalse($this->policy->create($client));
+    }
+
+    #[Test]
+    public function staff_in_an_allowed_role_can_create_documents()
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
+            ['id' => 14, 'name' => 'Calling Team', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $callingTeam = Staff::factory()->create(['role' => 14]);
+
+        $this->assertTrue($this->policy->create($callingTeam));
+    }
+
+    #[Test]
+    public function staff_outside_the_allowed_roles_cannot_create_documents()
+    {
+        \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
+            ['id' => 16, 'name' => 'Solicitor', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $solicitor = Staff::factory()->create(['role' => 16]);
+
+        $this->assertFalse($this->policy->create($solicitor));
     }
 
     #[Test]

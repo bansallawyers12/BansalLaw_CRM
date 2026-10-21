@@ -66,7 +66,9 @@
                 <a href="{{ route('booking.appointments.index') }}" class="icon-btn{{ $_navActive['booking'] ? ' active' : '' }}" title="Website Bookings" style="position: relative;"@if($_navActive['booking']) aria-current="page"@endif>
                     <i class="fa-solid fa-globe"></i>
                     @php
-                        $pendingCount = \App\Models\BookingAppointment::where('status', 'pending')->where('is_paid', 1)->count();
+                        $_pendingBookingQuery = \App\Models\BookingAppointment::where('status', 'pending')->where('is_paid', 1);
+                        \App\Support\StaffClientVisibility::restrictBookingAppointmentEloquentQuery($_pendingBookingQuery);
+                        $pendingCount = $_pendingBookingQuery->count();
                     @endphp
                     @if($pendingCount > 0)
                         <span class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $pendingCount }}</span>
@@ -79,14 +81,10 @@
                     <div class="dropdown-divider"></div>
                     @php
                         $_bookingNavStaff = app(\App\Services\StaffPersonalCalendarFeedService::class)->staffFilterOptions();
-                        $_bookingNavSeenTypes = [];
                     @endphp
-                    @forelse($_bookingNavStaff as $_navStaff)
+                    @foreach($_bookingNavStaff as $_navStaff)
                         @php
                             $_navCalType = $_navStaff['booking_calendar_type'] ?? null;
-                            if (is_string($_navCalType) && $_navCalType !== '') {
-                                $_bookingNavSeenTypes[$_navCalType] = true;
-                            }
                             $_navCalHref = in_array($_navCalType, ['ajay', 'kunal'], true)
                                 ? route('booking.appointments.calendar', ['type' => $_navCalType])
                                 : route('booking.appointments.calendar.staff', ['staff' => $_navStaff['id']]);
@@ -94,23 +92,7 @@
                         <a class="dropdown-item" href="{{ $_navCalHref }}">
                             <i class="fa-solid fa-calendar-days me-2"></i> {{ $_navStaff['name'] }}
                         </a>
-                    @empty
-                        <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
-                            <i class="fa-solid fa-calendar-days me-2"></i> Ajay
-                        </a>
-                        <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
-                            <i class="fa-solid fa-calendar-days me-2"></i> Michael
-                        </a>
-                    @endforelse
-                    @if(!empty($_bookingNavStaff))
-                        @foreach(['ajay' => 'Ajay', 'kunal' => 'Michael'] as $_fallbackType => $_fallbackLabel)
-                            @if(empty($_bookingNavSeenTypes[$_fallbackType]))
-                                <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => $_fallbackType]) }}">
-                                    <i class="fa-solid fa-calendar-days me-2"></i> {{ $_fallbackLabel }} calendar
-                                </a>
-                            @endif
-                        @endforeach
-                    @endif
+                    @endforeach
                     @if($_crmTopAdminish)
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.sync.dashboard') }}">

@@ -9,9 +9,7 @@
 ])
 
 @php
-    $typeOptions = !empty($calendarTypeOptions) && is_array($calendarTypeOptions)
-        ? $calendarTypeOptions
-        : \App\Services\StaffPersonalCalendarFeedService::CALENDAR_TYPES;
+    $typeOptions = is_array($calendarTypeOptions) ? $calendarTypeOptions : [];
     $homeType = \App\Services\StaffPersonalCalendarFeedService::isValidCalendarType($bookingCalendarType)
         ? $bookingCalendarType
         : null;
