@@ -1414,8 +1414,8 @@ $(function () {
     // Complete task - open modal
     var currentTaskId = null;
     var currentTaskGroupId = null;
-    
-    $('.assignee-action-page').on('click', '.complete_task', function() {
+
+    $(document).on('click', '#open-tasks-spa-root .complete_task, .assignee-action-page .complete_task', function() {
         var row_id = $(this).attr('data-id');
         var row_unique_group_id = $(this).attr('data-unique_group_id') || '';
         
