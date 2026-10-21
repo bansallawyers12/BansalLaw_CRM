@@ -1219,6 +1219,100 @@ body.sidebar-mini .staff-form-modal .staff-checkbox-row span {
   color: var(--text-dark) !important;
 }
 
+body.sidebar-mini .staff-form-modal .calendar-visibility-assigned {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: var(--page-bg);
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 768px) {
+  body.sidebar-mini .staff-form-modal .calendar-visibility-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-count {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #fff;
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-list--compact {
+  max-height: none;
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 4px;
+  margin: 0;
+  border-radius: 4px;
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-item:hover {
+  background: rgba(30, 61, 96, 0.06);
+}
+
+body.sidebar-mini .staff-form-modal .calendar-visibility-summary {
+  margin: 0;
+}
+
 body.sidebar-mini .staff-form-modal .cus_field_input {
   position: relative;
 }

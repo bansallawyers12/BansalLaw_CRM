@@ -10,6 +10,7 @@ use App\Models\ClientMatter;
 use App\Models\Note;
 use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
+use App\Models\StaffCalendarViewGrant;
 use App\Services\Booking\BookingCalendarExternalFeed;
 use App\Services\Booking\StaffCalendarFeedService;
 use App\Support\PersonalCalendarFeedReset;
@@ -175,17 +176,35 @@ class StaffPersonalCalendarFeedService
      */
     public function canFilterStaffCalendar(Staff $viewer): bool
     {
+        if ($this->canViewAllStaffCalendars($viewer)) {
+            return true;
+        }
+
+        if ($viewer->staffCalendarVisibility() !== 'assigned') {
+            return false;
+        }
+
+        return $this->assignedCalendarGrantCount($viewer) > 0;
+    }
+
+    /**
+     * Super Admin or staff granted "all calendars" in Admin Console.
+     */
+    public function canViewAllStaffCalendars(Staff $viewer): bool
+    {
         if ($viewer->hasEffectiveSuperAdminPrivileges()) {
             return true;
         }
 
-        // Native Super Admin role even if elevation helpers are unavailable.
-        return (int) ($viewer->role ?? 0) === 1;
+        if ((int) ($viewer->role ?? 0) === 1) {
+            return true;
+        }
+
+        return $viewer->staffCalendarVisibility() === 'all';
     }
 
     /**
      * Whether the viewer may open another staff member's personal calendar page/feed.
-     * Everyone may open their own; only Super Admin may open others'.
      */
     public function canViewPersonalCalendarOf(Staff $viewer, Staff $target): bool
     {
@@ -197,7 +216,11 @@ class StaffPersonalCalendarFeedService
             return true;
         }
 
-        return $this->canFilterStaffCalendar($viewer);
+        if ($this->canViewAllStaffCalendars($viewer)) {
+            return true;
+        }
+
+        return in_array((int) $target->id, $this->grantedVisibleStaffIds($viewer), true);
     }
 
     /**
@@ -211,15 +234,25 @@ class StaffPersonalCalendarFeedService
     public function staffFilterOptions(?Staff $viewer = null): array
     {
         $viewer = $viewer ?? Auth::guard('admin')->user();
-        if ($viewer instanceof Staff && ! $this->canFilterStaffCalendar($viewer)) {
+        if (! $viewer instanceof Staff || ! $this->canFilterStaffCalendar($viewer)) {
             return [];
         }
 
-        $options = Staff::query()
+        $query = Staff::query()
             ->where('status', 1)
             ->where('role', '!=', 1)
             ->orderBy('first_name')
-            ->orderBy('last_name')
+            ->orderBy('last_name');
+
+        if (! $this->canViewAllStaffCalendars($viewer)) {
+            $allowedIds = $this->grantedVisibleStaffIds($viewer);
+            if ($allowedIds === []) {
+                return [];
+            }
+            $query->whereIn('id', $allowedIds);
+        }
+
+        return $query
             ->get(['id', 'first_name', 'last_name', 'role', 'can_access_personal_calendar', 'status'])
             ->filter(fn (Staff $s) => $s->canAccessPersonalCalendar())
             ->map(fn (Staff $s) => [
@@ -229,8 +262,32 @@ class StaffPersonalCalendarFeedService
             ])
             ->values()
             ->all();
+    }
 
-        return $options;
+    /**
+     * Website booking calendar types the viewer may open (dashboard switcher / nav).
+     *
+     * @return array<string, string>
+     */
+    public function bookingCalendarTypeOptionsForViewer(Staff $viewer): array
+    {
+        if ($this->canViewAllStaffCalendars($viewer)) {
+            return self::CALENDAR_TYPES;
+        }
+
+        $allowed = [];
+        foreach ($this->grantedBookingCalendarTypes($viewer) as $type) {
+            if (isset(self::CALENDAR_TYPES[$type])) {
+                $allowed[$type] = self::CALENDAR_TYPES[$type];
+            }
+        }
+
+        $owned = $this->ownedWebsiteCalendarType($viewer);
+        if (self::isValidCalendarType($owned)) {
+            $allowed[(string) $owned] = self::CALENDAR_TYPES[(string) $owned];
+        }
+
+        return $allowed;
     }
 
     /**
@@ -246,11 +303,15 @@ class StaffPersonalCalendarFeedService
         if (! self::isValidCalendarType($type)) {
             return false;
         }
-        if ($this->canFilterStaffCalendar($viewer)) {
+        if ($this->canViewAllStaffCalendars($viewer)) {
             return true;
         }
 
-        return $this->ownedWebsiteCalendarType($viewer) === $type;
+        if ($this->ownedWebsiteCalendarType($viewer) === $type) {
+            return true;
+        }
+
+        return in_array($type, $this->grantedBookingCalendarTypes($viewer), true);
     }
 
     /**
@@ -288,9 +349,12 @@ class StaffPersonalCalendarFeedService
             return ['mode' => 'self', 'staff' => $viewer];
         }
 
-        // Super Admin default is firm-wide so the dashboard matches the old “see everything” calendar.
+        $unrestricted = $this->canViewAllStaffCalendars($viewer);
+
         if (! $request->has('staff_view') || $request->input('staff_view') === null || $request->input('staff_view') === '') {
-            return ['mode' => 'all', 'staff' => null];
+            return $unrestricted
+                ? ['mode' => 'all', 'staff' => null]
+                : ['mode' => 'self', 'staff' => $viewer];
         }
 
         $raw = strtolower(trim((string) $request->input('staff_view')));
@@ -299,20 +363,81 @@ class StaffPersonalCalendarFeedService
         }
 
         if ($raw === 'all') {
-            return ['mode' => 'all', 'staff' => null];
+            return $unrestricted
+                ? ['mode' => 'all', 'staff' => null]
+                : ['mode' => 'self', 'staff' => $viewer];
         }
 
         $id = (int) $raw;
         if ($id < 1) {
-            return ['mode' => 'all', 'staff' => null];
+            return $unrestricted
+                ? ['mode' => 'all', 'staff' => null]
+                : ['mode' => 'self', 'staff' => $viewer];
         }
 
         $target = Staff::query()->where('id', $id)->where('status', 1)->first();
         if (! $target || ! $target->canAccessPersonalCalendar()) {
-            return ['mode' => 'all', 'staff' => null];
+            return $unrestricted
+                ? ['mode' => 'all', 'staff' => null]
+                : ['mode' => 'self', 'staff' => $viewer];
+        }
+
+        if (! $this->canViewPersonalCalendarOf($viewer, $target)) {
+            return ['mode' => 'self', 'staff' => $viewer];
         }
 
         return ['mode' => 'staff', 'staff' => $target];
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function grantedVisibleStaffIds(Staff $viewer): array
+    {
+        if (! Schema::hasTable('staff_calendar_view_grants')) {
+            return [];
+        }
+
+        return StaffCalendarViewGrant::query()
+            ->where('staff_id', (int) $viewer->id)
+            ->whereNotNull('visible_staff_id')
+            ->pluck('visible_staff_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function grantedBookingCalendarTypes(Staff $viewer): array
+    {
+        if (! Schema::hasTable('staff_calendar_view_grants')) {
+            return [];
+        }
+
+        return StaffCalendarViewGrant::query()
+            ->where('staff_id', (int) $viewer->id)
+            ->whereNotNull('booking_calendar_type')
+            ->pluck('booking_calendar_type')
+            ->map(fn ($type) => strtolower(trim((string) $type)))
+            ->filter(fn (string $type) => self::isValidCalendarType($type))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    protected function assignedCalendarGrantCount(Staff $viewer): int
+    {
+        if (! Schema::hasTable('staff_calendar_view_grants')) {
+            return 0;
+        }
+
+        return (int) StaffCalendarViewGrant::query()
+            ->where('staff_id', (int) $viewer->id)
+            ->count();
     }
 
     /**

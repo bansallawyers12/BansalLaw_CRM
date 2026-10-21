@@ -10,6 +10,7 @@ use App\Models\Staff;
 use App\Models\ClientMatter;
 use App\Models\AppointmentSyncLog;
 use App\Models\ActivitiesLog;
+use App\Exceptions\BansalExternalAppointmentCreateSkippedException;
 use App\Services\BansalAppointmentSync\AppointmentSyncService;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Booking\BookingCalendarExternalFeed;
@@ -2351,6 +2352,12 @@ class BookingAppointmentsController extends Controller
             ]);
 
             return null;
+        } catch (BansalExternalAppointmentCreateSkippedException) {
+            if (! empty($appointment->bansal_appointment_id)) {
+                return (int) $appointment->bansal_appointment_id;
+            }
+
+            return BansalApiClient::allocateLocalAppointmentId();
         } catch (Exception $e) {
             $errorMessage = $e->getMessage();
 

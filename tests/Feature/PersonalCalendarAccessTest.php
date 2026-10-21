@@ -6,6 +6,8 @@ use App\Models\Admin;
 use App\Models\Note;
 use App\Models\Staff;
 use App\Models\StaffCalendarEvent;
+use App\Models\StaffCalendarViewGrant;
+use App\Services\StaffPersonalCalendarFeedService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -699,5 +701,74 @@ class PersonalCalendarAccessTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.this_month', 1)
             ->assertJsonPath('data.upcoming', 1);
+    }
+
+    #[Test]
+    public function staff_with_assigned_calendar_grants_see_only_those_calendars(): void
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('staff', 'staff_calendar_visibility')) {
+            $this->markTestSkipped('staff_calendar_visibility column missing.');
+        }
+
+        $viewer = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Viewer',
+            'email' => 'viewer.assigned.calendar@example.com',
+            'staff_calendar_visibility' => 'assigned',
+        ]);
+        $allowed = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Allowed',
+            'email' => 'allowed.assigned.calendar@example.com',
+        ]);
+        $blocked = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Blocked',
+            'email' => 'blocked.assigned.calendar@example.com',
+        ]);
+
+        StaffCalendarViewGrant::query()->create([
+            'staff_id' => $viewer->id,
+            'visible_staff_id' => $allowed->id,
+            'booking_calendar_type' => null,
+        ]);
+
+        $feed = app(StaffPersonalCalendarFeedService::class);
+        $this->actingAs($viewer, 'admin');
+
+        $ids = collect($feed->staffFilterOptions($viewer))->pluck('id')->all();
+        $this->assertSame([(int) $allowed->id], $ids);
+        $this->assertTrue($feed->canViewPersonalCalendarOf($viewer, $allowed));
+        $this->assertFalse($feed->canViewPersonalCalendarOf($viewer, $blocked));
+
+        $this->get(route('booking.appointments.calendar.staff', ['staff' => $allowed->id]))->assertOk();
+        $this->get(route('booking.appointments.calendar.staff', ['staff' => $blocked->id]))->assertForbidden();
+    }
+
+    #[Test]
+    public function staff_with_all_calendar_visibility_sees_every_staff_calendar(): void
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('staff', 'staff_calendar_visibility')) {
+            $this->markTestSkipped('staff_calendar_visibility column missing.');
+        }
+
+        $viewer = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Broad',
+            'email' => 'broad.calendar.visibility@example.com',
+            'staff_calendar_visibility' => 'all',
+        ]);
+        $other = $this->createStaff([
+            'role' => 16,
+            'first_name' => 'Peer',
+            'email' => 'peer.calendar.visibility@example.com',
+        ]);
+
+        $feed = app(StaffPersonalCalendarFeedService::class);
+        $this->actingAs($viewer, 'admin');
+
+        $ids = collect($feed->staffFilterOptions($viewer))->pluck('id')->all();
+        $this->assertContains($other->id, $ids);
+        $this->assertTrue($feed->canViewPersonalCalendarOf($viewer, $other));
     }
 }

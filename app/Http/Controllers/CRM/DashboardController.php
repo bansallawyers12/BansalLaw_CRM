@@ -69,7 +69,8 @@ class DashboardController extends Controller
                 && $this->personalCalendarFeed->canFilterStaffCalendar($staff);
             $dashboardData['calendarTypeOptions'] = [];
             if ($canFilterCalendarStaff) {
-                $dashboardData['calendarTypeOptions'] = StaffPersonalCalendarFeedService::CALENDAR_TYPES;
+                $dashboardData['calendarTypeOptions'] = $this->personalCalendarFeed
+                    ->bookingCalendarTypeOptionsForViewer($staff);
             } elseif ($canAccessPersonalCalendar && is_string($dashboardData['bookingCalendarType'] ?? null)
                 && isset(StaffPersonalCalendarFeedService::CALENDAR_TYPES[$dashboardData['bookingCalendarType']])) {
                 $ownedType = $dashboardData['bookingCalendarType'];

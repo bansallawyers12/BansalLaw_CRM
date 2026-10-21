@@ -2,6 +2,8 @@
 
 namespace App\Services\BansalAppointmentSync;
 
+use App\Exceptions\BansalExternalAppointmentCreateSkippedException;
+use App\Models\BookingAppointment;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Client\PendingRequest;
@@ -29,6 +31,37 @@ class BansalApiClient
     public function isConfigured(): bool
     {
         return ! empty($this->apiToken);
+    }
+
+    /**
+     * Whether createAppointment should call the external booking API.
+     * Disabled by default after the marketing site (Next.js) removed legacy /api routes.
+     */
+    public function isExternalCreateEnabled(): bool
+    {
+        if (! filter_var(config('services.bansal_api.external_create', false), FILTER_VALIDATE_BOOLEAN)) {
+            return false;
+        }
+
+        if (! $this->isConfigured()) {
+            return false;
+        }
+
+        $host = strtolower((string) parse_url($this->baseUrl, PHP_URL_HOST));
+
+        return ! in_array($host, ['www.bansallawyers.com.au', 'bansallawyers.com.au'], true);
+    }
+
+    /**
+     * Allocate a unique local bansal_appointment_id when no external booking API is used.
+     */
+    public static function allocateLocalAppointmentId(): int
+    {
+        do {
+            $id = 2000000 + (time() % 900000) + mt_rand(1, 99999);
+        } while (BookingAppointment::where('bansal_appointment_id', $id)->exists());
+
+        return $id;
     }
 
     /**
@@ -155,6 +188,12 @@ class BansalApiClient
      */
     public function createAppointment(array $payload): array
     {
+        if (! $this->isExternalCreateEnabled()) {
+            throw new BansalExternalAppointmentCreateSkippedException(
+                'External Bansal appointment create is disabled; booking is stored in CRM only.'
+            );
+        }
+
         try {
             $response = $this->client()->post("{$this->baseUrl}/appointments/add-appointment", $payload);
             $data = $response->json();
@@ -188,21 +227,38 @@ class BansalApiClient
                 'method' => 'createAppointment',
                 'payload' => $payload,
                 'status' => $response?->status(),
-                'body' => $response?->body(),
-                'error' => $message,
+                'url' => "{$this->baseUrl}/appointments/add-appointment",
+                'body' => $this->summarizeHttpBody($response?->body()),
+                'error' => $this->summarizeHttpBody($message),
             ]);
 
             throw new Exception($message, $e->getCode(), $e);
+        } catch (BansalExternalAppointmentCreateSkippedException $e) {
+            throw $e;
         } catch (Exception $e) {
             Log::error('Bansal API Client Error', [
                 'method' => 'createAppointment',
                 'payload' => $payload,
                 'error_type' => get_class($e),
-                'error' => $e->getMessage(),
+                'error' => $this->summarizeHttpBody($e->getMessage()),
             ]);
 
             throw $e;
         }
+    }
+
+    protected function summarizeHttpBody(?string $body): string
+    {
+        if ($body === null || $body === '') {
+            return '';
+        }
+
+        $trimmed = ltrim($body);
+        if (str_starts_with($trimmed, '<!DOCTYPE') || str_starts_with($trimmed, '<html')) {
+            return 'HTML error page (check BANSAL_API_BASE_URL — legacy /api routes may not exist on the marketing site)';
+        }
+
+        return strlen($body) > 500 ? substr($body, 0, 500) . '…' : $body;
     }
 
     /**

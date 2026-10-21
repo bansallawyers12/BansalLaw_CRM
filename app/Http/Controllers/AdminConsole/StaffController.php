@@ -4,7 +4,9 @@ namespace App\Http\Controllers\AdminConsole;
 
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
+use App\Models\StaffCalendarViewGrant;
 use App\Models\UserRole;
+use App\Services\StaffPersonalCalendarFeedService;
 use App\Services\CrmAccess\CrmAccessService;
 use App\Services\CrmAccess\StaffRestrictedAccessService;
 use App\Services\StaffMailboxService;
@@ -236,6 +238,8 @@ class StaffController extends Controller
                 $requestData['zoho_app_password'] ?? null
             );
 
+            $this->syncStaffCalendarViewGrants($freshStaff, $request, $storeActorStaff);
+
             $loginUrl = url('/login');
             $message = "Staff added successfully. They can sign in at {$loginUrl} using this email address and the password you set.";
 
@@ -396,6 +400,8 @@ class StaffController extends Controller
                     $requestData['zoho_app_password'] ?? null,
                     $previousEmail
                 );
+
+                $this->syncStaffCalendarViewGrants($freshStaff, $request, $actorStaff);
             }
 
             if ($saved && $prevStatus === 1 && (int) $staff->status === 0) {
@@ -664,9 +670,14 @@ class StaffController extends Controller
             if ($rawDefault === null || $rawDefault === '' || $rawDefault === 'automatic') {
                 $obj->default_calendar_type = null;
             } else {
-                $allowed = \App\Services\StaffPersonalCalendarFeedService::calendarTypeKeys();
+                $allowed = StaffPersonalCalendarFeedService::calendarTypeKeys();
                 $obj->default_calendar_type = in_array($rawDefault, $allowed, true) ? $rawDefault : null;
             }
+        }
+
+        if ($canGrantPersonalCalendar && Schema::hasColumn('staff', 'staff_calendar_visibility')) {
+            $mode = strtolower(trim((string) $request->input('staff_calendar_visibility', 'own')));
+            $obj->staff_calendar_visibility = in_array($mode, ['all', 'assigned'], true) ? $mode : 'own';
         }
 
         $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
@@ -706,6 +717,55 @@ class StaffController extends Controller
             'email' => $staff->email,
             'status' => (int) $staff->status,
         ];
+    }
+
+    protected function syncStaffCalendarViewGrants(Staff $staff, Request $request, ?Staff $actor): void
+    {
+        if (! Staff::canGrantPersonalCalendarPermission($actor) || ! Schema::hasTable('staff_calendar_view_grants')) {
+            return;
+        }
+
+        StaffCalendarViewGrant::query()->where('staff_id', (int) $staff->id)->delete();
+
+        if ($staff->staffCalendarVisibility() !== 'assigned') {
+            return;
+        }
+
+        $selfId = (int) $staff->id;
+        $staffIds = collect($request->input('calendar_view_staff_ids', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0 && $id !== $selfId)
+            ->unique()
+            ->values();
+
+        $validStaffIds = Staff::query()
+            ->where('status', 1)
+            ->whereIn('id', $staffIds)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        foreach ($validStaffIds as $visibleId) {
+            StaffCalendarViewGrant::query()->create([
+                'staff_id' => $selfId,
+                'visible_staff_id' => $visibleId,
+                'booking_calendar_type' => null,
+            ]);
+        }
+
+        $types = collect($request->input('calendar_view_booking_types', []))
+            ->map(fn ($type) => strtolower(trim((string) $type)))
+            ->filter(fn (string $type) => StaffPersonalCalendarFeedService::isValidCalendarType($type))
+            ->unique()
+            ->values();
+
+        foreach ($types as $type) {
+            StaffCalendarViewGrant::query()->create([
+                'staff_id' => $selfId,
+                'visible_staff_id' => null,
+                'booking_calendar_type' => $type,
+            ]);
+        }
     }
 
     protected function respondUnauthorized(Request $request)
