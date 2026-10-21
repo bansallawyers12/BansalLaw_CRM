@@ -95,17 +95,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Restricted staff access (Step 1+ — local feature flag)
+    | Restricted staff access — retired
     |--------------------------------------------------------------------------
     |
-    | When enabled, staff with access_mode=restricted only see own profile,
-    | a bare dashboard shell, and explicit staff_record_grants.
-    | Full CRM bypass is Super Admin only (role 1 and/or effective super-admin).
-    | Admin (e.g. role 12) is NOT full-access under this mode.
+    | Kept so older call sites still resolve. The mode is not used.
+    | CRM_RESTRICTED_ACCESS_ENABLED is ignored. Assignment, matter scope,
+    | and the Full CRM staff checkbox still control who sees which records.
     |
     */
     'restricted_access' => [
-        'enabled' => filter_var(env('CRM_RESTRICTED_ACCESS_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'enabled' => false,
 
         // Native Super Admin role id(s). Admin role must NOT be listed here.
         'full_access_role_ids' => $intList('CRM_RESTRICTED_FULL_ACCESS_ROLE_IDS', '1', [1]),

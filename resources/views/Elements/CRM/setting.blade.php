@@ -122,17 +122,6 @@
 			?>
 
 			<?php
-			// Staff Access — Super Admin only (restricted profiles + grants)
-			$_staffAccessUser = Auth::user();
-			$_showStaffAccess = $_staffAccessUser instanceof \App\Models\Staff
-				&& app(\App\Services\CrmAccess\StaffAccessGate::class)->hasFullCrmAccess($_staffAccessUser);
-			if ($_showStaffAccess) {
-				$staffAccessActive = str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.system.staff-access.') ? 'active' : '';
-			?>
-			<li class="{{ $staffAccessActive }}"><a class="nav-link" href="{{ route('adminconsole.system.staff-access.index') }}">Staff Access</a></li>
-			<?php } ?>
-
-			<?php
 			$grantsDashUser = Auth::user();
 			$showGrantsDashboard = $grantsDashUser instanceof \App\Models\Staff
 				&& app(\App\Services\CrmAccess\CrmAccessService::class)->isApprover($grantsDashUser);
