@@ -464,8 +464,7 @@
         .feed-item-stage-body b { color: #212529; font-weight: 600; }
         .feed-content p { margin-bottom: 4px; font-size: 0.9em; }
         .feed-content strong { font-weight: 600; }
-        .feed-timestamp { font-size: 0.8em; color: #6c757d; }
-        .main-footer { position: fixed; bottom: 0; width: 100%; z-index: 800; background: #fff; padding: 10px; }
+        .main-footer { display: flex; justify-content: space-between; align-items: center; position: relative; width: 100%; z-index: 10; background: #fff; padding: 12px 24px; margin-top: 24px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
         @media (max-width: 1200px) {
             .activity-feed { flex: 0 0 280px; }
             .main-content { margin-left: 70px; }
