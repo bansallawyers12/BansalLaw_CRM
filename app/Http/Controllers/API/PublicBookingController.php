@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Client\RequestException;
 use Carbon\Carbon;
+use App\Exceptions\BansalExternalAppointmentCreateSkippedException;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Booking\BookedTimeSlotsToDisableService;
 use App\Services\Payment\StripePaymentService;
@@ -548,6 +549,8 @@ class PublicBookingController extends BaseController
                     'client_id' => $client->id,
                     'client_email' => $clientEmail
                 ]);
+            } catch (BansalExternalAppointmentCreateSkippedException) {
+                $bansalAppointmentId = null;
             } catch (\Exception $apiException) {
                 $bansalApiError = $apiException->getMessage();
                 Log::error('Failed to create appointment on public booking website via API', [
@@ -556,8 +559,26 @@ class PublicBookingController extends BaseController
                     'client_email' => $clientEmail,
                     'payload' => $bansalApiPayload,
                 ]);
-                
-                return $this->sendError('Selected time slot is unavailable on the booking calendar: ' . $bansalApiError, [], 422);
+                $bansalAppointmentId = null;
+
+                $errorLower = strtolower($bansalApiError);
+                $isSlotUnavailable = str_contains($errorLower, 'time slot')
+                    || (str_contains($errorLower, 'slot') && str_contains($errorLower, 'not available'))
+                    || (str_contains($errorLower, 'slot') && (str_contains($errorLower, 'already') || str_contains($errorLower, 'booked') || str_contains($errorLower, 'taken')));
+                if ($isSlotUnavailable) {
+                    return $this->sendError('Selected time slot is unavailable on the booking calendar: ' . $bansalApiError, [], 422);
+                }
+            }
+
+            if ($bansalAppointmentId === null) {
+                $bansalAppointmentId = BansalApiClient::allocateLocalAppointmentId();
+                if ($bansalApiError !== null) {
+                    Log::warning('Using local bansal_appointment_id for public booking due to API failure', [
+                        'bansal_appointment_id' => $bansalAppointmentId,
+                        'api_error' => $bansalApiError,
+                        'client_id' => $client->id,
+                    ]);
+                }
             }
 
             // Create booking appointment — never trust client-supplied paid flags at create time
@@ -855,6 +876,8 @@ class PublicBookingController extends BaseController
                     'client_id' => $client->id,
                     'client_email' => $clientEmail,
                 ]);
+            } catch (BansalExternalAppointmentCreateSkippedException) {
+                $bansalAppointmentId = null;
             } catch (\Exception $apiException) {
                 $bansalApiError = $apiException->getMessage();
                 Log::error('Failed to create public appointment on public booking website via API', [
@@ -877,15 +900,14 @@ class PublicBookingController extends BaseController
             }
 
             if ($bansalAppointmentId === null) {
-                $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
-                while (BookingAppointment::where('bansal_appointment_id', $bansalAppointmentId)->exists()) {
-                    $bansalAppointmentId = 2000000 + (time() % 900000) + mt_rand(1, 99999);
+                $bansalAppointmentId = BansalApiClient::allocateLocalAppointmentId();
+                if ($bansalApiError !== null) {
+                    Log::warning('Using local bansal_appointment_id for public appointment due to API failure', [
+                        'bansal_appointment_id' => $bansalAppointmentId,
+                        'api_error' => $bansalApiError,
+                        'client_id' => $client->id,
+                    ]);
                 }
-                Log::warning('Using temporary bansal_appointment_id for public appointment due to API failure', [
-                    'temporary_id' => $bansalAppointmentId,
-                    'api_error' => $bansalApiError,
-                    'client_id' => $client->id,
-                ]);
             }
 
             // Create booking appointment — never trust client-supplied paid flags at create time
@@ -1981,6 +2003,12 @@ class PublicBookingController extends BaseController
             ]);
             
             return null;
+        } catch (BansalExternalAppointmentCreateSkippedException) {
+            if (! empty($appointment->bansal_appointment_id)) {
+                return (int) $appointment->bansal_appointment_id;
+            }
+
+            return BansalApiClient::allocateLocalAppointmentId();
         } catch (\Exception $e) {
             Log::warning('Failed to create appointment via API', [
                 'appointment_id' => $appointment->id,

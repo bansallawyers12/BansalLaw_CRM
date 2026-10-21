@@ -67,6 +67,7 @@ class Staff extends Authenticatable
         'can_use_timeline_billing',
         'can_access_personal_calendar',
         'default_calendar_type',
+        'staff_calendar_visibility',
         'can_close_discontinue_matter',
         'can_edit_final_invoice',
         'can_manage_matter_team_access',
@@ -173,6 +174,14 @@ class Staff extends Authenticatable
     public function recordGrants(): HasMany
     {
         return $this->hasMany(StaffRecordGrant::class, 'staff_id');
+    }
+
+    /**
+     * Staff / website booking calendars this user may open in "Other calendars".
+     */
+    public function calendarViewGrants(): HasMany
+    {
+        return $this->hasMany(StaffCalendarViewGrant::class, 'staff_id');
     }
 
     /**
@@ -697,6 +706,20 @@ class Staff extends Authenticatable
     public function canAccessPersonalCalendar(): bool
     {
         return (int) ($this->status ?? 0) === 1;
+    }
+
+    /**
+     * How many other calendars this staff member may browse: own, all, or assigned-only.
+     */
+    public function staffCalendarVisibility(): string
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('staff', 'staff_calendar_visibility')) {
+            return 'own';
+        }
+
+        $value = strtolower(trim((string) ($this->staff_calendar_visibility ?? 'own')));
+
+        return in_array($value, ['all', 'assigned'], true) ? $value : 'own';
     }
 
     /**

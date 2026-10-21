@@ -180,17 +180,28 @@ return [
     'bansal_api' => [
         'url' => rtrim(env(
             'BANSAL_API_BASE_URL',
-            env('BANSAL_API_URL', env('APPOINTMENT_API_URL', 'https://www.bansallawyers.com.au/api'))
+            env('BANSAL_API_URL', env('APPOINTMENT_API_URL', rtrim((string) env('OUTLOOK_ADDIN_PRODUCTION_URL', 'https://legal.bansalcrm.com'), '/') . '/api'))
         ), '/'),
         'token' => env('APPOINTMENT_API_BEARER_TOKEN') ?: env('BANSAL_API_TOKEN'),
+        /**
+         * POST /appointments/add-appointment on an external host. Off by default: bookings are created in CRM;
+         * www.bansallawyers.com.au no longer serves the legacy Laravel booking API (Next.js returns 404 HTML).
+         */
+        'external_create' => env('BANSAL_API_EXTERNAL_CREATE', false),
         /** Full POST URL; Bearer token = APPOINTMENT_API_BEARER_TOKEN (or BANSAL_API_TOKEN) */
         'disabled_datetime_url' => env(
             'BANSAL_API_DISABLED_DATETIME_URL',
-            'https://www.bansallawyers.com.au/api/getdisableddatetimenewapi'
+            rtrim(env(
+                'BANSAL_API_BASE_URL',
+                env('BANSAL_API_URL', env('APPOINTMENT_API_URL', rtrim((string) env('OUTLOOK_ADDIN_PRODUCTION_URL', 'https://legal.bansalcrm.com'), '/') . '/api'))
+            ), '/') . '/appointments/get-disabled-slots'
         ),
         'timeslot_labels_url' => env(
             'BANSAL_API_TIMESLOT_LABELS_URL',
-            'https://www.bansallawyers.com.au/api/appointments/timeslot-labels'
+            rtrim(env(
+                'BANSAL_API_BASE_URL',
+                env('BANSAL_API_URL', env('APPOINTMENT_API_URL', rtrim((string) env('OUTLOOK_ADDIN_PRODUCTION_URL', 'https://legal.bansalcrm.com'), '/') . '/api'))
+            ), '/') . '/appointment-variable-lists'
         ),
         'timeout' => (int) env('BANSAL_API_TIMEOUT', 30),
         /** When true, appointment datetime endpoints use default office hours if the API is missing token or unreachable. Defaults to on when APP_ENV=local. */
@@ -202,7 +213,10 @@ return [
     ],
 
     'appointment_api' => [
-        'url' => rtrim(env('APPOINTMENT_API_URL', 'https://www.bansallawyers.com.au/api'), '/'),
+        'url' => rtrim(env(
+            'APPOINTMENT_API_URL',
+            rtrim((string) env('OUTLOOK_ADDIN_PRODUCTION_URL', 'https://legal.bansalcrm.com'), '/') . '/api'
+        ), '/'),
         'service_token' => env('APPOINTMENT_API_SERVICE_TOKEN'),
         /** When set, used as Bearer token instead of /service-account/authenticate. */
         'bearer_token' => env('APPOINTMENT_API_BEARER_TOKEN'),

@@ -311,6 +311,8 @@
 
                 @include('AdminConsole.staff.partials.default-calendar-type')
 
+                @include('AdminConsole.staff.partials.calendar-visibility-grants')
+
                 @if($canGrantMatterTeamAccess)
                 <div class="form-group">
                     <small class="text-muted d-block">Temporary matter access on a client file is limited to Super Admin, Ajay Bansal, and Khushi Sangroya.</small>
