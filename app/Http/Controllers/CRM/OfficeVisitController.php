@@ -221,6 +221,9 @@ class OfficeVisitController extends Controller
 		if (!$CheckinLog) {
 			return response()->json(['status' => false, 'message' => 'Checkin log record not found'], 404);
 		}
+		if ($denied = $this->denyUnlessOfficeVisitVisible($CheckinLog)) {
+			return $denied;
+		}
 		if ($CheckinLog->client_id) {
 			$this->ensureCrmRecordAccess((int) $CheckinLog->client_id);
 		}
@@ -466,6 +469,9 @@ class OfficeVisitController extends Controller
 			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
 			return;
 		}
+		if ($denied = $this->denyUnlessOfficeVisitVisible($obj)) {
+			return $denied;
+		}
 		if ($obj->client_id) {
 			$this->ensureCrmRecordAccess((int) $obj->client_id);
 		}
@@ -486,6 +492,9 @@ class OfficeVisitController extends Controller
 		if (!$checkinForAuth) {
 			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
 			return;
+		}
+		if ($denied = $this->denyUnlessOfficeVisitVisible($checkinForAuth)) {
+			return $denied;
 		}
 		if ($checkinForAuth->client_id) {
 			$this->ensureCrmRecordAccess((int) $checkinForAuth->client_id);
@@ -511,6 +520,9 @@ class OfficeVisitController extends Controller
 		if (!$objs) {
 			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
 			return;
+		}
+		if ($denied = $this->denyUnlessOfficeVisitVisible($objs)) {
+			return $denied;
 		}
 		if ($objs->client_id) {
 			$this->ensureCrmRecordAccess((int) $objs->client_id);
@@ -553,6 +565,9 @@ class OfficeVisitController extends Controller
 		if (!$obj) {
 			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
 			return;
+		}
+		if ($denied = $this->denyUnlessOfficeVisitVisible($obj)) {
+			return $denied;
 		}
 		if ($obj->client_id) {
 			$this->ensureCrmRecordAccess((int) $obj->client_id);
@@ -621,6 +636,9 @@ class OfficeVisitController extends Controller
 		if (!$obj) {
 			echo json_encode(['status' => false, 'message' => 'Checkin log record not found']);
 			return;
+		}
+		if ($denied = $this->denyUnlessOfficeVisitVisible($obj)) {
+			return $denied;
 		}
 		if ($obj->client_id) {
 			$this->ensureCrmRecordAccess((int) $obj->client_id);
@@ -721,6 +739,18 @@ class OfficeVisitController extends Controller
 	}
 	public function create(Request $request){
 		return view('crm.officevisits.create');
+	}
+
+	private function denyUnlessOfficeVisitVisible(CheckinLog $log): ?JsonResponse
+	{
+		if (CheckinLog::visibleToViewer($log)) {
+			return null;
+		}
+
+		return response()->json([
+			'status' => false,
+			'message' => 'Unauthorized access to check-in record',
+		], 403);
 	}
 
 	private function officeFilterFromRequest(Request $request): ?int

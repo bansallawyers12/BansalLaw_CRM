@@ -21,13 +21,16 @@ class DocumentVisibilityTest extends TestCase
         $otherUser = Admin::factory()->create(['role' => 2]);
 
         $myDocument = Document::factory()->create(['created_by' => $user->id]);
-        // Unattributed documents (null client_id, null lead_id) are visible to all staff
-        // because the visible() scope filters by client/lead allocation, not by creator.
-        Document::factory()->create(['created_by' => $otherUser->id]);
+        $otherDocument = Document::factory()->create([
+            'created_by' => $otherUser->id,
+            'client_id' => null,
+            'lead_id' => null,
+        ]);
 
         $visibleDocs = Document::visible($user)->get();
 
         $this->assertTrue($visibleDocs->contains($myDocument));
+        $this->assertFalse($visibleDocs->contains($otherDocument));
     }
 
     #[Test]
@@ -126,9 +129,7 @@ class DocumentVisibilityTest extends TestCase
         $response = $this->actingAs($user, 'admin')
             ->get(route('signatures.show', $document->id));
 
-        // Unattributed documents are accessible to all authenticated staff;
-        // DocumentPolicy::view() is intentionally permissive.
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     #[Test]

@@ -1,9 +1,12 @@
 <?php
 namespace App\Models;
 
+use App\Support\StaffClientVisibility;
+use App\Traits\SortableTrait;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\SortableTrait;
+use Illuminate\Support\Facades\Auth;
 
 class CheckinLog extends Model
 {
@@ -77,9 +80,34 @@ class CheckinLog extends Model
 		return $contact->email ?? $contact->phone ?? ('Contact #' . $contact->id);
 	}
 
-	public function scopeForOfficeVisitViewer(Builder $query): Builder
+	/**
+	 * In Person queue: broad-visibility staff see every visit.
+	 * Everyone else sees only visits assigned to them.
+	 */
+	public function scopeForOfficeVisitViewer(Builder $query, ?Authenticatable $user = null): Builder
 	{
-		return $query;
+		$user = $user ?? (Auth::guard('admin')->user() ?: Auth::user());
+		if ($user && StaffClientVisibility::seesAllClientMatters($user)) {
+			return $query;
+		}
+
+		$uid = (int) ($user->id ?? 0);
+		if ($uid <= 0) {
+			return $query->whereRaw('1 = 0');
+		}
+
+		return $query->where($query->getModel()->getTable().'.user_id', $uid);
+	}
+
+	public static function visibleToViewer(self $log, ?Authenticatable $user = null): bool
+	{
+		$user = $user ?? (Auth::guard('admin')->user() ?: Auth::user());
+		if ($user && StaffClientVisibility::seesAllClientMatters($user)) {
+			return true;
+		}
+
+		return (int) ($log->user_id ?? 0) > 0
+			&& (int) $log->user_id === (int) ($user->id ?? 0);
 	}
 
 	/**

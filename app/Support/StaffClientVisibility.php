@@ -819,9 +819,25 @@ final class StaffClientVisibility
         $model   = $query->getModel();
         $table   = $model->getTable();
 
-        $query->where(function (Builder $outer) use ($staffId, $table) {
-            $outer->where(function (Builder $q) use ($table) {
-                $q->whereNull("{$table}.client_id")->whereNull("{$table}.lead_id");
+        $query->where(function (Builder $outer) use ($staffId, $table, $user) {
+            $outer->where(function (Builder $q) use ($staffId, $table, $user) {
+                $q->whereNull("{$table}.client_id")
+                    ->whereNull("{$table}.lead_id")
+                    ->where(function (Builder $owner) use ($staffId, $table, $user) {
+                        $owner->where("{$table}.created_by", $staffId);
+                        if (Schema::hasColumn($table, 'user_id')) {
+                            $owner->orWhere("{$table}.user_id", $staffId);
+                        }
+                        $email = strtolower(trim((string) ($user->email ?? '')));
+                        if ($email !== '' && Schema::hasTable('signers')) {
+                            $owner->orWhereExists(function ($sub) use ($table, $email) {
+                                $sub->select(DB::raw('1'))
+                                    ->from('signers')
+                                    ->whereColumn('signers.document_id', "{$table}.id")
+                                    ->whereRaw('LOWER(signers.email) = ?', [$email]);
+                            });
+                        }
+                    });
             });
 
             foreach (['client_id', 'lead_id'] as $col) {
@@ -904,10 +920,7 @@ final class StaffClientVisibility
             return true;
         }
 
-        // Unattributed documents (no client_id and no lead_id) are accessible to all authenticated staff
-        if (empty($document->client_id) && empty($document->lead_id)) {
-            return true;
-        }
+        // Unlinked documents are visible only to the sender (handled above) and broad-visibility staff.
 
         if (! empty($document->client_matter_id) && \App\Support\MatterScopedAccess::isEnabled()) {
             return \App\Support\MatterScopedAccess::canAccessClientMatter((int) $document->client_matter_id, $user);

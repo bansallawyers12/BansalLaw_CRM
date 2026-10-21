@@ -55,12 +55,7 @@ class DocumentPolicy
             }
         }
 
-        // Unattributed documents (no client_id and no lead_id) are accessible to all authenticated staff
-        if (empty($document->client_id) && empty($document->lead_id)) {
-            return true;
-        }
-
-        // Check allocation access via StaffClientVisibility
+        // Unlinked documents stay with the sender. Linked documents follow matter access.
         return StaffClientVisibility::mayAccessDocument($document, $user);
     }
 

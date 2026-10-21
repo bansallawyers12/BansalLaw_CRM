@@ -82,19 +82,18 @@ class DocumentPolicyTest extends TestCase
     }
 
     #[Test]
-    public function any_user_can_view_any_document()
+    public function unlinked_document_is_visible_only_to_its_sender()
     {
-        // Policy grants global view access to all authenticated users
-        $user = Admin::factory()->create();
-        $otherUser = Admin::factory()->create();
+        $sender = Admin::factory()->create(['role' => 2]);
+        $otherUser = Admin::factory()->create(['role' => 2]);
         $document = Document::factory()->create([
-            'created_by' => Staff::factory()->create()->id,
+            'created_by' => $sender->id,
             'client_id' => null,
             'lead_id' => null,
         ]);
 
-        $this->assertTrue($this->policy->view($user, $document));
-        $this->assertTrue($this->policy->view($otherUser, $document));
+        $this->assertTrue($this->policy->view($sender, $document));
+        $this->assertFalse($this->policy->view($otherUser, $document));
     }
 
     #[Test]
@@ -116,14 +115,17 @@ class DocumentPolicyTest extends TestCase
     }
 
     #[Test]
-    public function any_user_can_update_any_document()
+    public function unrelated_user_cannot_update_an_unlinked_document()
     {
-        // Policy grants global update access
-        $user = Admin::factory()->create();
+        $user = Admin::factory()->create(['role' => 2]);
         $staff = Staff::factory()->create();
-        $document = Document::factory()->create(['created_by' => $staff->id]);
+        $document = Document::factory()->create([
+            'created_by' => $staff->id,
+            'client_id' => null,
+            'lead_id' => null,
+        ]);
 
-        $this->assertTrue($this->policy->update($user, $document));
+        $this->assertFalse($this->policy->update($user, $document));
     }
 
     #[Test]
@@ -216,14 +218,17 @@ class DocumentPolicyTest extends TestCase
     }
 
     #[Test]
-    public function any_user_can_send_reminder_for_any_document()
+    public function unrelated_user_cannot_send_reminder_for_an_unlinked_document()
     {
-        // Policy sendReminder() grants global access
-        $user = Admin::factory()->create();
+        $user = Admin::factory()->create(['role' => 2]);
         $staff = Staff::factory()->create();
-        $document = Document::factory()->create(['created_by' => $staff->id]);
+        $document = Document::factory()->create([
+            'created_by' => $staff->id,
+            'client_id' => null,
+            'lead_id' => null,
+        ]);
 
-        $this->assertTrue($this->policy->sendReminder($user, $document));
+        $this->assertFalse($this->policy->sendReminder($user, $document));
     }
 }
 

@@ -7556,6 +7556,13 @@ class ClientsController extends Controller
      */
     protected function updateCheckinLogAssignee(CheckinLog $checkinLog, ?int $assigneeId)
     {
+        if (! CheckinLog::visibleToViewer($checkinLog)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized access to check-in record',
+            ], 403);
+        }
+
         if ($checkinLog->client_id) {
             $this->ensureCrmRecordAccessForOptionalClientId((int) $checkinLog->client_id);
         }
