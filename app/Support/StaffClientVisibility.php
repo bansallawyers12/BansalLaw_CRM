@@ -198,12 +198,6 @@ final class StaffClientVisibility
             return true;
         }
 
-        // Legacy name-based broad visibility (Kabir / Ajay / Khusi). Disabled when Staff Access
-        // restricted mode is on — those users follow grants, allocation, or full CRM flag instead.
-        if ((bool) config('crm_access.restricted_access.enabled', false)) {
-            return false;
-        }
-
         return self::isNamedMatterVisibilityException($user);
     }
 

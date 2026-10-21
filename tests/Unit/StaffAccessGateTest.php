@@ -61,7 +61,7 @@ class StaffAccessGateTest extends TestCase
         $this->assertFalse(StaffClientVisibility::isExemptFromAllocation(new Staff(['id' => 2, 'role' => 17])));
     }
 
-    public function test_named_staff_exceptions_do_not_bypass_when_restricted_access_enabled(): void
+    public function test_named_staff_exceptions_keep_broad_visibility(): void
     {
         $kabir = new Staff([
             'id' => 50,
@@ -71,9 +71,6 @@ class StaffAccessGateTest extends TestCase
             'status' => 1,
         ]);
 
-        $this->assertFalse(StaffClientVisibility::seesAllClientMatters($kabir));
-
-        config(['crm_access.restricted_access.enabled' => false]);
         $this->assertTrue(StaffClientVisibility::seesAllClientMatters($kabir));
     }
 
