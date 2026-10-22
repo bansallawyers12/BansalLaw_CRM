@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Arr;
+use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
@@ -95,7 +96,11 @@ class Handler extends ExceptionHandler
             }
         }
 
-        if ($request->expectsJson() || $request->is('api/*')) {
+        $wantsJson = $request->expectsJson()
+            || $request->ajax()
+            || $request->header('X-Requested-With') === 'XMLHttpRequest';
+
+        if ($wantsJson || $request->is('api/*')) {
             if ($exception instanceof NotFoundHttpException) {
                 return response()->json([
                     'success' => false,
@@ -103,9 +108,28 @@ class Handler extends ExceptionHandler
                 ], 404);
             }
 
-            if ($exception instanceof HttpExceptionInterface && ! config('app.debug')) {
+            if ($exception instanceof AuthorizationException) {
+                $message = $exception->getMessage() ?: 'You are not allowed to perform this action.';
+                return response()->json([
+                    'success' => false,
+                    'status' => false,
+                    'message' => $message,
+                    'errors' => ['error' => [$message]],
+                ], 403);
+            }
+
+            if ($exception instanceof HttpExceptionInterface) {
                 $status = $exception->getStatusCode();
-                if ($status >= 500) {
+                if ($status === 403) {
+                    $message = $exception->getMessage() ?: 'You are not allowed to perform this action.';
+                    return response()->json([
+                        'success' => false,
+                        'status' => false,
+                        'message' => $message,
+                        'errors' => ['error' => [$message]],
+                    ], 403);
+                }
+                if ($status >= 500 && ! config('app.debug')) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Something went wrong. Please try again later.',

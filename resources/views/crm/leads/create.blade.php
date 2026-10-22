@@ -2145,6 +2145,17 @@
                 alertContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
 
+            function messageFromForbiddenHtml(html) {
+                if (!html) return '';
+                try {
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    var el = doc.querySelector('.error-message, .error-heading, h1');
+                    var text = el ? String(el.textContent || '').trim() : '';
+                    if (text) return text;
+                } catch (e) { /* ignore */ }
+                return '';
+            }
+
             function collectErrorMessages(data) {
                 const allMessages = [];
                 const errors = data && data.errors;
@@ -2223,8 +2234,8 @@
                             if (response.status === 419) {
                                 renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
                             } else if (response.status === 403) {
-                                var forbiddenMsg = (data && (data.message || (data.errors && data.errors.error && data.errors.error[0])))
-                                    || 'You do not have permission to perform this action.';
+                                var forbiddenMsg = messageFromForbiddenHtml(rawBody)
+                                    || 'Access was denied (HTTP 403). Ask your admin to run route:clear and config:clear on the server after the latest deploy, and ensure CRM_RESTRICTED_ACCESS_ENABLED is not set.';
                                 renderSpaErrorSummary([forbiddenMsg]);
                             } else if (response.status === 401) {
                                 renderSpaErrorSummary(['Your session expired. Please refresh the page and sign in again.']);
@@ -2254,6 +2265,10 @@
                     const allMessages = collectErrorMessages(data);
                     if (allMessages.length > 0) {
                         renderSpaErrorSummary(allMessages);
+                    } else if (response.status === 403) {
+                        var msg403 = (data && data.message) || messageFromForbiddenHtml(rawBody)
+                            || 'Access was denied while saving this lead (HTTP 403).';
+                        renderSpaErrorSummary([msg403]);
                     } else if (response.status === 419) {
                         renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
                     } else {
