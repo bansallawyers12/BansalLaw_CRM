@@ -90,7 +90,7 @@ class AssignmentOnlyAccessTest extends TestCase
     }
 
     #[Test]
-    public function emails_tab_is_limited_to_broad_visibility_staff(): void
+    public function emails_tab_follows_client_allocation_like_notes(): void
     {
         config([
             'crm_access.quick_access_only_role_ids' => [14],
@@ -129,7 +129,7 @@ class AssignmentOnlyAccessTest extends TestCase
         ]);
 
         $this->assertTrue(StaffClientVisibility::canAccessClientOrLead((int) $client->id, $assigned));
-        $this->assertFalse(StaffClientVisibility::canAccessEmails((int) $client->id, $assigned));
+        $this->assertTrue(StaffClientVisibility::canAccessEmails((int) $client->id, $assigned));
         $this->assertTrue(StaffClientVisibility::canAccessEmails((int) $client->id, $calling));
         $this->assertTrue(StaffClientVisibility::canAccessEmails((int) $client->id, $fullCrm));
     }

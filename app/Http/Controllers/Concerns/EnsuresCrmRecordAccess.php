@@ -166,7 +166,7 @@ trait EnsuresCrmRecordAccess
 
     /**
      * Abort 403 unless the current staff may access emails for this client/lead
-     * (and optional matter). Restricted users need an active record grant.
+     * (and optional matter), using the same rules as the Emails tab visibility.
      */
     protected function ensureEmailAccess(int $adminId, ?int $matterId = null): void
     {
@@ -178,7 +178,7 @@ trait EnsuresCrmRecordAccess
         }
 
         $payload = array_merge(StaffClientVisibility::unauthorizedPayload(), [
-            'message' => 'The Emails tab is only available to Super Admin, full CRM access, and the Calling Team.',
+            'message' => 'You do not have access to emails for this client or matter.',
         ]);
 
         if (request()->expectsJson() || request()->ajax()) {
@@ -189,7 +189,7 @@ trait EnsuresCrmRecordAccess
     }
 
     /**
-     * Client/lead file access, optional matter team, and note-write scope (restricted grants).
+     * Client/lead file access, optional matter team, and note-write scope (allocation / matter_temp).
      */
     protected function ensureClientNoteWriteAccess(int $adminId, ?int $clientMatterId = null): void
     {
