@@ -459,8 +459,10 @@
             $('#create_note_d #appliationModalLabel').html('Create Note');
             resetNoteAttachments($('#create_note_d'));
 
-            // Pre-select the currently active matter so notes are saved under the right matter
-            var activeMatterId = $('#sel_matter_id_client_detail').val() || '';
+            // URL matter (CIV_2) wins over header dropdown, which may still point at "latest" matter
+            var activeMatterId = (window.ClientDetailConfig && window.ClientDetailConfig.clientMatterId)
+                ? String(window.ClientDetailConfig.clientMatterId)
+                : ($('#sel_matter_id_client_detail').val() || '');
             $('#create_note_d select[name="matter_id"]').val(activeMatterId);
 
             if ($(this).attr('datatype') == 'note') {

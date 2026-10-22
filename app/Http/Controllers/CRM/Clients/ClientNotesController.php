@@ -74,15 +74,25 @@ class ClientNotesController extends Controller
             $oldNote = $obj->replicate(); // Keep a copy of old values for tracking changes
         }else{
             $resolvedClientId = $this->resolveClientAdminIdFromNoteRequest($request);
-            $createMatterId = (int) $request->input('matter_id', 0);
+            $postedMatterId = (int) $request->input('matter_id', 0);
+            $createMatterId = $this->resolveNoteMatterIdForWrite($request, $resolvedClientId);
+            if ($postedMatterId > 0 && $createMatterId === null) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You do not have permission to save notes on the selected matter. Open the client from the matter you are assigned to, or pick an allowed matter in the note form.',
+                ], 403);
+            }
+            if ($createMatterId !== null && $createMatterId !== $postedMatterId) {
+                $request->merge(['matter_id' => $createMatterId]);
+            }
             $this->ensureClientNoteWriteAccess(
                 $resolvedClientId,
-                $createMatterId > 0 ? $createMatterId : null
+                $createMatterId
             );
             $obj = new Note;
             // Title field may not exist in simple form, use default if not provided
             $obj->title = $request->title ?? '';
-            $obj->matter_id = $request->matter_id;
+            $obj->matter_id = $createMatterId ?? $request->matter_id;
         }
 
         // Track changes for updates

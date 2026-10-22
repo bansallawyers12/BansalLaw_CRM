@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\Admin;
 use App\Models\ClientMatter;
+use App\Models\Staff;
 use App\Support\MatterScopedAccess;
 use App\Support\StaffClientVisibility;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -80,13 +81,16 @@ trait EnsuresCrmRecordAccess
             return;
         }
 
+        $message = 'You do not have access to this matter.';
         if (request()->expectsJson() || request()->ajax()) {
             throw new HttpResponseException(
-                response()->json(StaffClientVisibility::unauthorizedPayload(), 403)
+                response()->json(array_merge(StaffClientVisibility::unauthorizedPayload(), [
+                    'message' => $message,
+                ]), 403)
             );
         }
 
-        abort(403, 'You do not have access to this matter.');
+        abort(403, $message);
     }
 
     /**
@@ -222,5 +226,47 @@ trait EnsuresCrmRecordAccess
         }
 
         return $clientId;
+    }
+
+    /**
+     * Pick a matter id the user may write notes for. Prefer explicit matter_id when allowed;
+     * otherwise fall back to context_matter_id from the client detail page (URL matter).
+     */
+    protected function resolveNoteMatterIdForWrite(Request $request, int $clientAdminId): ?int
+    {
+        $user = Auth::guard('admin')->user();
+        if (! $user instanceof Staff) {
+            return null;
+        }
+
+        $candidates = [];
+        $posted = (int) $request->input('matter_id', 0);
+        if ($posted > 0) {
+            $candidates[] = $posted;
+        }
+        $context = (int) $request->input('context_matter_id', 0);
+        if ($context > 0 && ! in_array($context, $candidates, true)) {
+            $candidates[] = $context;
+        }
+
+        foreach ($candidates as $matterId) {
+            if ($matterId <= 0) {
+                continue;
+            }
+            $belongs = (int) ClientMatter::query()
+                ->where('id', $matterId)
+                ->where('client_id', $clientAdminId)
+                ->value('id');
+            if ($belongs <= 0) {
+                continue;
+            }
+            if (! MatterScopedAccess::isEnabled()
+                || MatterScopedAccess::canAccessClientMatter($matterId, $user)
+            ) {
+                return $matterId;
+            }
+        }
+
+        return null;
     }
 }
