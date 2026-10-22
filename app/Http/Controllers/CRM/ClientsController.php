@@ -4208,6 +4208,8 @@ class ClientsController extends Controller
 
     public function storeLeadMatterFromEdit(Request $request)
     {
+        ReleaseSessionLock::forParallelRequests();
+
         $validated = $request->validate([
             'client_id' => 'required|integer|exists:admins,id',
             'matter_id' => 'required|integer|exists:matters,id',
@@ -4250,8 +4252,8 @@ class ClientsController extends Controller
             ? (string) $matterRow->stream
             : 'general';
 
-        $ourRole = trim((string) $validated['our_party_role']);
-        if ($ourRole === '') {
+        $ourRole = MatterStreamHelper::resolvePartyRoleKey($stream, $validated['our_party_role'] ?? '');
+        if ($ourRole === null || $ourRole === '') {
             return response()->json([
                 'success' => false,
                 'message' => 'Our client\'s role is required.',
@@ -4281,8 +4283,12 @@ class ClientsController extends Controller
         $row->client_id = (int) $admin->id;
         $row->office_id = $validated['office_id'] ?? optional(Auth::user())->office_id ?? null;
         $row->sel_legal_practitioner = isset($validated['legal_practitioner']) ? (int) $validated['legal_practitioner'] : null;
-        $row->sel_person_responsible = $validated['person_responsible'] ?? null;
-        $row->sel_person_assisting = $validated['person_assisting'] ?? null;
+        $row->sel_person_responsible = isset($validated['person_responsible']) && $validated['person_responsible'] !== ''
+            ? (int) $validated['person_responsible']
+            : null;
+        $row->sel_person_assisting = isset($validated['person_assisting']) && $validated['person_assisting'] !== ''
+            ? (int) $validated['person_assisting']
+            : null;
         $row->sel_matter_id = $matterId;
         $caseDetail = isset($validated['case_detail']) ? trim((string) $validated['case_detail']) : '';
         $row->case_detail = $caseDetail !== '' ? $caseDetail : null;
@@ -4293,12 +4299,7 @@ class ClientsController extends Controller
             $row->our_party_role = $ourRole;
         }
 
-        $countForType = DB::table('client_matters')
-            ->where('sel_matter_id', $matterId)
-            ->where('client_id', $admin->id)
-            ->count();
-        $nextNo = $countForType + 1;
-        $row->client_unique_matter_no = Matter::clientUniqueMatterNoPrefix($matterId) . '_' . $nextNo;
+        $row->client_unique_matter_no = ClientMatter::generateUniqueMatterNumber((int) $admin->id, $matterId);
 
         $matterType = Matter::find($matterId);
         $workflowId = $matterType && $matterType->workflow_id
@@ -4320,23 +4321,61 @@ class ClientsController extends Controller
 
         MatterAssigneeDefaults::applyMissingToNewMatter($row);
 
+        if (! $row->workflow_stage_id) {
+            $generalWorkflowId = WorkflowStageCatalog::ensureGeneralWorkflowStages();
+            if ($generalWorkflowId) {
+                $row->workflow_id = $generalWorkflowId;
+                $row->workflow_stage_id = WorkflowStageCatalog::firstStageIdForWorkflow($generalWorkflowId);
+            }
+        }
+
+        if (! $row->workflow_stage_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No workflow stages are configured. Ask an administrator to set up matter workflows.',
+            ], 422);
+        }
+
         try {
-            DB::transaction(function () use ($row, $opposingParties, $admin) {
+            DB::transaction(function () use ($row, $opposingParties) {
                 $row->save();
                 \App\Support\OpposingPartyHelper::syncForMatter((int) $row->id, $opposingParties);
+            });
+
+            try {
                 \App\Support\MatterOtherPartiesHelper::syncConflictPartiesAfterMatterSave(
                     (int) $admin->id,
                     (int) $row->id,
                     $opposingParties
                 );
+            } catch (\Throwable $e) {
+                Log::warning('Conflict party sync after matter create failed', [
+                    'client_id' => $admin->id,
+                    'client_matter_id' => $row->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            try {
                 \App\Services\LeadMatterAssignedConversion::applyForAdminId((int) $admin->id);
-            });
+            } catch (\Throwable $e) {
+                Log::warning('Lead auto-conversion after matter create failed', [
+                    'client_id' => $admin->id,
+                    'client_matter_id' => $row->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         } catch (\Throwable $e) {
             report($e);
 
+            $message = 'Could not create matter. Please try again.';
+            if (config('app.debug')) {
+                $message .= ' (' . $e->getMessage() . ')';
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Could not create matter. Please try again.',
+                'message' => $message,
             ], 500);
         }
 

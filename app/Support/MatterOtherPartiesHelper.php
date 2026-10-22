@@ -182,9 +182,17 @@ class MatterOtherPartiesHelper
             return;
         }
 
-        DB::transaction(function () use ($clientId, $clientMatterId, $parties) {
+        $sync = static function () use ($clientId, $clientMatterId, $parties): void {
             self::syncConflictPartiesForMatter($clientId, $clientMatterId, $parties);
-        });
+        };
+
+        if (DB::transactionLevel() > 0) {
+            $sync();
+
+            return;
+        }
+
+        DB::transaction($sync);
     }
 
     /**
