@@ -18,7 +18,6 @@ class StaffRestrictedAccessService
 {
     public function isFeatureEnabled(): bool
     {
-        // Config value is hardcoded false. CRM_RESTRICTED_ACCESS_ENABLED is not read.
         return (bool) config('crm_access.restricted_access.enabled', false);
     }
 

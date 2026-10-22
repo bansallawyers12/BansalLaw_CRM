@@ -95,16 +95,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Restricted staff access — retired
+    | Restricted staff access (Staff Access in Admin Console)
     |--------------------------------------------------------------------------
     |
-    | Kept so older call sites still resolve. The mode is not used.
-    | CRM_RESTRICTED_ACCESS_ENABLED is ignored. Assignment, matter scope,
-    | and the Full CRM staff checkbox still control who sees which records.
+    | Off by default on production until explicitly enabled. Local: set
+    | CRM_RESTRICTED_ACCESS_ENABLED=true in .env. Assignment, matter scope,
+    | and the Full CRM staff checkbox still apply when this is off.
     |
     */
     'restricted_access' => [
-        'enabled' => false,
+        'enabled' => filter_var(env('CRM_RESTRICTED_ACCESS_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
 
         // Native Super Admin role id(s). Admin role must NOT be listed here.
         'full_access_role_ids' => $intList('CRM_RESTRICTED_FULL_ACCESS_ROLE_IDS', '1', [1]),
