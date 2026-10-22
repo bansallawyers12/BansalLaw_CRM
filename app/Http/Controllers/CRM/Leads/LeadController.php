@@ -25,8 +25,6 @@ use App\Services\LeadSpreadsheetImportService;
 use App\Services\ContactVerificationService;
 use App\Models\Staff;
 use App\Models\ClientAddress;
-use App\Services\CrmAccess\StaffAccessGate;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 class LeadController extends Controller
 {
@@ -374,8 +372,7 @@ class LeadController extends Controller
             $leadStageLabels = app(LeadFormDataService::class)->stageLabels();
         }
         
-        $canCreateLeads = Auth::user() instanceof Staff
-            && app(StaffAccessGate::class)->canCreateLeads(Auth::user());
+        $canCreateLeads = auth('admin')->check();
 
         return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'leadStageLabels', 'unreadEmailCounts', 'canCreateLeads'));
     }
@@ -461,8 +458,7 @@ class LeadController extends Controller
         }
 
         $leadStageLabels = [];
-        $canCreateLeads = Auth::user() instanceof Staff
-            && app(StaffAccessGate::class)->canCreateLeads(Auth::user());
+        $canCreateLeads = auth('admin')->check();
 
         return view('crm.leads.other-parties-index', compact('lists', 'totalData', 'perPage', 'leadStageLabels', 'canCreateLeads'));
     }
@@ -640,30 +636,6 @@ class LeadController extends Controller
      *
      * @param  array<int|string, mixed>  $module_access
      */
-    /**
-     * Restricted staff need Leads → Add; others follow route middleware defaults.
-     */
-    protected function denyUnlessCanCreateLead(Request $request): void
-    {
-        $user = Auth::user();
-        if (! $user instanceof Staff || ! app(StaffAccessGate::class)->canCreateLeads($user)) {
-            $message = 'You do not have permission to create leads. Contact Super Admin if you need access.';
-
-            if ($request->expectsJson() || $request->ajax()) {
-                throw new HttpResponseException(response()->json([
-                    'success' => false,
-                    'status' => false,
-                    'message' => $message,
-                    'errors' => ['error' => [$message]],
-                ], 403));
-            }
-
-            throw new HttpResponseException(
-                Redirect::route('leads.index')->with('error', $message)
-            );
-        }
-    }
-
     protected function staffRoleCanOpenLeadList(array $module_access): bool
     {
         $user = Auth::user();
@@ -866,8 +838,6 @@ class LeadController extends Controller
      */
     public function create(Request $request, LeadFormDataService $formData)
     {
-        $this->denyUnlessCanCreateLead($request);
-
         return view('crm.leads.create', $formData->createFormData());
     }
 
@@ -876,8 +846,6 @@ class LeadController extends Controller
      */
     public function store(Request $request)
     {
-        $this->denyUnlessCanCreateLead($request);
-
         // Debug logging
         Log::info('Lead store method called');
         Log::info('Request method: ' . $request->method());

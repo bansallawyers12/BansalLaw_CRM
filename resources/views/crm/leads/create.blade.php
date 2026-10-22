@@ -2223,7 +2223,9 @@
                             if (response.status === 419) {
                                 renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
                             } else if (response.status === 403) {
-                                renderSpaErrorSummary(['You do not have permission to create leads. Contact Super Admin if you need access.']);
+                                var forbiddenMsg = (data && (data.message || (data.errors && data.errors.error && data.errors.error[0])))
+                                    || 'You do not have permission to perform this action.';
+                                renderSpaErrorSummary([forbiddenMsg]);
                             } else if (response.status === 401) {
                                 renderSpaErrorSummary(['Your session expired. Please refresh the page and sign in again.']);
                             } else {

@@ -143,9 +143,7 @@ class LeadFormDataService
      */
     public function createFormData(): array
     {
-        $staff = auth('admin')->user();
-        $canCreateLeads = $staff instanceof \App\Models\Staff
-            && app(\App\Services\CrmAccess\StaffAccessGate::class)->canCreateLeads($staff);
+        $canCreateLeads = auth('admin')->check();
 
         return [
             'countries' => $this->countries(),

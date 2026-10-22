@@ -14,8 +14,7 @@
     if ($_staffTop instanceof \App\Models\Staff && !empty($_navFlags['tasks'])) {
         $_pendingTaskCount = app(\App\Services\DashboardService::class)->getPendingOpenTaskCount($_staffTop);
     }
-    $_canCreateLeads = $_staffTop instanceof \App\Models\Staff
-        && app(\App\Services\CrmAccess\StaffAccessGate::class)->canCreateLeads($_staffTop);
+    $_canCreateLeads = auth('admin')->check();
 
     $_routeName = Route::currentRouteName() ?? '';
     $_navAccounts = in_array($_routeName, [
