@@ -70,7 +70,6 @@ class Kernel extends HttpKernel
         'communication.check' => \App\Http\Middleware\EnsureCommunicationCheckEnabled::class,
         'mcp.admin.guard' => \App\Http\Middleware\SetAdminGuardFromSanctumUser::class,
         'booking.api.access' => \App\Http\Middleware\VerifyBookingApiAccess::class,
-        'restricted.access' => \App\Http\Middleware\RestrictStaffNavAccess::class,
     ];
 
     /**

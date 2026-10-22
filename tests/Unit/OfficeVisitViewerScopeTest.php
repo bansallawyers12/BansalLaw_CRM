@@ -16,7 +16,6 @@ class OfficeVisitViewerScopeTest extends TestCase
     public function in_person_list_is_limited_to_the_assignee(): void
     {
         config([
-            'crm_access.restricted_access.enabled' => false,
             'crm_access.matter_scope_bypass_role_ids' => [1],
             'crm_access.quick_access_only_role_ids' => [14],
         ]);

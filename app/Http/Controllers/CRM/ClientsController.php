@@ -28,7 +28,6 @@ use App\Models\AccountClientReceipt;
 
 use App\Models\Matter;
 use App\Models\ClientMatter;
-use App\Models\StaffRecordGrant;
 use App\Models\Branch;
 use App\Support\CrmListingTextSearch;
 use App\Support\MatterStreamHelper;
@@ -6340,14 +6339,6 @@ class ClientsController extends Controller
                         'error' => 'Unauthorized access to email log'
                     ], 403);
                 }
-                $gate = app(\App\Services\CrmAccess\StaffAccessGate::class);
-                if ($gate->isFeatureEnabled() && $gate->isRestricted($staff) && ! $gate->hasFullCrmAccess($staff)) {
-                    // Truly unlinked mail stays blocked; grant-linked mail uses ensureEmailAccess above.
-                    return response()->json([
-                        'success' => false,
-                        'error' => 'You can only open emails linked to clients, leads, or matters you have been granted.',
-                    ], 403);
-                }
             }
 
             // Prefer stored body / preview so open does not re-call Python for every view.
@@ -6817,16 +6808,6 @@ class ClientsController extends Controller
 
         // Calendar invites / ICS events belong on the calendar, not mail lists.
         \App\Models\EmailLog::applyExcludeCalendarInvitesFromMailLists($query);
-
-        // Restricted staff: only emails linked to granted clients / matters.
-        if ($isGlobalSyncedMailView && $staff instanceof \App\Models\Staff) {
-            $accessGate = app(\App\Services\CrmAccess\StaffAccessGate::class);
-            if ($accessGate->isFeatureEnabled()
-                && $accessGate->isRestricted($staff)
-                && ! $accessGate->hasFullCrmAccess($staff)) {
-                $accessGate->applyGrantedEmailLogFilter($query, $staff);
-            }
-        }
 
         if ($folder === 'all' && ! $isGlobalSyncedMailView) {
             $this->applyClientAllMailDuplicateScope($query);

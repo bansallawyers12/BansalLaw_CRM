@@ -8,7 +8,6 @@ use App\Models\StaffCalendarViewGrant;
 use App\Models\UserRole;
 use App\Services\StaffPersonalCalendarFeedService;
 use App\Services\CrmAccess\CrmAccessService;
-use App\Services\CrmAccess\StaffRestrictedAccessService;
 use App\Services\StaffMailboxService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -226,12 +225,6 @@ class StaffController extends Controller
 
             $storeActorStaff = $storeActor instanceof Staff ? $storeActor : null;
             $freshStaff = $obj->fresh();
-            app(StaffRestrictedAccessService::class)->syncProfileIfRestrictedRole($freshStaff, $storeActorStaff);
-            app(StaffRestrictedAccessService::class)->syncFullCrmAllocationAccessAfterStaffSave(
-                $freshStaff,
-                (bool) ($freshStaff->has_full_crm_allocation_access ?? false),
-                $storeActorStaff
-            );
 
             app(StaffMailboxService::class)->syncFromStaff(
                 $obj->fresh(),
@@ -388,12 +381,6 @@ class StaffController extends Controller
             if ($saved) {
                 $actorStaff = $actor instanceof Staff ? $actor : null;
                 $freshStaff = $staff->fresh();
-                app(StaffRestrictedAccessService::class)->syncProfileIfRestrictedRole($freshStaff, $actorStaff);
-                app(StaffRestrictedAccessService::class)->syncFullCrmAllocationAccessAfterStaffSave(
-                    $freshStaff,
-                    (bool) ($freshStaff->has_full_crm_allocation_access ?? false),
-                    $actorStaff
-                );
 
                 app(StaffMailboxService::class)->syncFromStaff(
                     $freshStaff,

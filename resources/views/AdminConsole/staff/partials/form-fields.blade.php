@@ -190,7 +190,7 @@
             <h4>Permissions & access</h4>
         </div>
         <div class="accordion-body collapse" id="{{ $fieldPrefix }}_access" data-bs-parent="#{{ $accordionId }}">
-            <div class="staff-access-options">
+            <div class="staff-permission-options">
                 @if($canQuick)
                 <div class="form-group">
                     <input type="hidden" name="quick_access_enabled" value="0">
@@ -327,7 +327,7 @@
                             @checked(old('has_full_crm_allocation_access', $isEdit ? ($fetchedData->has_full_crm_allocation_access ?? false) : false))>
                         <span>Full CRM access (all clients, leads, matters &amp; email)</span>
                     </label>
-                    <small class="text-muted d-block mt-1">Bypasses allocation and matter-team restrictions so this staff member can open any client, lead, matter, documents, and synced mailbox mail. Incompatible with Staff Access restricted (grants-only) mode — saving restricted profile clears this flag. Only native Super Admin can enable this.</small>
+                    <small class="text-muted d-block mt-1">Bypasses allocation and matter-team restrictions so this staff member can open any client, lead, matter, documents, and synced mailbox mail. Only native Super Admin can enable this.</small>
                 </div>
                 @endif
 

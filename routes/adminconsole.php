@@ -21,8 +21,6 @@ use App\Http\Controllers\AdminConsole\Sms\SmsWebhookController;
 use App\Http\Controllers\AdminConsole\ESignatureController;
 use App\Http\Controllers\AdminConsole\EmailLabelController;
 use App\Http\Controllers\AdminConsole\ActivitySearchController;
-use App\Http\Controllers\AdminConsole\StaffRestrictedAccessController;
-
 /*
 |--------------------------------------------------------------------------
 | AdminConsole Routes
@@ -34,7 +32,7 @@ use App\Http\Controllers\AdminConsole\StaffRestrictedAccessController;
 |
 */
 
-Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 'restricted.access', 'adminconsole'])->group(function() {
+Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 'adminconsole'])->group(function() {
     
     // Features routes - Feature management
     Route::prefix('features')->name('features.')->group(function() {
@@ -208,27 +206,10 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/activity-search/search-clients', [ActivitySearchController::class, 'searchClients'])->name('activity-search.search-clients');
         Route::get('/activity-search/detail/{id?}', [ActivitySearchController::class, 'show'])->name('activity-search.show');
 
-        // Staff Access — Super Admin restricted profiles / grants (Step 7) + audit log (Step 8)
-        Route::get('/staff-access', [StaffRestrictedAccessController::class, 'index'])->name('staff-access.index');
-        Route::get('/staff-access/search', [StaffRestrictedAccessController::class, 'searchResources'])->name('staff-access.search');
-        Route::get('/staff-access/audit', [StaffRestrictedAccessController::class, 'audit'])->name('staff-access.audit');
-        Route::get('/staff-access/audit/{auditId}', [StaffRestrictedAccessController::class, 'auditShow'])->name('staff-access.audit.show');
-        Route::get('/staff-access/{id}', [StaffRestrictedAccessController::class, 'edit'])->name('staff-access.edit');
-        Route::get('/staff-access/{id}/inventory', [StaffRestrictedAccessController::class, 'inventoryJson'])->name('staff-access.inventory');
-        Route::put('/staff-access/{id}/profile', [StaffRestrictedAccessController::class, 'updateProfile'])->name('staff-access.profile');
-        Route::post('/staff-access/{id}/grants', [StaffRestrictedAccessController::class, 'storeGrant'])->name('staff-access.grants.store');
-        Route::delete('/staff-access/{id}/grants/{grantId}', [StaffRestrictedAccessController::class, 'revokeGrant'])->name('staff-access.grants.revoke');
+        // Legacy Staff Access URLs (retired) → Admin Console home
+        Route::redirect('/staff-access/{any?}', '/adminconsole/features/matter')->where('any', '.*');
+        Route::redirect('/staff_access/{any?}', '/adminconsole/features/matter')->where('any', '.*');
 
-        // Underscore aliases (bookmarks / older links)
-        Route::redirect('/staff_access', '/adminconsole/system/staff-access');
-        Route::get('/staff_access/search', [StaffRestrictedAccessController::class, 'searchResources']);
-        Route::get('/staff_access/audit', [StaffRestrictedAccessController::class, 'audit']);
-        Route::get('/staff_access/audit/{auditId}', [StaffRestrictedAccessController::class, 'auditShow']);
-        Route::get('/staff_access/{id}', [StaffRestrictedAccessController::class, 'edit']);
-        Route::put('/staff_access/{id}/profile', [StaffRestrictedAccessController::class, 'updateProfile']);
-        Route::post('/staff_access/{id}/grants', [StaffRestrictedAccessController::class, 'storeGrant']);
-        Route::delete('/staff_access/{id}/grants/{grantId}', [StaffRestrictedAccessController::class, 'revokeGrant']);
-        
     });
     
 });

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\CRM;
 use App\Models\Admin;
 use App\Models\ClientMatter;
 use App\Models\Staff;
-use App\Services\CrmAccess\StaffAccessGate;
 use App\Services\EmailMatchingService;
 use App\Support\StaffClientVisibility;
 use Illuminate\Http\Request;
@@ -904,16 +903,7 @@ class OutlookAddinController extends EmailUploadController
             return true;
         }
 
-        $gate = app(StaffAccessGate::class);
-        if (! $gate->isFeatureEnabled() || $gate->hasFullCrmAccess($actor) || ! $gate->isRestricted($actor)) {
-            return StaffClientVisibility::canAccessClientOrLead($clientId, $actor);
-        }
-
-        return StaffClientVisibility::canFileEmailOnRecord(
-            $clientId,
-            $actor,
-            $matterId > 0 ? $matterId : null
-        );
+        return StaffClientVisibility::canAccessClientOrLead($clientId, $actor);
     }
 
     /**
