@@ -8,7 +8,6 @@ use App\Models\ClientAccessGrant;
 use App\Models\Document;
 use App\Models\Staff;
 use App\Services\CrmAccess\CrmAccessService;
-use App\Services\CrmAccess\StaffAccessGate;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
@@ -137,11 +136,6 @@ final class StaffClientVisibility
     {
         if (! $user) {
             return false;
-        }
-
-        // Restricted-access mode: only Super Admin has full bypass (not Admin).
-        if ((bool) config('crm_access.restricted_access.enabled', false)) {
-            return $user instanceof Staff && app(StaffAccessGate::class)->hasFullCrmAccess($user);
         }
 
         if ($user instanceof Staff && app(CrmAccessService::class)->hasEffectiveSuperAdminPrivileges($user)) {
@@ -343,27 +337,6 @@ final class StaffClientVisibility
             return;
         }
 
-        if ($user instanceof Staff) {
-            $gate = app(StaffAccessGate::class);
-            if ($gate->isRestricted($user) && ! $gate->hasFullCrmAccess($user)) {
-                $adminIds = $gate->allowedAdminIds($user);
-                $matterIds = $gate->allowedMatterIds($user);
-                $query->where(function ($q) use ($cmAlias, $adminIds, $matterIds) {
-                    if ($matterIds !== []) {
-                        $q->orWhereIn($cmAlias . '.id', $matterIds);
-                    }
-                    if ($adminIds !== []) {
-                        $q->orWhereIn($cmAlias . '.client_id', $adminIds);
-                    }
-                    if ($matterIds === [] && $adminIds === []) {
-                        $q->whereRaw('0 = 1');
-                    }
-                });
-
-                return;
-            }
-        }
-
         $staffId = (int) $user->id;
         $matterAlias = preg_replace('/[^A-Za-z0-9_]/', '', $cmAlias) ?: 'cm';
         $query->where(function ($q) use ($staffId, $matterAlias) {
@@ -505,10 +478,6 @@ final class StaffClientVisibility
             return;
         }
 
-        if ($user instanceof Staff && self::applyRestrictedAdminIdFilter($query, $user, 'admins.id')) {
-            return;
-        }
-
         $staffId = (int) $user->id;
         $column = $query->getModel()->qualifyColumn('user_id');
         $query->where(function (Builder $q) use ($column, $staffId) {
@@ -647,17 +616,6 @@ final class StaffClientVisibility
             return $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
         }
 
-        // Restricted-access feature: restricted staff are grants-only; Super Admin is full.
-        if ((bool) config('crm_access.restricted_access.enabled', false) && $user instanceof Staff) {
-            $gate = app(StaffAccessGate::class);
-            if ($gate->hasFullCrmAccess($user)) {
-                return true;
-            }
-            if ($gate->isRestricted($user)) {
-                return $gate->canClientOrLead($user, $adminId, (string) ($row->type ?? ''));
-            }
-        }
-
         if (! self::isAllocationEnforcementEnabled()) {
             return true;
         }
@@ -723,16 +681,7 @@ final class StaffClientVisibility
             return false;
         }
 
-        if (! (bool) config('crm_access.restricted_access.enabled', false)) {
-            return true;
-        }
-
-        $gate = app(StaffAccessGate::class);
-        if ($gate->hasFullCrmAccess($user) || ! $gate->isRestricted($user)) {
-            return true;
-        }
-
-        return $gate->canEmails($user, $adminId, $matterId);
+        return true;
     }
 
     /**
@@ -754,41 +703,6 @@ final class StaffClientVisibility
             if (! MatterScopedAccess::canAccessClientMatter($clientMatterId, $user)) {
                 return false;
             }
-        }
-
-        if (! (bool) config('crm_access.restricted_access.enabled', false)) {
-            return true;
-        }
-
-        $gate = app(StaffAccessGate::class);
-        if ($gate->hasFullCrmAccess($user) || ! $gate->isRestricted($user)) {
-            return true;
-        }
-
-        return $gate->canWriteNotes($user, $adminId, $clientMatterId);
-    }
-
-    /**
-     * When staff is restricted, limit queries to granted admin IDs only.
-     *
-     * @param  Builder<\App\Models\Admin>|\Illuminate\Database\Eloquent\Builder  $query
-     */
-    private static function applyRestrictedAdminIdFilter($query, Staff $user, string $adminIdColumn): bool
-    {
-        if (! (bool) config('crm_access.restricted_access.enabled', false)) {
-            return false;
-        }
-
-        $gate = app(StaffAccessGate::class);
-        if (! $gate->isRestricted($user) || $gate->hasFullCrmAccess($user)) {
-            return false;
-        }
-
-        $ids = $gate->allowedAdminIds($user);
-        if ($ids === []) {
-            $query->whereRaw('0 = 1');
-        } else {
-            $query->whereIn($adminIdColumn, $ids);
         }
 
         return true;

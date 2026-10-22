@@ -193,14 +193,6 @@ class ClientEmailFilterController extends Controller
             throw new HttpResponseException(response()->json(['success' => false, 'error' => 'Unauthorized'], 403));
         }
 
-        // Restricted staff: unlinked synced mail stays blocked (granted clients use ensureEmailAccess).
-        $gate = app(\App\Services\CrmAccess\StaffAccessGate::class);
-        if ($gate->isFeatureEnabled() && $gate->isRestricted($staff) && ! $gate->hasFullCrmAccess($staff)) {
-            throw new HttpResponseException(response()->json([
-                'success' => false,
-                'error' => 'You can only open emails linked to clients, leads, or matters you have been granted.',
-            ], 403));
-        }
     }
 
     private function paginatedJson($paginator): JsonResponse

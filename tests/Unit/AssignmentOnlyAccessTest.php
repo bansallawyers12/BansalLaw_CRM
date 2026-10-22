@@ -93,7 +93,6 @@ class AssignmentOnlyAccessTest extends TestCase
     public function emails_tab_is_limited_to_broad_visibility_staff(): void
     {
         config([
-            'crm_access.restricted_access.enabled' => false,
             'crm_access.quick_access_only_role_ids' => [14],
             'crm_access.matter_scope_bypass_role_ids' => [1],
         ]);

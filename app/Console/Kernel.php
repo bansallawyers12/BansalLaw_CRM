@@ -57,8 +57,6 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\IssueMcpStaffTokenCommand',
         '\App\Console\Commands\PromotePendingUploadsToS3',
         GenerateOutlookAddinManifest::class,
-        \App\Console\Commands\EnsureRestrictedUserRole::class,
-        \App\Console\Commands\QaRestrictedAccess::class,
     ];
 
     /**

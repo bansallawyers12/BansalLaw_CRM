@@ -161,22 +161,6 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Restricted-access profile (full vs restricted + dashboard widgets).
-     */
-    public function accessProfile(): HasOne
-    {
-        return $this->hasOne(StaffAccessProfile::class, 'staff_id');
-    }
-
-    /**
-     * Explicit client / lead / matter grants for restricted staff.
-     */
-    public function recordGrants(): HasMany
-    {
-        return $this->hasMany(StaffRecordGrant::class, 'staff_id');
-    }
-
-    /**
      * Staff / website booking calendars this user may open in "Other calendars".
      */
     public function calendarViewGrants(): HasMany
@@ -351,24 +335,10 @@ class Staff extends Authenticatable
 
     /**
      * Whether this staff member may access Admin Console (/adminconsole).
-     * Restricted staff may also get access via Staff Access profile grants.
      */
     public function canAccessAdminConsole(): bool
     {
-        if ($this->canAccessAdminConsoleByRole()) {
-            return true;
-        }
-
-        try {
-            $gate = app(\App\Services\CrmAccess\StaffAccessGate::class);
-            if ($gate->isFeatureEnabled() && $gate->isRestricted($this)) {
-                return $gate->canAdminConsole($this);
-            }
-        } catch (\Throwable) {
-            // Fall through when container/gate unavailable (e.g. early boot).
-        }
-
-        return false;
+        return $this->canAccessAdminConsoleByRole();
     }
 
     /**
@@ -774,8 +744,6 @@ class Staff extends Authenticatable
 
     /**
      * Super Admin grant: bypass allocation, matter-team scoping, and assignment-only filters.
-     * When restricted access is enabled, {@see \App\Services\CrmAccess\StaffRestrictedAccessService::hasFullCrmAccess()}
-     * also honors this flag so Staff form and Staff Access stay aligned.
      */
     public function hasFullCrmAllocationAccess(): bool
     {
