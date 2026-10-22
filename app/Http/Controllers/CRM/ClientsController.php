@@ -34,6 +34,7 @@ use App\Support\CrmListingTextSearch;
 use App\Support\MatterStreamHelper;
 use App\Support\ClientTagStorage;
 use App\Support\ClientActivity;
+use App\Support\ReleaseSessionLock;
 use App\Support\EmailTimelineActivity;
 
 use Illuminate\Support\Facades\Storage;
@@ -2921,6 +2922,8 @@ class ClientsController extends Controller
 
 	public function activities(Request $request)
 	{
+		ReleaseSessionLock::forParallelRequests();
+
 		$response = [
 			'status' => false,
 			'message' => 'An error occurred while fetching activities',
