@@ -17,6 +17,7 @@ use App\Models\ClientMatter;
 use App\Services\ClientNotesListService;
 use App\Services\NoteAttachmentService;
 use App\Support\NoteAttachmentHtml;
+use App\Support\ReleaseSessionLock;
 use App\Traits\LogsClientActivity;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -52,7 +53,9 @@ class ClientNotesController extends Controller
      * @return json
      */
     public function createnote(Request $request)
-    { 
+    {
+        ReleaseSessionLock::forParallelRequests();
+
         $response = []; // Initialize response array
         $isUpdate = isset($request->noteid) && $request->noteid != '';
         $changedFields = [];
@@ -415,6 +418,8 @@ class ClientNotesController extends Controller
      */
     public function getnotes(Request $request, ClientNotesListService $notesList)
     {
+        ReleaseSessionLock::forParallelRequests();
+
         $clientId = (int) $request->input('clientid', $request->query('clientid'));
         $this->ensureCrmRecordAccess($clientId);
 

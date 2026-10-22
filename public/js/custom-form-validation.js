@@ -229,6 +229,88 @@ function flushTomSelectPendingCreates($form) {
 	});
 }
 
+var CRM_NOTE_SAVE_TIMEOUT_MS = 120000;
+
+function crmHideFormSubmitLoader() {
+	$('.popuploader').hide();
+	$('.btn-create-note').prop('disabled', false);
+}
+
+function crmParseAjaxJson(response) {
+	if (typeof response === 'object' && response !== null) {
+		return response;
+	}
+	if (typeof response === 'string') {
+		var trimmed = response.trim();
+		if (!trimmed) {
+			return null;
+		}
+		try {
+			return JSON.parse(trimmed);
+		} catch (e) {
+			return null;
+		}
+	}
+	return null;
+}
+
+function crmNoteSaveErrorMessage(xhr, status) {
+	if (status === 'timeout') {
+		return 'Saving the note took too long. If the note was created, refresh the Notes tab. Otherwise try again.';
+	}
+	if (xhr && xhr.status === 419) {
+		return 'Your session expired. Refresh the page and sign in again, then retry.';
+	}
+	if (xhr && xhr.status === 403) {
+		return 'You do not have permission to save this note.';
+	}
+	if (xhr && xhr.status >= 500) {
+		return 'A server error occurred while saving the note. Please try again.';
+	}
+	return 'Could not save the note. Check your connection and try again.';
+}
+
+function crmSubmitNoteFormAjax(formName, options) {
+	options = options || {};
+	var myform = document.getElementById(formName);
+	if (!myform) {
+		crmHideFormSubmitLoader();
+		return;
+	}
+	var fd = new FormData(myform);
+	$('.btn-create-note').prop('disabled', true);
+	$.ajax({
+		type: 'post',
+		url: $("form[name=" + formName + "]").attr('action'),
+		processData: false,
+		contentType: false,
+		data: fd,
+		timeout: CRM_NOTE_SAVE_TIMEOUT_MS,
+		success: function(response) {
+			crmHideFormSubmitLoader();
+			var obj = crmParseAjaxJson(response);
+			if (!obj) {
+				$('.custom-error-msg').html('<span class="alert alert-danger">Unexpected server response while saving the note. Please refresh and check the Notes tab.</span>');
+				return;
+			}
+			if (typeof options.onSuccess === 'function') {
+				options.onSuccess(obj);
+			}
+		},
+		error: function(xhr, status) {
+			crmHideFormSubmitLoader();
+			var msg = crmNoteSaveErrorMessage(xhr, status);
+			$('.custom-error-msg').html('<span class="alert alert-danger">' + msg + '</span>');
+			if (typeof crmToast === 'function') {
+				crmToast(msg, 'error');
+			}
+		},
+		complete: function() {
+			crmHideFormSubmitLoader();
+		}
+	});
+}
+
 function customValidate(formName, savetype = '')
 	{ //alert(formName);
 		if (formName === 'convert_lead_to_client') {
@@ -2372,36 +2454,26 @@ function customValidate(formName, savetype = '')
 				else if(formName == 'notetermform')
 				{
 					var client_id = $('input[name="client_id"]').val() || window.ClientDetailConfig?.clientId;
-					var myform = document.getElementById('notetermform');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-						success: function(response){
-							$('.popuploader').hide();
-							// Handle both string and already-parsed JSON responses
-							var obj = typeof response === 'string' ? $.parseJSON(response) : response;
-							if(obj.status){
+					crmSubmitNoteFormAjax('notetermform', {
+						onSuccess: function(obj) {
+							if (obj.status) {
 								$('#create_note').modal('hide');
 								$('#create_note input[name="spend_mins"]').val('');
 								if (typeof window.resetNoteAttachments === 'function') {
 									window.resetNoteAttachments($('#create_note'));
 								}
-								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
+								$('.custom-error-msg').html('<span class="alert alert-success">' + obj.message + '</span>');
 								if (typeof window.handleNoteSaveSideEffects === 'function') {
 									window.handleNoteSaveSideEffects(obj);
 								} else if (typeof getallnotes === 'function') {
 									getallnotes();
 								} else {
 									$.ajax({
-										url: site_url+'/get-notes',
-										type:'GET',
+										url: site_url + '/get-notes',
+										type: 'GET',
 										cache: false,
-										data:{clientid:client_id,type:'client',_: Date.now()},
-										success: function(responses){
+										data: { clientid: client_id, type: 'client', _: Date.now() },
+										success: function(responses) {
 											$('.note_term_list').html(responses);
 											if (typeof window.filterNotes === 'function') {
 												window.filterNotes();
@@ -2409,41 +2481,28 @@ function customValidate(formName, savetype = '')
 										}
 									});
 								}
-									getallactivities(client_id);
-								} else {
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-								}
+								getallactivities(client_id);
+							} else {
+								$('.custom-error-msg').html('<span class="alert alert-danger">' + obj.message + '</span>');
 							}
-						});
-					}
+						}
+					});
+				}
 					else if(formName == 'notetermform_n')
 					{
                         var client_id = $('input[name="client_id"]').val() || window.ClientDetailConfig?.clientId;
-						var myform = document.getElementById('notetermform_n');
-						var fd = new FormData(myform);
-						$.ajax({
-							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
-							processData: false,
-							contentType: false,
-							data: fd,
-							success: function(response){
-								$('.popuploader').hide();
-								// Handle both string and already-parsed JSON responses
-								var obj = typeof response === 'string' ? $.parseJSON(response) : response;
-
-								if(obj.status){
-								    $('#create_note_d input[name="title"]').val('');
-								    $('#create_note_d input[name="title"]').val('');
-								$("#create_note_d .tinymce-editor").val('');
-								$('#create_note_d input[name="noteid"]').val('');
-								$('#create_note_d input[name="spend_mins"]').val('');
-								if (typeof window.resetNoteAttachments === 'function') {
-									window.resetNoteAttachments($('#create_note_d'));
-								}
-								// Clear TinyMCE editor if initialized
-								if (typeof tinymce !== 'undefined') {
-									$("#create_note_d .tinymce-editor").each(function() {
+						crmSubmitNoteFormAjax('notetermform_n', {
+							onSuccess: function(obj) {
+								if (obj.status) {
+									$('#create_note_d input[name="title"]').val('');
+									$('#create_note_d input[name="noteid"]').val('');
+									$('#create_note_d input[name="spend_mins"]').val('');
+									$("#create_note_d .tinymce-editor").val('');
+									if (typeof window.resetNoteAttachments === 'function') {
+										window.resetNoteAttachments($('#create_note_d'));
+									}
+									if (typeof tinymce !== 'undefined') {
+										$("#create_note_d .tinymce-editor").each(function() {
 											var editorId = $(this).attr('id');
 											if (editorId && tinymce.get(editorId)) {
 												tinymce.get(editorId).setContent('');
@@ -2451,30 +2510,29 @@ function customValidate(formName, savetype = '')
 										});
 									}
 									$('#create_note_d').modal('hide');
-									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-
-								if (typeof window.handleNoteSaveSideEffects === 'function') {
-									window.handleNoteSaveSideEffects(obj);
-								} else if (typeof getallnotes === 'function') {
-									getallnotes();
-								} else {
-									$.ajax({
-										url: site_url+'/get-notes',
-										type:'GET',
-										cache: false,
-										data:{clientid:client_id,type:'client',_: Date.now()},
-										success: function(responses){
-											$('.note_term_list').html(responses);
-											if (typeof window.filterNotes === 'function') {
-												window.filterNotes();
+									$('.custom-error-msg').html('<span class="alert alert-success">' + obj.message + '</span>');
+									if (typeof window.handleNoteSaveSideEffects === 'function') {
+										window.handleNoteSaveSideEffects(obj);
+									} else if (typeof getallnotes === 'function') {
+										getallnotes();
+									} else {
+										$.ajax({
+											url: site_url + '/get-notes',
+											type: 'GET',
+											cache: false,
+											data: { clientid: client_id, type: 'client', _: Date.now() },
+											success: function(responses) {
+												$('.note_term_list').html(responses);
+												if (typeof window.filterNotes === 'function') {
+													window.filterNotes();
+												}
 											}
-										}
-									});
+										});
+									}
+									getallactivities(client_id);
+								} else {
+									$('.custom-error-msg').html('<span class="alert alert-danger">' + obj.message + '</span>');
 								}
-                                    getallactivities(client_id);
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
-                                }
 							}
 						});
 					}
