@@ -70,6 +70,8 @@ class Kernel extends HttpKernel
         'communication.check' => \App\Http\Middleware\EnsureCommunicationCheckEnabled::class,
         'mcp.admin.guard' => \App\Http\Middleware\SetAdminGuardFromSanctumUser::class,
         'booking.api.access' => \App\Http\Middleware\VerifyBookingApiAccess::class,
+        // No-op: legacy Staff Access removed; stale route cache may still reference this alias.
+        'restricted.access' => \App\Http\Middleware\RestrictStaffNavAccess::class,
     ];
 
     /**
