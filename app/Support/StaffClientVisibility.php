@@ -644,10 +644,8 @@ final class StaffClientVisibility
 
     /**
      * Whether the client/lead Emails tab and its mail APIs are available.
-     * Only the broad-visibility group: Super Admin (including elevation), full CRM
-     * allocation, Calling Team (role or department), and the named exceptions
-     * while restricted access is off. Being on the matter team, or holding a
-     * client/matter grant, does not open this tab.
+     * Same visibility as notes: allocation, matter team, active client_access_grants
+     * (including matter_temp), and optional matter-scoped enforcement when $matterId is set.
      */
     public static function canAccessEmails(int $adminId, ?Authenticatable $user = null, ?int $matterId = null): bool
     {
@@ -657,17 +655,21 @@ final class StaffClientVisibility
             return false;
         }
 
-        if (! self::seesAllClientMatters($user)) {
+        if (! self::canAccessClientOrLead($adminId, $user)) {
             return false;
         }
 
-        return self::canAccessClientOrLead($adminId, $user);
+        if ($matterId !== null && $matterId > 0 && MatterScopedAccess::isEnabled()) {
+            if (! MatterScopedAccess::canAccessClientMatter($matterId, $user)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
      * Whether staff may file an Outlook message onto a client/lead.
-     * This is separate from the Emails tab: assigned staff can still file mail,
-     * and restricted staff still need an email grant.
      */
     public static function canFileEmailOnRecord(int $adminId, ?Authenticatable $user = null, ?int $matterId = null): bool
     {
