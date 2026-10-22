@@ -130,6 +130,27 @@
         return id !== undefined && id !== null && String(id) !== '' ? String(id) : null;
     }
 
+    /** Align hidden matter select + ClientDetailConfig with URL before composer lock / task fetch. */
+    function syncMatterContextFromDetail() {
+        var shared = window.ClientDetailShared;
+        if (shared && typeof shared.parseClientDetailMatterRefFromUrl === 'function') {
+            var ref = shared.parseClientDetailMatterRefFromUrl();
+            if (ref && typeof shared.selectClientDetailMatterByRef === 'function') {
+                shared.selectClientDetailMatterByRef(ref, { silent: true });
+            }
+        }
+        var selectedId = null;
+        if (shared && typeof shared.getSelectedClientDetailMatterId === 'function') {
+            selectedId = safeId(shared.getSelectedClientDetailMatterId());
+        }
+        if (!selectedId) {
+            selectedId = safeId($('#sel_matter_id_client_detail').val());
+        }
+        if (selectedId && window.ClientDetailConfig) {
+            window.ClientDetailConfig.clientMatterId = selectedId;
+        }
+    }
+
     function matterRef() {
         var shared = window.ClientDetailShared;
         if (shared && typeof shared.parseClientDetailMatterRefFromUrl === 'function') {
@@ -1290,6 +1311,7 @@
     }
 
     $(document).ready(function () {
+        syncMatterContextFromDetail();
         ensureDueDatePicker();
         reload();
 
@@ -1313,8 +1335,10 @@
             if (String(tabId || '').toLowerCase() !== 'clientaction') {
                 return;
             }
+            syncMatterContextFromDetail();
             // Lazy-loaded Tasks HTML replaces the due input — re-bind Flatpickr
             ensureDueDatePicker();
+            syncComposerLock();
             scheduleReload();
         });
 

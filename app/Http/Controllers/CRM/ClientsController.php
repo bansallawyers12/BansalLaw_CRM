@@ -1780,20 +1780,14 @@ class ClientsController extends Controller
 
                 $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
 
-                $matterIdForEmailScope = ! empty($activeClientMatterId)
-                    ? (int) $activeClientMatterId
-                    : ((! empty($id1) && is_numeric($id1)) ? (int) $id1 : null);
-                $canAccessEmails = StaffClientVisibility::canAccessEmails(
+                $accessFlags = app(ClientDetailService::class)->resolveDetailAccessFlags(
                     (int) $id,
-                    Auth::user(),
-                    $matterIdForEmailScope
+                    ! empty($activeClientMatterId) ? (int) $activeClientMatterId : null,
+                    $id1 ?? null,
+                    Auth::user()
                 );
-
-                $canWriteClientNotes = StaffClientVisibility::canWriteClientNotes(
-                    (int) $id,
-                    Auth::user(),
-                    $matterIdForEmailScope
-                );
+                $canAccessEmails = $accessFlags['canAccessEmails'];
+                $canWriteClientNotes = $accessFlags['canWriteClientNotes'];
 
                 if (! $canAccessEmails && strtolower((string) $activeTab) === 'emails') {
                     $activeTab = 'personaldetails';

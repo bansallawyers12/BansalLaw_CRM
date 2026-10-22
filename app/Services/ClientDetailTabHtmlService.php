@@ -94,6 +94,16 @@ class ClientDetailTabHtmlService
             $data['suppressPersonalDetailsTagCard'] = true;
         }
 
+        $activeMatterId = ! empty($data['activeClientMatterId']) ? (int) $data['activeClientMatterId'] : null;
+        $accessFlags = $this->detailService->resolveDetailAccessFlags(
+            $clientId,
+            $activeMatterId,
+            $matterRef,
+            auth('admin')->user()
+        );
+        $data['canAccessEmails'] = $accessFlags['canAccessEmails'];
+        $data['canWriteClientNotes'] = $accessFlags['canWriteClientNotes'];
+
         return [
             'view' => $view,
             'data' => $data,
