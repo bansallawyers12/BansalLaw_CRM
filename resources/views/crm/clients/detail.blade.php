@@ -436,6 +436,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                                 ->get();
                                 $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                                 $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
+                                $heroSelectedMatterId = !empty($activeClientMatterId) ? (int) $activeClientMatterId : $latestClientMatterId;
                                 ?>
                                 <select name="matter_id" id="sel_matter_id_client_detail" class="form-control visa-dropdown" data-valid="required">
                                     <option value="">Select Matters</option>
@@ -443,7 +444,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                                         @php
                                             $matterName = \App\Models\Matter::displayTitleFromJoinedRow($matterlist->title ?? null);
                                         @endphp
-                                        <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
+                                        <option value="{{$matterlist->id}}" {{ $matterlist->id == $heroSelectedMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                                     @endforeach
                                 </select>
                             <?php
@@ -469,6 +470,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                             ->get();
                             $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                             $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
+                            $heroSelectedMatterId = !empty($activeClientMatterId) ? (int) $activeClientMatterId : $latestClientMatterId;
                             ?>
                             <select name="matter_id" id="sel_matter_id_client_detail" class="form-control visa-dropdown" data-valid="required">
                                 <option value="">Select Matters</option>
@@ -476,7 +478,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                                     @php
                                         $matterName = \App\Models\Matter::displayTitleFromJoinedRow($matterlist->title ?? null);
                                     @endphp
-                                    <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
+                                    <option value="{{$matterlist->id}}" {{ $matterlist->id == $heroSelectedMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                                 @endforeach
                             </select>
                         <?php

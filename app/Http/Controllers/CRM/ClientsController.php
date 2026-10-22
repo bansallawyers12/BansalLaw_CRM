@@ -1780,12 +1780,9 @@ class ClientsController extends Controller
 
                 $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
 
-                $matterIdForEmailScope = null;
-                if (! empty($id1) && is_numeric($id1)) {
-                    $matterIdForEmailScope = (int) $id1;
-                } elseif (! empty($activeClientMatterId)) {
-                    $matterIdForEmailScope = (int) $activeClientMatterId;
-                }
+                $matterIdForEmailScope = ! empty($activeClientMatterId)
+                    ? (int) $activeClientMatterId
+                    : ((! empty($id1) && is_numeric($id1)) ? (int) $id1 : null);
                 $canAccessEmails = StaffClientVisibility::canAccessEmails(
                     (int) $id,
                     Auth::user(),
