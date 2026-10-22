@@ -103,7 +103,7 @@
 			</div>
 			<form method="post" action="{{URL::to('/create-note')}}" name="notetermform_n" autocomplete="off" id="notetermform_n" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="client_id" id="client_id" value="{{$fetchedData->id}}">
+                    <input type="hidden" name="client_id" id="note_form_client_id_d" value="{{$fetchedData->id}}">
                     <input type="hidden" name="noteid" value="">
                     <input type="hidden" name="mailid" value="0">
                     <input type="hidden" name="vtype" value="client">
@@ -122,6 +122,10 @@
                                 )
                                 ->orderByDesc('client_matters.updated_at')
                                 ->get();
+                            $noteModalMatters = \App\Support\MatterScopedAccess::filterMattersForViewer(
+                                $noteModalMatters,
+                                auth('admin')->user()
+                            );
                         @endphp
                         @if($noteModalMatters->isNotEmpty())
                         <div class="col-12 col-lg-5">

@@ -725,7 +725,9 @@
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm" data-bs-toggle="modal" data-bs-target="#importLeadModal" title="Import Lead">
                                 <i class="fa-solid fa-upload"></i> Import Lead
                             </a>
+                            @if(!empty($canCreateLeads))
                             <a href="{{ route('leads.create') }}" class="btn btn-primary">Create Lead</a>
+                            @endif
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn{{ $activeLeadFilters > 0 ? ' filter_btn--active' : '' }}" id="filterToggleBtn">
                                 <i class="fa-solid fa-filter"></i> Filter
                                 @if($activeLeadFilters > 0)

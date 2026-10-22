@@ -8,9 +8,11 @@
                                 <option value="desc" selected>Newest First</option>
                                 <option value="asc">Oldest First</option>
                             </select>
+                            @if(!empty($canWriteClientNotes))
                             <button class="btn btn-primary btn-sm create_note_d" datatype="note">
                                 <i class="fa-solid fa-plus"></i> Add Note
                             </button>
+                            @endif
                         </div>
                     </div>
 

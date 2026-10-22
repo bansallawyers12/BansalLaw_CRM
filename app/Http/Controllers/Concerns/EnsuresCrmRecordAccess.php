@@ -183,4 +183,44 @@ trait EnsuresCrmRecordAccess
 
         abort(403, $payload['message']);
     }
+
+    /**
+     * Client/lead file access, optional matter team, and note-write scope (restricted grants).
+     */
+    protected function ensureClientNoteWriteAccess(int $adminId, ?int $clientMatterId = null): void
+    {
+        $this->ensureCrmRecordAccess($adminId);
+
+        if ($clientMatterId !== null && $clientMatterId > 0) {
+            $matter = ClientMatter::query()->find($clientMatterId);
+            if ($matter) {
+                $this->ensureClientMatterAccess($matter);
+            }
+        }
+
+        $user = Auth::guard('admin')->user();
+        if (! StaffClientVisibility::canWriteClientNotes($adminId, $user, $clientMatterId)) {
+            $payload = array_merge(StaffClientVisibility::unauthorizedPayload(), [
+                'message' => 'You do not have permission to save notes on this record.',
+            ]);
+
+            if (request()->expectsJson() || request()->ajax()) {
+                throw new HttpResponseException(response()->json($payload, 403));
+            }
+
+            abort(403, $payload['message']);
+        }
+    }
+
+    protected function resolveClientAdminIdFromNoteRequest(Request $request, ?int $fallbackClientId = null): int
+    {
+        $clientId = (int) $request->input('client_id', $fallbackClientId ?? 0);
+        $matterId = (int) $request->input('matter_id', 0);
+
+        if ($clientId <= 0 && $matterId > 0) {
+            $clientId = (int) ClientMatter::query()->where('id', $matterId)->value('client_id');
+        }
+
+        return $clientId;
+    }
 }

@@ -14,7 +14,7 @@
         e.preventDefault();
         var entityId = $(this).attr('data-id');
         if (entityId) {
-            $('#tags_clients #client_id').val(entityId);
+            $('#tags_clients #tags_modal_client_id').val(entityId);
             $('#tags_clients #create_new_as_red').val('0');
             $('#tags_clients #tags_red_mode_hint').hide();
             $('#tags_clients').modal('show');
@@ -26,7 +26,7 @@
         e.preventDefault();
         var entityId = $(this).attr('data-id');
         if (entityId) {
-            $('#tags_clients #client_id').val(entityId);
+            $('#tags_clients #tags_modal_client_id').val(entityId);
             $('#tags_clients #create_new_as_red').val('1');
             $('#tags_clients #tags_red_mode_hint').show();
             $('#tags_clients').modal('show');

@@ -441,6 +441,12 @@
         bindNotePageDropOverlay($('#create_note_d'));
 
         $(document).delegate('.create_note_d', 'click', function() {
+            if (window.ClientDetailConfig && window.ClientDetailConfig.canWriteClientNotes === false) {
+                if (typeof crmToast === 'function') {
+                    crmToast('You do not have permission to save notes on this record.', 'error');
+                }
+                return;
+            }
             // Reset type select and clear any leftover phone/extra fields from a previous edit
             $('#create_note_d select[name="task_group"]').val('');
             $('#create_note_d .additional-fields-container').html('');

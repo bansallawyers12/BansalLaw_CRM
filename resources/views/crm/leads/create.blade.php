@@ -2222,6 +2222,10 @@
                             restoreSaveButton(originalBtnHtml);
                             if (response.status === 419) {
                                 renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
+                            } else if (response.status === 403) {
+                                renderSpaErrorSummary(['You do not have permission to create leads. Contact Super Admin if you need access.']);
+                            } else if (response.status === 401) {
+                                renderSpaErrorSummary(['Your session expired. Please refresh the page and sign in again.']);
                             } else {
                                 renderSpaErrorSummary(['We could not save this lead. Please try again.']);
                             }

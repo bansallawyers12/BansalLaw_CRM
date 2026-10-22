@@ -262,6 +262,10 @@ function crmNoteSaveErrorMessage(xhr, status) {
 		return 'Your session expired. Refresh the page and sign in again, then retry.';
 	}
 	if (xhr && xhr.status === 403) {
+		var parsed = crmParseAjaxJson(xhr.responseText);
+		if (parsed && parsed.message) {
+			return parsed.message;
+		}
 		return 'You do not have permission to save this note.';
 	}
 	if (xhr && xhr.status >= 500) {

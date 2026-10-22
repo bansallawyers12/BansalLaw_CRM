@@ -54,9 +54,11 @@
                                     <span class="filter-count-badge">{{ $activeOpFilters }}</span>
                                 @endif
                             </a>
+                            @if(!empty($canCreateLeads))
                             <a href="{{ route('leads.create', ['other_party' => 1]) }}" class="btn btn-theme btn-theme-sm">
                                 <i class="fa-solid fa-user-plus"></i> Create Other Party
                             </a>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -211,7 +213,7 @@
                                                         Create an other party to use in conflict checks and matter roles.
                                                     @endif
                                                 </span>
-                                                @if($activeOpFilters === 0)
+                                                @if($activeOpFilters === 0 && !empty($canCreateLeads))
                                                     <a href="{{ route('leads.create', ['other_party' => 1]) }}" class="btn btn-theme btn-theme-sm mt-2">
                                                         <i class="fa-solid fa-user-plus"></i> Create Other Party
                                                     </a>

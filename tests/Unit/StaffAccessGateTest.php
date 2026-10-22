@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Models\Admin;
 use App\Models\Staff;
 use App\Models\StaffAccessProfile;
 use App\Models\StaffRecordGrant;
@@ -326,6 +327,48 @@ class StaffAccessGateTest extends TestCase
         $svc->ensureRestrictedProfile($staff);
 
         return $staff->fresh();
+    }
+
+    public function test_nav_action_for_createnote_route_is_view_not_add(): void
+    {
+        $gate = app(StaffAccessGate::class);
+
+        $this->assertSame('view', $gate->navActionForRoute('clients.createnote'));
+        $this->assertSame('view', $gate->navActionForRoute('clients.getnotes'));
+        $this->assertSame('view', $gate->navActionForRoute('clients.deletenote'));
+        $this->assertSame('add', $gate->navActionForRoute('clients.store'));
+        $this->assertSame('add', $gate->navActionForRoute('leads.create'));
+        $this->assertSame('add', $gate->navActionForRoute('leads.store'));
+    }
+
+    public function test_restricted_staff_with_client_grant_can_hit_createnote_route(): void
+    {
+        if (! Schema::hasTable('staff_record_grants') || ! Schema::hasTable('admins')) {
+            $this->markTestSkipped('staff_record_grants or admins table missing');
+        }
+
+        $staff = $this->makeEphemeralRestrictedStaff('restricted-note-route@example.test');
+        $gate = app(StaffAccessGate::class);
+
+        $clientAdminId = (int) Admin::query()->where('type', 'client')->value('id');
+        if ($clientAdminId <= 0) {
+            $this->cleanupEphemeralRestrictedStaff((int) $staff->id);
+            $this->markTestSkipped('No client admin row for grant test');
+        }
+
+        StaffRecordGrant::query()->create([
+            'staff_id' => (int) $staff->id,
+            'resource_type' => StaffRecordGrant::TYPE_CLIENT,
+            'resource_id' => $clientAdminId,
+            'scopes' => [StaffRecordGrant::SCOPE_VIEW, StaffRecordGrant::SCOPE_NOTES],
+            'starts_at' => now()->subMinute(),
+            'ends_at' => null,
+        ]);
+
+        $this->assertTrue($gate->canAccessRoute($staff, 'clients.createnote'));
+        $this->assertTrue($gate->canWriteNotes($staff, $clientAdminId, null));
+
+        $this->cleanupEphemeralRestrictedStaff((int) $staff->id);
     }
 
     protected function cleanupEphemeralRestrictedStaff(int $staffId): void

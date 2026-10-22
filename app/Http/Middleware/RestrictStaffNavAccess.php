@@ -39,7 +39,7 @@ class RestrictStaffNavAccess
             return $next($request);
         }
 
-        if ($request->expectsJson() || $request->ajax()) {
+        if ($request->expectsJson() || $request->ajax() || str_contains(strtolower((string) $request->header('Accept', '')), 'application/json')) {
             return response()->json([
                 'success' => false,
                 'status' => false,

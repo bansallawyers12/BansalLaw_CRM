@@ -1793,6 +1793,12 @@ class ClientsController extends Controller
                     $matterIdForEmailScope
                 );
 
+                $canWriteClientNotes = StaffClientVisibility::canWriteClientNotes(
+                    (int) $id,
+                    Auth::user(),
+                    $matterIdForEmailScope
+                );
+
                 if (! $canAccessEmails && strtolower((string) $activeTab) === 'emails') {
                     $activeTab = 'personaldetails';
                 }
@@ -1811,7 +1817,8 @@ class ClientsController extends Controller
                     'matter_cnt', 'crmDetailNavIsLead', 'crmShowMatterDocsForConvertedLead',
                     'hideMatterDocumentsForBankMatter', 'showMatterDocumentsTab', 'showMatterBundleTabs',
                     'isMatterIdInUrl',
-                    'canAccessEmails'
+                    'canAccessEmails',
+                    'canWriteClientNotes'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
@@ -1894,6 +1901,12 @@ class ClientsController extends Controller
                 if ($matterRow) {
                     $matterRef = (string) $matterRow;
                 }
+            }
+        }
+
+        if ($matterRef && \App\Support\MatterScopedAccess::isEnabled()) {
+            if (! \App\Support\MatterScopedAccess::canAccessMatterByReference((int) $id, $matterRef, Auth::user())) {
+                abort(403, 'You do not have access to this matter.');
             }
         }
 
