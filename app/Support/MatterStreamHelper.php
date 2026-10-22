@@ -29,11 +29,41 @@ class MatterStreamHelper
 
     public static function isValidPartyRole(?string $stream, ?string $role): bool
     {
-        if ($role === null || $role === '') {
-            return true;
-        }
-        $allowed = array_keys(self::partyRolesForStream($stream));
+        $resolved = self::resolvePartyRoleKey($stream, $role);
 
-        return in_array($role, $allowed, true);
+        return $resolved !== null && $resolved !== '';
+    }
+
+    /**
+     * Accept stored keys or display labels from the UI (e.g. "Respondent" → respondent).
+     */
+    public static function resolvePartyRoleKey(?string $stream, ?string $role): ?string
+    {
+        if ($role === null) {
+            return null;
+        }
+
+        $role = trim($role);
+        if ($role === '') {
+            return '';
+        }
+
+        $roles = self::partyRolesForStream($stream);
+        if (isset($roles[$role])) {
+            return $role;
+        }
+
+        $lower = strtolower($role);
+        if (isset($roles[$lower])) {
+            return $lower;
+        }
+
+        foreach ($roles as $key => $label) {
+            if (strcasecmp((string) $label, $role) === 0) {
+                return (string) $key;
+            }
+        }
+
+        return $role;
     }
 }

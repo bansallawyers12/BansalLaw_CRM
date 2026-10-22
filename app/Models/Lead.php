@@ -157,16 +157,22 @@ class Lead extends Admin
         $this->status = 1;
         $this->save();
         
-        // Log the conversion in activities
-        \App\Models\ActivitiesLog::create([
-            'client_id' => $this->id,
-            'created_by' => \Auth::id(),
-            'subject' => 'Lead converted to Client',
-            'description' => "Lead successfully converted to client.",
-            'activity_type' => 'lead_converted',
-            'task_status' => 0,
-            'pin' => 0,
-        ]);
+        try {
+            \App\Models\ActivitiesLog::create([
+                'client_id' => $this->id,
+                'created_by' => \Auth::id(),
+                'subject' => 'Lead converted to Client',
+                'description' => 'Lead successfully converted to client.',
+                'activity_type' => 'lead_converted',
+                'task_status' => 0,
+                'pin' => 0,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Lead conversion activity log failed', [
+                'lead_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
         
         // Return as Admin model instance with client type
         return Admin::find($this->id);
