@@ -6,6 +6,8 @@ use App\Models\Admin;
 use App\Models\ClientMatter;
 use App\Services\ClientEditService;
 use App\Services\LeadFormDataService;
+use App\Support\StaffClientVisibility;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 /**
  * Builds client/lead detail view payload with tab-aware loading so first paint
@@ -439,5 +441,28 @@ class ClientDetailService
         $built['loaded'] = true;
 
         return $built;
+    }
+
+    /**
+     * Email + note write flags for client detail (full page and lazy tab HTML).
+     *
+     * @return array{canAccessEmails: bool, canWriteClientNotes: bool}
+     */
+    public function resolveDetailAccessFlags(
+        int $clientId,
+        ?int $activeClientMatterId,
+        ?string $matterRefSegment,
+        ?Authenticatable $user = null
+    ): array {
+        $matterIdForScope = ($activeClientMatterId !== null && $activeClientMatterId > 0)
+            ? $activeClientMatterId
+            : (($matterRefSegment !== null && $matterRefSegment !== '' && is_numeric($matterRefSegment))
+                ? (int) $matterRefSegment
+                : null);
+
+        return [
+            'canAccessEmails' => StaffClientVisibility::canAccessEmails($clientId, $user, $matterIdForScope),
+            'canWriteClientNotes' => StaffClientVisibility::canWriteClientNotes($clientId, $user, $matterIdForScope),
+        ];
     }
 }

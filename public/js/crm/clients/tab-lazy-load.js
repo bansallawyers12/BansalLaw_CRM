@@ -13,6 +13,48 @@
         return window.ClientDetailConfig || {};
     }
 
+    function matterRefForLazyRequest() {
+        var shared = window.ClientDetailShared;
+        if (shared && typeof shared.parseClientDetailMatterRefFromUrl === 'function') {
+            var fromUrl = shared.parseClientDetailMatterRefFromUrl();
+            if (fromUrl) {
+                return fromUrl;
+            }
+        }
+        var fromCfg = cfg().matterId || cfg().matterRefNo || '';
+        fromCfg = fromCfg == null ? '' : String(fromCfg).trim();
+        if (fromCfg && shared && typeof shared.isClientDetailTabSlug === 'function' && !shared.isClientDetailTabSlug(fromCfg)) {
+            return fromCfg;
+        }
+        if (fromCfg && !shared) {
+            return fromCfg;
+        }
+        var $select = $('#sel_matter_id_client_detail');
+        if ($select.length) {
+            var $opt = $select.find('option:selected');
+            var optRef = $opt.attr('data-clientuniquematterno') || $opt.data('clientuniquematterno');
+            if (optRef) {
+                return String(optRef);
+            }
+        }
+        return '';
+    }
+
+    function clientMatterIdForLazyRequest() {
+        var shared = window.ClientDetailShared;
+        if (shared && typeof shared.getSelectedClientDetailMatterId === 'function') {
+            var selected = shared.getSelectedClientDetailMatterId();
+            if (selected) {
+                return selected;
+            }
+        }
+        var fromCfg = cfg().clientMatterId;
+        if (fromCfg != null && fromCfg !== '') {
+            return fromCfg;
+        }
+        return $('#sel_matter_id_client_detail').val() || '';
+    }
+
     function scriptUrl(path) {
         var base = (cfg().assetBase || '').replace(/\/$/, '');
         return base + '/' + String(path).replace(/^\//, '');
@@ -129,8 +171,8 @@
                     url: requestUrl,
                     type: 'GET',
                     data: {
-                        matter_ref: cfg().matterId || '',
-                        client_matter_id: cfg().clientMatterId || ''
+                        matter_ref: matterRefForLazyRequest(),
+                        client_matter_id: clientMatterIdForLazyRequest()
                     }
                 });
             })
