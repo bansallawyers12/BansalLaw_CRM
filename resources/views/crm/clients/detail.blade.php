@@ -353,7 +353,9 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
                         <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-update-stage" data-bs-toggle="modal" data-bs-target="#cdn-update-stage-modal" title="Update workflow stage">Update Stage</button>
                     </div>
                     <div class="cdn-client-hero__actions-bottom" role="group" aria-label="Contact actions">
+                        @if(!empty($canWriteClientNotes))
                         <button type="button" class="btn cdn-client-hero__action-btn create_note_d" datatype="note" title="Add a note">Add Notes</button>
+                        @endif
                         <button type="button" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ trim(($cdnFn ?? '').' '.($cdnLn ?? '')) }}" title="Compose mail">Send Email</button>
                         <button type="button" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ trim(($cdnFn ?? '').' '.($cdnLn ?? '')) }}" title="Send SMS">Send SMS</button>
                     </div>
@@ -1107,7 +1109,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 			<div class="modal-body">
                 <form method="post" action="{{url('/save_tag')}}" name="stags_matter" id="stags_matter" autocomplete="off" enctype="multipart/form-data">
 				@csrf
-				<input type="hidden" name="client_id" id="client_id" value="">
+				<input type="hidden" name="client_id" id="tags_modal_client_id" value="">
 				<input type="hidden" name="create_new_as_red" id="create_new_as_red" value="0">
 					<div id="tags_red_mode_hint" class="alert alert-warning py-2 mb-2" style="display: none;">
 						<i class="fa-solid fa-triangle-exclamation text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
@@ -1696,6 +1698,7 @@ $(document).ready(function() {
         clientRef: @json(($fetchedData->client_id ?? '')),
         matterUniqueNo: @json(($cdnMatterRefLabel ?? '')),
         clientMatterId: @json($cdnMatterRow?->id ?? null),
+        canWriteClientNotes: @json(!empty($canWriteClientNotes)),
         isClosedMatterView: @json(!empty($isClosedMatterView)),
         canReopenClosedMatter: @json(!empty($cdnCanReopenClosedMatter)),
         reopenRequestedByName: @json($cdnReopenRequestedByName ?? null),

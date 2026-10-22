@@ -736,6 +736,39 @@ final class StaffClientVisibility
     }
 
     /**
+     * Whether staff may create, update, or delete notes on this client/lead file.
+     */
+    public static function canWriteClientNotes(int $adminId, ?Authenticatable $user = null, ?int $clientMatterId = null): bool
+    {
+        $user = self::currentStaff($user);
+
+        if (! $user instanceof Staff || $adminId <= 0) {
+            return false;
+        }
+
+        if (! self::canAccessClientOrLead($adminId, $user)) {
+            return false;
+        }
+
+        if ($clientMatterId !== null && $clientMatterId > 0 && MatterScopedAccess::isEnabled()) {
+            if (! MatterScopedAccess::canAccessClientMatter($clientMatterId, $user)) {
+                return false;
+            }
+        }
+
+        if (! (bool) config('crm_access.restricted_access.enabled', false)) {
+            return true;
+        }
+
+        $gate = app(StaffAccessGate::class);
+        if ($gate->hasFullCrmAccess($user) || ! $gate->isRestricted($user)) {
+            return true;
+        }
+
+        return $gate->canWriteNotes($user, $adminId, $clientMatterId);
+    }
+
+    /**
      * When staff is restricted, limit queries to granted admin IDs only.
      *
      * @param  Builder<\App\Models\Admin>|\Illuminate\Database\Eloquent\Builder  $query

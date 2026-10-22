@@ -14,6 +14,8 @@
     if ($_staffTop instanceof \App\Models\Staff && !empty($_navFlags['tasks'])) {
         $_pendingTaskCount = app(\App\Services\DashboardService::class)->getPendingOpenTaskCount($_staffTop);
     }
+    $_canCreateLeads = $_staffTop instanceof \App\Models\Staff
+        && app(\App\Services\CrmAccess\StaffAccessGate::class)->canCreateLeads($_staffTop);
 
     $_routeName = Route::currentRouteName() ?? '';
     $_navAccounts = in_array($_routeName, [
@@ -143,6 +145,8 @@
                     <a class="dropdown-item" href="{{route('leads.index')}}"><i class="fa-solid fa-list-alt me-2"></i> Lead List</a>
                     @if(empty($_navFlags['restricted']))
                     <a class="dropdown-item" href="{{route('leads.other_parties.index')}}"><i class="fa-solid fa-user-tag me-2"></i> Other Parties</a>
+                    @endif
+                    @if($_canCreateLeads)
                     <a class="dropdown-item" href="{{route('leads.create')}}"><i class="fa-solid fa-circle-plus me-2"></i> Add Lead</a>
                     <a class="dropdown-item" href="{{route('leads.create', ['other_party' => 1])}}"><i class="fa-solid fa-user-plus me-2"></i> Add Other Party</a>
                     @endif

@@ -66,10 +66,19 @@ class ClientNotesController extends Controller
             if (!$obj) {
                 return response()->json(['status' => false, 'message' => 'Note not found'], 404);
             }
-            $this->ensureCrmRecordAccess((int) $obj->client_id);
+            $noteMatterId = (int) ($obj->matter_id ?? 0);
+            $this->ensureClientNoteWriteAccess(
+                (int) $obj->client_id,
+                $noteMatterId > 0 ? $noteMatterId : null
+            );
             $oldNote = $obj->replicate(); // Keep a copy of old values for tracking changes
         }else{
-            $this->ensureCrmRecordAccess((int) $request->client_id);
+            $resolvedClientId = $this->resolveClientAdminIdFromNoteRequest($request);
+            $createMatterId = (int) $request->input('matter_id', 0);
+            $this->ensureClientNoteWriteAccess(
+                $resolvedClientId,
+                $createMatterId > 0 ? $createMatterId : null
+            );
             $obj = new Note;
             // Title field may not exist in simple form, use default if not provided
             $obj->title = $request->title ?? '';
@@ -299,7 +308,11 @@ class ClientNotesController extends Controller
             ->first();
         
         if($note){
-            $this->ensureCrmRecordAccess((int) $note->client_id);
+            $matterId = (int) ($note->matter_id ?? 0);
+            $this->ensureClientNoteWriteAccess(
+                (int) $note->client_id,
+                $matterId > 0 ? $matterId : null
+            );
             $note->updated_at = $carbonDateTime; // Carbon instance
             $saved = $note->save();
             
@@ -472,7 +485,11 @@ class ClientNotesController extends Controller
 		if (!$note) {
 			return response()->json(['status' => false, 'message' => 'Note not found'], 404);
 		}
-		$this->ensureCrmRecordAccess((int) $note->client_id);
+		$deleteMatterId = (int) ($note->matter_id ?? 0);
+		$this->ensureClientNoteWriteAccess(
+		    (int) $note->client_id,
+		    $deleteMatterId > 0 ? $deleteMatterId : null
+		);
 		$data = Note::select('client_id','title','description','task_group','type','mobile_number')->where('id',$note_id)->first();
         NoteAttachmentService::deleteAllForNote($note);
 		$res = DB::table('notes')->where('id', @$note_id)->delete();
@@ -526,7 +543,11 @@ class ClientNotesController extends Controller
 		if (!$note) {
 			return response()->json(['status' => false, 'message' => 'Record not found'], 404);
 		}
-		$this->ensureCrmRecordAccess((int) $note->client_id);
+		$pinMatterId = (int) ($note->matter_id ?? 0);
+		$this->ensureClientNoteWriteAccess(
+		    (int) $note->client_id,
+		    $pinMatterId > 0 ? $pinMatterId : null
+		);
 
 		$currentPin = (int) $note->pin;
 		$newPin = $currentPin ? 0 : 1;

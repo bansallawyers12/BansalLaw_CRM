@@ -294,6 +294,55 @@ class StaffAccessGate
         return $this->canClient($staff, $adminId) || $this->canLead($staff, $adminId);
     }
 
+    /**
+     * Whether restricted staff may create, edit, or delete notes on a granted record.
+     * Non-restricted staff defer to allocation / matter-team rules elsewhere.
+     */
+    /**
+     * Whether the staff member may open the create-lead form and POST leads.store.
+     */
+    public function canCreateLeads(Staff|Authenticatable|null $staff): bool
+    {
+        if (! $staff instanceof Staff) {
+            return false;
+        }
+
+        return $this->canAccessRoute($staff, 'leads.create');
+    }
+
+    public function canWriteNotes(Staff|Authenticatable|null $staff, int $adminId, ?int $matterId = null): bool
+    {
+        if (! $staff instanceof Staff || $adminId <= 0) {
+            return false;
+        }
+
+        if (! $this->isFeatureEnabled() || $this->hasFullCrmAccess($staff) || ! $this->isRestricted($staff)) {
+            return true;
+        }
+
+        if ($matterId && $matterId > 0) {
+            $grant = $this->activeGrant($staff, StaffRecordGrant::TYPE_MATTER, $matterId)
+                ?? $this->activeGrant($staff, StaffRecordGrant::TYPE_CLOSED_MATTER, $matterId);
+            if ($grant && $grant->hasScope(StaffRecordGrant::SCOPE_NOTES)) {
+                return true;
+            }
+        }
+
+        $row = Admin::query()->where('id', $adminId)->first(['type']);
+        $type = strtolower((string) ($row->type ?? 'client'));
+        if ($type === 'lead') {
+            $grant = $this->activeGrant($staff, StaffRecordGrant::TYPE_LEAD, $adminId);
+        } else {
+            $grant = $this->activeGrant($staff, StaffRecordGrant::TYPE_CLIENT, $adminId);
+        }
+
+        if ($grant && $grant->hasScope(StaffRecordGrant::SCOPE_NOTES)) {
+            return true;
+        }
+
+        return $this->hasMatterNotesGrantForAdmin($staff, $adminId);
+    }
+
     public function canEmails(Staff|Authenticatable|null $staff, ?int $adminId = null, ?int $matterId = null): bool
     {
         if (! $staff instanceof Staff) {
@@ -518,6 +567,32 @@ class StaffAccessGate
             ->exists();
     }
 
+    protected function hasMatterNotesGrantForAdmin(Staff $staff, int $adminId): bool
+    {
+        if (! Schema::hasTable('staff_record_grants') || ! Schema::hasTable('client_matters')) {
+            return false;
+        }
+
+        $matterIds = StaffRecordGrant::query()
+            ->active()
+            ->where('staff_id', (int) $staff->id)
+            ->whereIn('resource_type', StaffRecordGrant::matterResourceTypes())
+            ->get(['resource_id', 'scopes'])
+            ->filter(fn (StaffRecordGrant $g) => $g->hasScope(StaffRecordGrant::SCOPE_NOTES))
+            ->pluck('resource_id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+
+        if ($matterIds === []) {
+            return false;
+        }
+
+        return ClientMatter::query()
+            ->where('client_id', $adminId)
+            ->whereIn('id', $matterIds)
+            ->exists();
+    }
+
     protected function hasMatterEmailGrantForAdmin(Staff $staff, int $adminId): bool
     {
         if (! Schema::hasTable('staff_record_grants') || ! Schema::hasTable('client_matters')) {
@@ -668,24 +743,16 @@ class StaffAccessGate
         $routeName = strtolower($routeName);
 
         if (preg_match('/\.(destroy|delete|remove|revoke|unlink)(\.|$)/', $routeName)
-            || str_contains($routeName, '.destroy')
-            || str_contains($routeName, '.delete')
-            || str_contains($routeName, 'removetag')
-            || str_contains($routeName, '.remove')) {
+            || str_contains($routeName, 'removetag')) {
             return 'delete';
         }
 
-        if (preg_match('/\.(store|create|import|add)(\.|$)/', $routeName)
-            || str_contains($routeName, '.store')
-            || str_contains($routeName, '.create')
-            || str_contains($routeName, '.import')) {
+        if (preg_match('/\.(store|create|import|add)(\.|$)/', $routeName)) {
             return 'add';
         }
 
-        if (preg_match('/\.(edit|update|save|patch|put)(\.|$)/', $routeName)
-            || str_contains($routeName, '.edit')
-            || str_contains($routeName, '.update')
-            || str_contains($routeName, 'save')
+        if (preg_match('/\.(edit|update|patch|put)(\.|$)/', $routeName)
+            || preg_match('/\.save(\.|$)/', $routeName)
             || str_contains($routeName, 'change_')) {
             return 'edit';
         }
