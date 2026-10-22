@@ -122,6 +122,17 @@
 			?>
 
 			<?php
+			$showStaffAccessMenu = $_settingUser instanceof \App\Models\Staff
+				&& $_accessGate->hasFullCrmAccess($_settingUser);
+			if ($showStaffAccessMenu) {
+				$staffAccessActive = str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.system.staff-access.');
+			?>
+			<li class="{{ $staffAccessActive ? 'active' : '' }}"><a class="nav-link" href="{{ route('adminconsole.system.staff-access.index') }}">Staff Access</a></li>
+			<?php
+			}
+			?>
+
+			<?php
 			$grantsDashUser = Auth::user();
 			$showGrantsDashboard = $grantsDashUser instanceof \App\Models\Staff
 				&& app(\App\Services\CrmAccess\CrmAccessService::class)->isApprover($grantsDashUser);
