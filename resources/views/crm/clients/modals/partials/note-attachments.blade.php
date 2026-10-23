@@ -1,4 +1,5 @@
-{{-- Shared note file picker (images, PDF, Office, etc.) --}}
+{{-- TEMPORARY: hidden when CRM_TEMPORARY_NOTES_DISABLE_ATTACHMENTS — text-only notes for WAF workaround --}}
+@if(!\App\Support\CrmWafJsonPost::noteAttachmentsDisabled())
 <div class="form-group enhanced-form-group note-attachments-field mb-0">
     <label class="form-label">
         Attachments
@@ -19,3 +20,4 @@
     <div class="note-existing-attachments"></div>
     <ul class="note-selected-files"></ul>
 </div>
+@endif

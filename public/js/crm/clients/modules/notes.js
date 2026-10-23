@@ -240,6 +240,13 @@
 
     var MAX_NOTE_FILES = 10;
 
+    function noteAttachmentsDisabled() {
+        if (window.ClientDetailConfig && window.ClientDetailConfig.notesAttachmentsDisabled) {
+            return true;
+        }
+        return !!window.CRM_NOTES_ATTACHMENTS_DISABLED;
+    }
+
     function noteAttachmentField($form) {
         return $form.find('.note-attachments-field').first();
     }
@@ -435,10 +442,12 @@
             syncNotesLoadMore();
         }
 
-        bindNoteAttachmentUi($('#create_note'));
-        bindNoteAttachmentUi($('#create_note_d'));
-        bindNotePageDropOverlay($('#create_note'));
-        bindNotePageDropOverlay($('#create_note_d'));
+        if (!noteAttachmentsDisabled()) {
+            bindNoteAttachmentUi($('#create_note'));
+            bindNoteAttachmentUi($('#create_note_d'));
+            bindNotePageDropOverlay($('#create_note'));
+            bindNotePageDropOverlay($('#create_note_d'));
+        }
 
         $(document).delegate('.create_note_d', 'click', function() {
             if (window.ClientDetailConfig && window.ClientDetailConfig.canWriteClientNotes === false) {

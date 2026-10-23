@@ -1701,6 +1701,7 @@ $(document).ready(function() {
         matterUniqueNo: @json(($cdnMatterRefLabel ?? '')),
         clientMatterId: @json($cdnMatterRow?->id ?? null),
         canWriteClientNotes: @json(!empty($canWriteClientNotes)),
+        notesAttachmentsDisabled: @json(\App\Support\CrmWafJsonPost::noteAttachmentsDisabled()),
         isClosedMatterView: @json(!empty($isClosedMatterView)),
         canReopenClosedMatter: @json(!empty($cdnCanReopenClosedMatter)),
         reopenRequestedByName: @json($cdnReopenRequestedByName ?? null),
