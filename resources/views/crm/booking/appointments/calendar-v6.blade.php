@@ -467,6 +467,23 @@ const consultantsData = @json($consultantsArray);
 /** Base URL for /booking routes (works when app lives in a subdirectory, e.g. /BansalLaw_CRM/public). */
 const BOOKING_WEB_BASE = @json(rtrim(url('/booking'), '/'));
 
+function bookingCalendarPostJson(url, body) {
+    if (typeof window.crmPostJsonWafSafe === 'function') {
+        return window.crmPostJsonWafSafe(url, body || {});
+    }
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(body || {})
+    });
+}
+
 function sleepMs(ms) {
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
 }
@@ -3343,17 +3360,7 @@ document.addEventListener('DOMContentLoaded', function() {
             requestData.send_cancellation_confirmation = true;
         }
 
-        fetch(`${BOOKING_WEB_BASE}/appointments/${appointmentId}/update-status`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify(requestData)
-        })
+        bookingCalendarPostJson(`${BOOKING_WEB_BASE}/appointments/${appointmentId}/update-status`, requestData)
         .then(async function(response) {
             var ct = response.headers.get('content-type') || '';
             var data = {};
@@ -3409,18 +3416,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalValue = select.value;
         select.disabled = true;
         
-        fetch(`${BOOKING_WEB_BASE}/appointments/${crmAppointmentId}/update-consultant`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify({
-                consultant_id: consultantId
-            })
+        bookingCalendarPostJson(`${BOOKING_WEB_BASE}/appointments/${crmAppointmentId}/update-consultant`, {
+            consultant_id: consultantId
         })
         .then(response => {
             // Check if response is OK
@@ -3564,23 +3561,9 @@ document.addEventListener('DOMContentLoaded', function() {
         dateInput.disabled = true;
         timeInput.disabled = true;
         
-        // Prepare form data (using FormData for PUT request with _method)
-        const formData = new FormData();
-        formData.append('_method', 'PUT');
-        formData.append('appointment_date', newDate);
-        formData.append('appointment_time', newTime);
-        formData.append('meeting_type', meetingType);
-        formData.append('preferred_language', preferredLanguage);
-        
-        fetch(`${BOOKING_WEB_BASE}/appointments/${crmAppointmentId}`, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            credentials: 'same-origin',
-            body: formData
+        bookingCalendarPostJson(`${BOOKING_WEB_BASE}/appointments/${crmAppointmentId}/update-datetime`, {
+            appointment_date: newDate,
+            appointment_time: newTime
         })
         .then(response => {
             if (!response.ok) {
