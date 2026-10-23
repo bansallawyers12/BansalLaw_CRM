@@ -402,6 +402,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | TEMPORARY: WAF-safe lead create (JSON POST, not multipart/form-data)
+    |--------------------------------------------------------------------------
+    |
+    | When true, Create Lead uses POST /leads/store-waf-json with
+    | Content-Type: application/json so nginx/Cloudflare do not block multipart.
+    | Lead create has no file fields; this is a transport workaround only.
+    |
+    | Turn off (CRM_TEMPORARY_WAF_SAFE_LEAD_STORE=false) and remove
+    | leads.store.waf_json + crm-lead-store-waf.js once hosting allows normal POST.
+    |
+    */
+    'temporary_waf_safe_lead_store' => filter_var(
+        env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', true),
+        FILTER_VALIDATE_BOOLEAN
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
     | Personal document video upload queue
     |--------------------------------------------------------------------------
     | Default sync + afterResponse processes videos in the same web request after

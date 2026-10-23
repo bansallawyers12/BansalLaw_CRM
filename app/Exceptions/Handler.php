@@ -115,6 +115,10 @@ class Handler extends ExceptionHandler
                     'status' => false,
                     'message' => $message,
                     'errors' => ['error' => [$message]],
+                    'error_page_url' => route('crm.error', array_filter([
+                        'code' => 403,
+                        'message' => $message,
+                    ])),
                 ], 403);
             }
 
@@ -127,6 +131,10 @@ class Handler extends ExceptionHandler
                         'status' => false,
                         'message' => $message,
                         'errors' => ['error' => [$message]],
+                        'error_page_url' => route('crm.error', array_filter([
+                            'code' => 403,
+                            'message' => $message,
+                        ])),
                     ], 403);
                 }
                 if ($status >= 500 && ! config('app.debug')) {

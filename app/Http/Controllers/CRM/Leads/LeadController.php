@@ -842,6 +842,43 @@ class LeadController extends Controller
     }
 
     /**
+     * TEMPORARY: Accept lead create as JSON (no multipart) for WAF/hosting blocks.
+     * Delegates to {@see store()}. Disable via config crm.temporary_waf_safe_lead_store.
+     */
+    public function storeWafJson(Request $request)
+    {
+        if (! config('crm.temporary_waf_safe_lead_store', false)) {
+            abort(404);
+        }
+
+        if (! $request->isJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'JSON request body required.',
+            ], 415);
+        }
+
+        $payload = $request->json()->all();
+        if (isset($payload['payload']) && is_array($payload['payload'])) {
+            $payload = $payload['payload'];
+        }
+
+        if (! is_array($payload) || $payload === []) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid lead payload.',
+                'errors' => ['error' => ['Invalid lead payload.']],
+            ], 422);
+        }
+
+        $request->replace($payload);
+        $request->headers->set('Accept', 'application/json');
+        $request->headers->set('X-Requested-With', 'XMLHttpRequest');
+
+        return $this->store($request);
+    }
+
+    /**
      * Store a newly created lead
      */
     public function store(Request $request)
