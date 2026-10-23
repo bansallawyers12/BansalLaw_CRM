@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Schema;
 use Exception;
 use Carbon\Carbon;
 use App\Support\StaffClientVisibility;
+use App\Support\CrmWafJsonPost;
 use Illuminate\Support\Str;
 
 class BookingAppointmentsController extends Controller
@@ -1938,6 +1939,30 @@ class BookingAppointmentsController extends Controller
                 'message' => 'An error occurred while updating meeting type. Please try again.'
             ], 500);
         }
+    }
+
+    /** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. */
+    public function updateDatetimeWafJson(Request $request, $id)
+    {
+        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->updateDatetime($inner, $id));
+    }
+
+    /** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. */
+    public function updateStatusWafJson(Request $request, $id)
+    {
+        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->updateStatus($inner, $id));
+    }
+
+    /** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. */
+    public function updateConsultantWafJson(Request $request, $id)
+    {
+        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->updateConsultant($inner, $id));
+    }
+
+    /** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. */
+    public function updateMeetingTypeWafJson(Request $request, $id)
+    {
+        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->updateMeetingType($inner, $id));
     }
 
     /**
