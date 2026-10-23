@@ -255,6 +255,24 @@
         }
     });
 
+    async function postStoreLeadMatterFromEdit(payload) {
+        var url = window.storeLeadMatterFromEditUrl;
+        if (typeof window.crmPostJsonWafSafe === 'function') {
+            return window.crmPostJsonWafSafe(url, payload || {});
+        }
+        return fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': window.editClientConfig.csrfToken
+            },
+            body: JSON.stringify(payload || {})
+        });
+    }
+
     async function submitLeadMatterFromEdit() {
         var msgEl = document.getElementById('editAddMatterMsg');
         var btn = document.getElementById('editAddMatterSubmitBtn');
@@ -271,45 +289,37 @@
             msgEl.innerHTML = '<div class="alert alert-warning">Our client&rsquo;s role is required.</div>';
             return;
         }
-        var fd = new FormData();
-        fd.append('_token', window.editClientConfig.csrfToken);
         var matterClientPk = (window.currentClientId != null && String(window.currentClientId).trim() !== '')
             ? String(window.currentClientId).trim()
             : String(@json((int) ($fetchedData->id ?? 0)));
-        fd.append('client_id', matterClientPk);
-        fd.append('matter_id', matterId.value);
-        fd.append('legal_practitioner', agentId.value);
-        fd.append('our_party_role', ourRoleEl.value);
         var oppRows = window.OtherPartyPicker
             ? window.OtherPartyPicker.collectRows('#quick_add_opposing_parties_wrap')
             : [];
-        fd.append('opposing_parties_json', JSON.stringify(oppRows));
+        var payload = {
+            _token: window.editClientConfig.csrfToken,
+            client_id: matterClientPk,
+            matter_id: matterId.value,
+            legal_practitioner: agentId.value,
+            our_party_role: ourRoleEl.value,
+            opposing_parties_json: JSON.stringify(oppRows)
+        };
         var office = document.getElementById('edit_add_matter_office_id');
-        if (office && office.value) fd.append('office_id', office.value);
+        if (office && office.value) payload.office_id = office.value;
         var pr = document.getElementById('edit_add_matter_person_responsible');
-        if (pr && pr.value) fd.append('person_responsible', pr.value);
+        if (pr && pr.value) payload.person_responsible = pr.value;
         var pa = document.getElementById('edit_add_matter_person_assisting');
-        if (pa && pa.value) fd.append('person_assisting', pa.value);
+        if (pa && pa.value) payload.person_assisting = pa.value;
         var caseDetailEl = document.getElementById('edit_add_matter_case_detail');
         if (caseDetailEl && caseDetailEl.value.trim() !== '') {
-            fd.append('case_detail', caseDetailEl.value.trim());
+            payload.case_detail = caseDetailEl.value.trim();
         }
         var doiEl = document.getElementById('edit_add_matter_date_of_incidence');
-        if (doiEl && doiEl.value) fd.append('date_of_incidence', doiEl.value);
+        if (doiEl && doiEl.value) payload.date_of_incidence = doiEl.value;
         var itEl = document.getElementById('edit_add_matter_incidence_type');
-        if (itEl && itEl.value.trim() !== '') fd.append('incidence_type', itEl.value.trim());
+        if (itEl && itEl.value.trim() !== '') payload.incidence_type = itEl.value.trim();
         btn.disabled = true;
         try {
-            var res = await fetch(window.storeLeadMatterFromEditUrl, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': window.editClientConfig.csrfToken
-                },
-                body: fd
-            });
+            var res = await postStoreLeadMatterFromEdit(payload);
             var data = await res.json().catch(function () { return {}; });
             if (res.ok && data.success) {
                 msgEl.innerHTML = '<div class="alert alert-success">' + (data.message || 'Matter created.') + '</div>';
@@ -342,6 +352,7 @@
     window.openAddMatterModal = openAddMatterModal;
     window.closeAddMatterModal = closeAddMatterModal;
     window.submitLeadMatterFromEdit = submitLeadMatterFromEdit;
+    window.postStoreLeadMatterFromEdit = postStoreLeadMatterFromEdit;
     window.quickAddOpposingPartyRow = quickAddOpposingPartyRow;
 })();
 </script>

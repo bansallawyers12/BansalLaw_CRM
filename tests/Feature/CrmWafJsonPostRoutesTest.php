@@ -37,6 +37,22 @@ class CrmWafJsonPostRoutesTest extends TestCase
     }
 
     #[Test]
+    public function store_lead_matter_waf_json_route_is_hidden_when_feature_disabled(): void
+    {
+        config([
+            'crm.temporary_waf_safe_json_post' => false,
+            'crm.temporary_waf_safe_lead_store' => false,
+        ]);
+        $staff = Staff::factory()->create(['status' => 1]);
+
+        $this->actingAs($staff, 'admin')
+            ->postJson(route('clients.storeLeadMatterFromEdit.waf_json'), [
+                'payload' => ['client_id' => 1, 'matter_id' => 1],
+            ])
+            ->assertNotFound();
+    }
+
+    #[Test]
     public function booking_update_datetime_waf_json_route_is_hidden_when_feature_disabled(): void
     {
         config(['crm.temporary_waf_safe_json_post' => false]);

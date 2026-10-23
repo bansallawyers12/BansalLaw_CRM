@@ -429,6 +429,7 @@ return [
         'crm.matter.create_app_note' => 'crm.matter.create_app_note.waf_json',
         'clients.matterTask.store' => 'clients.matterTask.store.waf_json',
         'clients.add_appointment_book' => 'clients.add_appointment_book.waf_json',
+        'clients.storeLeadMatterFromEdit' => 'clients.storeLeadMatterFromEdit.waf_json',
         'booking.appointments.update-datetime' => 'booking.appointments.update-datetime.waf_json',
         'booking.appointments.update-status' => 'booking.appointments.update-status.waf_json',
         'booking.appointments.update-consultant' => 'booking.appointments.update-consultant.waf_json',
