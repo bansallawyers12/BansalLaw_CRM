@@ -170,7 +170,7 @@
                     </div>
                 @endif
                 
-                <form id="createLeadForm" action="{{ route('leads.store') }}" method="POST" enctype="multipart/form-data" novalidate>
+                <form id="createLeadForm" action="{{ route('leads.store') }}" method="POST" novalidate>
                     @csrf
 
 
@@ -2088,6 +2088,11 @@
         })();
     </script>
 
+    @if(config('crm.temporary_waf_safe_lead_store'))
+        <script src="{{ asset('js/crm-lead-store-waf.js') }}?v={{ file_exists(public_path('js/crm-lead-store-waf.js')) ? filemtime(public_path('js/crm-lead-store-waf.js')) : 1 }}"></script>
+        <script>window.CRM_LEAD_STORE_WAF_JSON_URL = {!! json_encode(route('leads.store.waf_json')) !!};</script>
+    @endif
+
     <!-- SPA Form Submit Handler -->
     <script>
     (function () {
@@ -2143,17 +2148,6 @@
                     </div>
                 `;
                 alertContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-
-            function messageFromForbiddenHtml(html) {
-                if (!html) return '';
-                try {
-                    var doc = new DOMParser().parseFromString(html, 'text/html');
-                    var el = doc.querySelector('.error-message, .error-heading, h1');
-                    var text = el ? String(el.textContent || '').trim() : '';
-                    if (text) return text;
-                } catch (e) { /* ignore */ }
-                return '';
             }
 
             function collectErrorMessages(data) {
@@ -2213,15 +2207,23 @@
 
                 try {
                     const formData = new FormData(form);
-                    const response = await fetch(form.action, {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || formData.get('_token') || '';
+                    const commonHeaders = {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    };
+                    const wafJsonUrl = window.CRM_LEAD_STORE_WAF_JSON_URL;
+                    const useWafJson = wafJsonUrl && typeof window.crmLeadFormToPayload === 'function';
+                    const response = await fetch(useWafJson ? wafJsonUrl : form.action, {
                         method: 'POST',
-                        body: formData,
+                        body: useWafJson
+                            ? JSON.stringify({ payload: window.crmLeadFormToPayload(form) })
+                            : new URLSearchParams(formData),
                         credentials: 'same-origin',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || formData.get('_token') || ''
-                        }
+                        headers: useWafJson
+                            ? Object.assign({ 'Content-Type': 'application/json' }, commonHeaders)
+                            : commonHeaders
                     });
 
                     let data = {};
@@ -2234,9 +2236,11 @@
                             if (response.status === 419) {
                                 renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
                             } else if (response.status === 403) {
-                                var forbiddenMsg = messageFromForbiddenHtml(rawBody)
-                                    || 'Access was denied (HTTP 403). Ask your admin to run route:clear and config:clear on the server after the latest deploy, and ensure CRM_RESTRICTED_ACCESS_ENABLED is not set.';
-                                renderSpaErrorSummary([forbiddenMsg]);
+                                if (typeof window.crmRedirectHttpErrorFromAjax === 'function'
+                                    && window.crmRedirectHttpErrorFromAjax(403, rawBody, null)) {
+                                    return;
+                                }
+                                renderSpaErrorSummary(['Access was denied (HTTP 403).']);
                             } else if (response.status === 401) {
                                 renderSpaErrorSummary(['Your session expired. Please refresh the page and sign in again.']);
                             } else {
@@ -2266,9 +2270,11 @@
                     if (allMessages.length > 0) {
                         renderSpaErrorSummary(allMessages);
                     } else if (response.status === 403) {
-                        var msg403 = (data && data.message) || messageFromForbiddenHtml(rawBody)
-                            || 'Access was denied while saving this lead (HTTP 403).';
-                        renderSpaErrorSummary([msg403]);
+                        if (typeof window.crmRedirectHttpErrorFromAjax === 'function'
+                            && window.crmRedirectHttpErrorFromAjax(403, rawBody, data)) {
+                            return;
+                        }
+                        renderSpaErrorSummary(['Access was denied while saving this lead (HTTP 403).']);
                     } else if (response.status === 419) {
                         renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
                     } else {
