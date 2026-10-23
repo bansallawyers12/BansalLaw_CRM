@@ -31,6 +31,7 @@ use Carbon\Carbon;
 | * Maps to: resources/views/Admin/clients/tabs/notes.blade.php
 | */
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
+use App\Support\CrmWafJsonPost;
 
 class ClientNotesController extends Controller
 {
@@ -44,6 +45,12 @@ class ClientNotesController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
+    }
+
+    /** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. Skips when note has file attachments (client uses multipart). */
+    public function createnoteWafJson(Request $request)
+    {
+        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->createnote($inner));
     }
 
     /**

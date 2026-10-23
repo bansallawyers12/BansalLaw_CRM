@@ -2088,11 +2088,6 @@
         })();
     </script>
 
-    @if(config('crm.temporary_waf_safe_lead_store'))
-        <script src="{{ asset('js/crm-lead-store-waf.js') }}?v={{ file_exists(public_path('js/crm-lead-store-waf.js')) ? filemtime(public_path('js/crm-lead-store-waf.js')) : 1 }}"></script>
-        <script>window.CRM_LEAD_STORE_WAF_JSON_URL = {!! json_encode(route('leads.store.waf_json')) !!};</script>
-    @endif
-
     <!-- SPA Form Submit Handler -->
     <script>
     (function () {
@@ -2213,8 +2208,13 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken
                     };
-                    const wafJsonUrl = window.CRM_LEAD_STORE_WAF_JSON_URL;
-                    const useWafJson = wafJsonUrl && typeof window.crmLeadFormToPayload === 'function';
+                    const wafJsonUrl = typeof window.crmResolveWafJsonPostUrl === 'function'
+                        ? window.crmResolveWafJsonPostUrl(form.action)
+                        : form.action;
+                    const useWafJson = window.CRM_WAF_JSON_POST_ENABLED
+                        && wafJsonUrl
+                        && wafJsonUrl !== form.action
+                        && typeof window.crmLeadFormToPayload === 'function';
                     const response = await fetch(useWafJson ? wafJsonUrl : form.action, {
                         method: 'POST',
                         body: useWafJson

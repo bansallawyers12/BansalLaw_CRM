@@ -402,21 +402,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | TEMPORARY: WAF-safe lead create (JSON POST, not multipart/form-data)
+    | TEMPORARY: WAF-safe JSON POST (not multipart/form-data)
     |--------------------------------------------------------------------------
     |
-    | When true, Create Lead uses POST /leads/store-waf-json with
-    | Content-Type: application/json so nginx/Cloudflare do not block multipart.
-    | Lead create has no file fields; this is a transport workaround only.
+    | When true, selected CRM saves use companion *-waf-json routes with
+    | Content-Type: application/json (notes without attachments, tasks/reminders,
+    | book appointment, create lead). Transport workaround only — remove when
+    | hosting/WAF allows normal POST and PHP file uploads.
     |
-    | Turn off (CRM_TEMPORARY_WAF_SAFE_LEAD_STORE=false) and remove
-    | leads.store.waf_json + crm-lead-store-waf.js once hosting allows normal POST.
+    | CRM_TEMPORARY_WAF_SAFE_LEAD_STORE is a legacy alias for the same flag.
     |
     */
-    'temporary_waf_safe_lead_store' => filter_var(
-        env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', true),
+    'temporary_waf_safe_json_post' => filter_var(
+        env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', true)),
         FILTER_VALIDATE_BOOLEAN
     ),
+
+    'temporary_waf_safe_lead_store' => filter_var(
+        env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', true)),
+        FILTER_VALIDATE_BOOLEAN
+    ),
+
+    'temporary_waf_safe_json_post_endpoints' => [
+        'leads.store' => 'leads.store.waf_json',
+        'clients.createnote' => 'clients.createnote.waf_json',
+        'crm.matter.create_app_note' => 'crm.matter.create_app_note.waf_json',
+        'clients.matterTask.store' => 'clients.matterTask.store.waf_json',
+        'clients.add_appointment_book' => 'clients.add_appointment_book.waf_json',
+    ],
 
     /*
     |--------------------------------------------------------------------------
