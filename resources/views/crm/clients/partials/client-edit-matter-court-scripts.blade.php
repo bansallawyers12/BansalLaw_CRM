@@ -961,29 +961,38 @@
             ? window.OtherPartyPicker.collectRows('#dyn_opposing_parties_wrap')
             : [];
 
-        var fd = new FormData();
-        fd.append('_token', window.editClientConfig.csrfToken);
         var clientPk = String(window.currentClientId || '{{ $fetchedData->id }}').trim();
-        fd.append('client_id', clientPk);
-        fd.append('matter_id', selectedMatterTypeId);
-        if (lpEl && lpEl.value) fd.append('legal_practitioner', lpEl.value);
+        var payload = {
+            _token: window.editClientConfig.csrfToken,
+            client_id: clientPk,
+            matter_id: selectedMatterTypeId,
+            our_party_role: ourRoleEl.value,
+            opposing_parties_json: JSON.stringify(oppRows)
+        };
+        if (lpEl && lpEl.value) payload.legal_practitioner = lpEl.value;
         var doi = document.getElementById('dyn_date_of_incidence');
-        if (doi && doi.value) fd.append('date_of_incidence', doi.value);
-        if (subTypeEl && subTypeEl.value) fd.append('incidence_type', subTypeEl.value);
-        if (baseCaseDetail) fd.append('case_detail', baseCaseDetail);
-        var opr = document.getElementById('dyn_our_party_role');
-        if (opr && opr.value) fd.append('our_party_role', opr.value);
-        else fd.append('our_party_role', '');
-        fd.append('opposing_parties_json', JSON.stringify(oppRows));
+        if (doi && doi.value) payload.date_of_incidence = doi.value;
+        if (subTypeEl && subTypeEl.value) payload.incidence_type = subTypeEl.value;
+        if (baseCaseDetail) payload.case_detail = baseCaseDetail;
 
         btn.disabled = true;
         try {
-            var res = await fetch(window.storeLeadMatterFromEditUrl, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': window.editClientConfig.csrfToken },
-                body: fd
-            });
+            var postMatter = typeof window.postStoreLeadMatterFromEdit === 'function'
+                ? window.postStoreLeadMatterFromEdit
+                : async function (body) {
+                    return fetch(window.storeLeadMatterFromEditUrl, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': window.editClientConfig.csrfToken
+                        },
+                        body: JSON.stringify(body)
+                    });
+                };
+            var res = await postMatter(payload);
             var data = await res.json().catch(function() { return {}; });
             if (res.ok && data.success) {
                 msgEl.innerHTML = '<div class="alert alert-success">' + (data.message || 'Matter created successfully.') + '</div>';

@@ -4210,6 +4210,12 @@ class ClientsController extends Controller
         return redirect()->back()->with('success', 'Court hearing deleted.');
     }
 
+    /** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. */
+    public function storeLeadMatterFromEditWafJson(Request $request)
+    {
+        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->storeLeadMatterFromEdit($inner));
+    }
+
     public function storeLeadMatterFromEdit(Request $request)
     {
         ReleaseSessionLock::forParallelRequests();
