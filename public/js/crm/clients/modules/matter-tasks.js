@@ -1452,7 +1452,7 @@
             if (ref) {
                 storeData.matter_ref = ref;
             }
-            $.ajax({
+            var taskStoreAjax = {
                 url: storeUrl,
                 type: 'POST',
                 dataType: 'json',
@@ -1503,7 +1503,11 @@
                     setBusy(false);
                     $btn.prop('disabled', false);
                 }
-            });
+            };
+            if (typeof window.crmEnhanceAjaxSettingsForWafJson === 'function') {
+                taskStoreAjax = window.crmEnhanceAjaxSettingsForWafJson(taskStoreAjax);
+            }
+            $.ajax(taskStoreAjax);
         });
 
         $(document).on('input' + EVT, '#cdn-matter-task-title', function () {

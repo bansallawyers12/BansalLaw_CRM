@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use App\Support\CrmWafJsonPost;
 
 class ClientMatterTaskController extends Controller
 {
@@ -222,6 +223,12 @@ class ClientMatterTaskController extends Controller
             'done_count' => $doneCount,
             'has_more' => ($page * $perPage) < $total,
         ]);
+    }
+
+    /** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. */
+    public function storeWafJson(Request $request)
+    {
+        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->store($inner));
     }
 
     public function store(Request $request)

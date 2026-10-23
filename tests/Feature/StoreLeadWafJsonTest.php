@@ -14,7 +14,10 @@ class StoreLeadWafJsonTest extends TestCase
     #[Test]
     public function waf_json_route_is_hidden_when_feature_disabled(): void
     {
-        config(['crm.temporary_waf_safe_lead_store' => false]);
+        config([
+            'crm.temporary_waf_safe_json_post' => false,
+            'crm.temporary_waf_safe_lead_store' => false,
+        ]);
         $staff = Staff::factory()->create(['status' => 1]);
 
         $this->actingAs($staff, 'admin')
@@ -25,7 +28,10 @@ class StoreLeadWafJsonTest extends TestCase
     #[Test]
     public function waf_json_route_requires_json_body_when_enabled(): void
     {
-        config(['crm.temporary_waf_safe_lead_store' => true]);
+        config([
+            'crm.temporary_waf_safe_json_post' => true,
+            'crm.temporary_waf_safe_lead_store' => true,
+        ]);
         $staff = Staff::factory()->create(['status' => 1]);
 
         $this->actingAs($staff, 'admin')
@@ -36,7 +42,10 @@ class StoreLeadWafJsonTest extends TestCase
     #[Test]
     public function waf_json_route_rejects_empty_payload_when_enabled(): void
     {
-        config(['crm.temporary_waf_safe_lead_store' => true]);
+        config([
+            'crm.temporary_waf_safe_json_post' => true,
+            'crm.temporary_waf_safe_lead_store' => true,
+        ]);
         $staff = Staff::factory()->create(['status' => 1]);
 
         $this->actingAs($staff, 'admin')
