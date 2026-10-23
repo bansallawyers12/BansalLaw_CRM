@@ -19,6 +19,11 @@ final class CrmWafJsonPost
         return filter_var(config('crm.temporary_waf_safe_lead_store', false), FILTER_VALIDATE_BOOLEAN);
     }
 
+    public static function noteAttachmentsDisabled(): bool
+    {
+        return filter_var(config('crm.temporary_notes_disable_attachments', false), FILTER_VALIDATE_BOOLEAN);
+    }
+
     /**
      * @param  callable(Request): mixed  $handler
      */

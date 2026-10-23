@@ -198,7 +198,7 @@
 				</div>
 				<x-crm.modal-close class="lh-note-modal__close" />
 			</div>
-			<form action="{{ url('/create-note') }}" method="POST" name="add-note" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
+			<form action="{{ url('/create-note') }}" method="POST" name="add-note" autocomplete="off" id="addnoteform"@if(!\App\Support\CrmWafJsonPost::noteAttachmentsDisabled()) enctype="multipart/form-data"@endif>
 				@csrf
 				<div class="modal-body lh-note-modal__body">
 					<div class="customerror"></div>
