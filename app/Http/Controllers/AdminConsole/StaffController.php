@@ -169,13 +169,6 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant Assign by subject permission.', 422);
             }
 
-            $canGrantCommunicationCheck = Staff::canGrantCommunicationCheckPermission(
-                $storeActor instanceof Staff ? $storeActor : null
-            );
-            if (! $canGrantCommunicationCheck && $request->has('can_use_communication_check')) {
-                return $this->respondStaffMessage($request, 'Only Super Admin can grant Communication Check permission.', 422);
-            }
-
             $canGrantTimelineBilling = Staff::canGrantTimelineBillingPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
@@ -332,10 +325,6 @@ class StaffController extends Controller
 
             if (! Staff::canGrantAssignEmailsBySubjectPermission($actor instanceof Staff ? $actor : null) && $request->has('can_assign_emails_by_subject')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant Assign by subject permission.', 422);
-            }
-
-            if (! Staff::canGrantCommunicationCheckPermission($actor instanceof Staff ? $actor : null) && $request->has('can_use_communication_check')) {
-                return $this->respondStaffMessage($request, 'Only Super Admin can grant Communication Check permission.', 422);
             }
 
             if (! Staff::canGrantTimelineBillingPermission($actor instanceof Staff ? $actor : null) && $request->has('can_use_timeline_billing')) {
@@ -629,13 +618,6 @@ class StaffController extends Controller
         );
         if ($canGrantAssignEmailsBySubject && Schema::hasColumn('staff', 'can_assign_emails_by_subject')) {
             $obj->can_assign_emails_by_subject = $request->boolean('can_assign_emails_by_subject');
-        }
-
-        $canGrantCommunicationCheck = Staff::canGrantCommunicationCheckPermission(
-            $actor instanceof Staff ? $actor : null
-        );
-        if ($canGrantCommunicationCheck && Schema::hasColumn('staff', 'can_use_communication_check')) {
-            $obj->can_use_communication_check = $request->boolean('can_use_communication_check');
         }
 
         $canGrantTimelineBilling = Staff::canGrantTimelineBillingPermission(
