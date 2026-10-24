@@ -67,7 +67,6 @@ class Kernel extends HttpKernel
         'adminconsole' => \App\Http\Middleware\EnsureAdminConsoleAccess::class,
         'extend.video.upload' => \App\Http\Middleware\ExtendVideoUploadLimits::class,
         'migration.crm.token' => \App\Http\Middleware\VerifyMigrationCrmToken::class,
-        'communication.check' => \App\Http\Middleware\EnsureCommunicationCheckEnabled::class,
         'mcp.admin.guard' => \App\Http\Middleware\SetAdminGuardFromSanctumUser::class,
         'booking.api.access' => \App\Http\Middleware\VerifyBookingApiAccess::class,
         // No-op: legacy Staff Access removed; stale route cache may still reference this alias.

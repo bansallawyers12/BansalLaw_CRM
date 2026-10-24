@@ -37,7 +37,6 @@
             str_starts_with($_routeName, 'clients.')
             || str_starts_with($_routeName, 'leads.')
             || str_starts_with($_routeName, 'emails.smart-import')
-            || str_starts_with($_routeName, 'communication-check.')
         ) && !$_navUnassigned && !$_navAccounts,
     ];
 @endphp
@@ -126,15 +125,6 @@
                     @endif
                     @if(empty($_navFlags['restricted']))
                     <a class="dropdown-item" href="{{ route('emails.smart-import.index') }}"><i class="fa-solid fa-file-import me-2"></i> Smart Email Import</a>
-                    @php
-                        $_ccStaff = auth()->guard('admin')->user();
-                        $_canCommunicationCheck = config('crm.communication_check.enabled')
-                            && $_ccStaff instanceof \App\Models\Staff
-                            && $_ccStaff->canUseCommunicationCheck();
-                    @endphp
-                    @if($_canCommunicationCheck)
-                    <a class="dropdown-item" href="{{ route('communication-check.index') }}"><i class="fa-solid fa-shield-halved me-2"></i> Communication Check</a>
-                    @endif
                     @endif
                     @if(!empty($_navFlags['leads']))
                     @if(!empty($_navFlags['clients']))

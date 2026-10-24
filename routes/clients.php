@@ -14,7 +14,6 @@ use App\Http\Controllers\CRM\EmailVerificationController;
 use App\Http\Controllers\CRM\CRMUtilityController;
 use App\Http\Controllers\CRM\EmailUploadController;
 use App\Http\Controllers\CRM\SmartEmailImportController;
-use App\Http\Controllers\CRM\CommunicationCheckController;
 use App\Http\Controllers\CRM\EmailLabelController;
 use App\Http\Controllers\CRM\EmailLogAttachmentController;
 use App\Http\Controllers\CRM\UploadChecklistController;
@@ -113,11 +112,6 @@ Route::prefix('emails/smart-import')->name('emails.smart-import.')->group(functi
     Route::get('/', [SmartEmailImportController::class, 'index'])->name('index');
     Route::post('/analyze', [SmartEmailImportController::class, 'analyze'])->name('analyze');
     Route::post('/confirm', [SmartEmailImportController::class, 'confirm'])->name('confirm');
-});
-
-Route::prefix('communication-check')->name('communication-check.')->middleware('communication.check')->group(function () {
-    Route::get('/', [CommunicationCheckController::class, 'index'])->name('index');
-    Route::post('/analyze', [CommunicationCheckController::class, 'analyze'])->name('analyze');
 });
 
 Route::post('/reassiginboxemail', [ClientsController::class, 'reassiginboxemail'])->name('clients.reassiginboxemail');

@@ -14,9 +14,10 @@ return new class extends Migration
 
         Schema::table('staff', function (Blueprint $table) {
             if (! Schema::hasColumn('staff', 'can_use_timeline_billing')) {
-                $table->boolean('can_use_timeline_billing')
-                    ->default(false)
-                    ->after('can_use_communication_check');
+                $column = $table->boolean('can_use_timeline_billing')->default(false);
+                if (Schema::hasColumn('staff', 'can_assign_emails_by_subject')) {
+                    $column->after('can_assign_emails_by_subject');
+                }
             }
         });
     }
