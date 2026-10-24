@@ -5,6 +5,7 @@ namespace App\Http\Controllers\CRM\Leads;
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Services\LeadAnalyticsService;
+use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,8 +23,8 @@ class LeadAnalyticsController extends Controller
     private function canAccessLeadAnalytics(): bool
     {
         $u = Auth::user();
-        return ($u instanceof Staff && $u->hasEffectiveSuperAdminPrivileges())
-            || in_array((int) ($u->role ?? 0), [12], true);
+
+        return $u instanceof Staff && StaffClientVisibility::seesAllClientMatters($u);
     }
     
     private function parseDateSafely(?string $dateInput, bool $isEnd = false): Carbon
@@ -40,8 +41,8 @@ class LeadAnalyticsController extends Controller
     }
     
     /**
-     * Display analytics dashboard
-     * Only admin and super admin can access (roles 1, 12)
+     * Display analytics dashboard.
+     * Super Admin, Calling Team, and the named full-visibility staff only.
      */
     public function index(Request $request)
     {

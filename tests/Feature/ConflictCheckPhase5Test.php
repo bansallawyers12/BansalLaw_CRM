@@ -104,6 +104,14 @@ class ConflictCheckPhase5Test extends TestCase
         $this->assertNotNull($otherMatch);
         $this->assertTrue($otherMatch['access_locked'] ?? false);
         $this->assertNull($otherMatch['detail_url'] ?? null);
+
+        $presented = app(ConflictCheckService::class)->presentMatchesForViewer($result['matches']);
+        $locked = collect($presented)->first(fn ($m) => ($m['access_locked'] ?? false) === true);
+        $this->assertNotNull($locked);
+        $this->assertSame('Possible conflict', $locked['name']);
+        $this->assertArrayNotHasKey('client_id', $locked);
+        $this->assertArrayNotHasKey('client_ref', $locked);
+        $this->assertNull($locked['matched_on'] ?? null);
     }
 
     #[Test]

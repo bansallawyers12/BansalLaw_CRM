@@ -4089,6 +4089,8 @@ class ClientsController extends Controller
             'reminder_minutes'  => 'nullable|integer|in:60,1440,10080',
         ]);
 
+        $this->ensureCourtHearingAccess((int) $validated['client_id'], isset($validated['client_matter_id']) ? (int) $validated['client_matter_id'] : null);
+
         $hearing = \App\Models\ClientCourtHearing::create([
             'client_id'        => $validated['client_id'],
             'client_matter_id' => $validated['client_matter_id'] ?? null,
@@ -4112,6 +4114,7 @@ class ClientsController extends Controller
     public function updateCourtHearing(Request $request, $id)
     {
         $hearing = \App\Models\ClientCourtHearing::findOrFail($id);
+        $this->ensureCourtHearingAccess((int) $hearing->client_id, $hearing->client_matter_id ? (int) $hearing->client_matter_id : null);
 
         if ($request->has('reminder_minutes') && $request->input('reminder_minutes') === '') {
             $request->merge(['reminder_minutes' => null]);
@@ -4134,6 +4137,11 @@ class ClientsController extends Controller
         $oldTime = $hearing->hearing_time
             ? substr((string) $hearing->hearing_time, 0, 5)
             : null;
+        $nextMatterId = isset($validated['client_matter_id']) ? (int) $validated['client_matter_id'] : null;
+        if ($nextMatterId && $nextMatterId !== (int) $hearing->client_matter_id) {
+            $this->ensureCourtHearingAccess((int) $hearing->client_id, $nextMatterId);
+        }
+
         $newTime = $validated['hearing_time'] ?? null;
         $newReminder = array_key_exists('reminder_minutes', $validated)
             ? $validated['reminder_minutes']
@@ -4199,9 +4207,50 @@ class ClientsController extends Controller
         ];
     }
 
+    private function viewerMaySeeEmailClient($staff, int $clientId): bool
+    {
+        if ($clientId <= 0) {
+            return false;
+        }
+
+        if (! $staff instanceof \App\Models\Staff) {
+            return true;
+        }
+
+        return $staff->canViewAllSyncedInboxMail()
+            || \App\Support\StaffClientVisibility::canAccessClientOrLead($clientId, $staff);
+    }
+
+    private function concealEmailClientLink($email): void
+    {
+        $email->unsetRelation('client');
+        $email->unsetRelation('matter');
+        $email->makeHidden(['client_id', 'client_matter_id']);
+        $email->client_name = '';
+        $email->client_ref = '';
+        $email->client_url = '';
+        $email->can_unlink_synced_email = false;
+    }
+
+    private function ensureCourtHearingAccess(int $clientId, ?int $matterId): void
+    {
+        if ($matterId && $matterId > 0) {
+            $matter = \App\Models\ClientMatter::query()->find($matterId);
+            if (! $matter || (int) $matter->client_id !== $clientId) {
+                abort(403, 'Unauthorized');
+            }
+            $this->ensureClientMatterAccess($matter);
+
+            return;
+        }
+
+        $this->ensureCrmRecordAccess($clientId);
+    }
+
     public function deleteCourtHearing(Request $request, $id)
     {
         $hearing = \App\Models\ClientCourtHearing::findOrFail($id);
+        $this->ensureCourtHearingAccess((int) $hearing->client_id, $hearing->client_matter_id ? (int) $hearing->client_matter_id : null);
         $hearing->delete();
 
         if ($request->expectsJson()) {
@@ -6938,13 +6987,12 @@ class ClientsController extends Controller
             if ($leanSyncedList) {
                 // Unassigned rows have no client; skip visibility lookups and heavy attachment/calendar work.
                 $email->can_unlink_synced_email = false;
-                if ($email->relationLoaded('client') && $email->client) {
+                if ((int) ($email->client_id ?? 0) > 0 && ! $this->viewerMaySeeEmailClient($staff, (int) $email->client_id)) {
+                    $this->concealEmailClientLink($email);
+                } elseif ($email->relationLoaded('client') && $email->client) {
                     $email->client_name = trim(($email->client->first_name ?? '') . ' ' . ($email->client->last_name ?? ''));
                     $email->client_ref = (string) ($email->client->client_id ?? '');
                     $email->client_url = url('/clients/detail/' . base64_encode(convert_uuencode((string) $email->client->id)));
-                    $email->can_unlink_synced_email = $canSyncInbox;
-                } elseif (! empty($email->client_id)) {
-                    $email->client_url = url('/clients/detail/' . base64_encode(convert_uuencode((string) $email->client_id)));
                     $email->can_unlink_synced_email = $canSyncInbox;
                 }
 
@@ -6986,19 +7034,21 @@ class ClientsController extends Controller
                 return $email;
             }
 
-            $email->can_unlink_synced_email = $email->client_id
+            $linkedClientId = (int) ($email->client_id ?? 0);
+            $maySeeClient = $linkedClientId > 0 && $this->viewerMaySeeEmailClient($staff, $linkedClientId);
+            $email->can_unlink_synced_email = $maySeeClient
                 && $staff instanceof \App\Models\Staff
                 && (
                     $canSyncInbox
-                    || \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $email->client_id, $staff)
+                    || \App\Support\StaffClientVisibility::canAccessClientOrLead($linkedClientId, $staff)
                 );
 
-            if ($email->relationLoaded('client') && $email->client) {
+            if ($linkedClientId > 0 && ! $maySeeClient) {
+                $this->concealEmailClientLink($email);
+            } elseif ($email->relationLoaded('client') && $email->client) {
                 $email->client_name = trim(($email->client->first_name ?? '') . ' ' . ($email->client->last_name ?? ''));
                 $email->client_ref = (string) ($email->client->client_id ?? '');
                 $email->client_url = url('/clients/detail/' . base64_encode(convert_uuencode((string) $email->client->id)));
-            } elseif (! empty($email->client_id)) {
-                $email->client_url = url('/clients/detail/' . base64_encode(convert_uuencode((string) $email->client_id)));
             }
 
             $appTimezone = config('app.timezone', 'Australia/Melbourne');

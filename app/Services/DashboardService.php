@@ -1019,7 +1019,7 @@ class DashboardService
         foreach ($notifications as $notification) {
             $checkinLog = CheckinLog::find($notification->module_id);
             
-            if (!$checkinLog || $checkinLog->status != 0) {
+            if (!$checkinLog || $checkinLog->status != 0 || ! CheckinLog::visibleToViewer($checkinLog)) {
                 continue;
             }
 

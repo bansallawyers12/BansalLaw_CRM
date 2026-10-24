@@ -1937,65 +1937,12 @@ class CRMUtilityController extends Controller
     // Column preferences method moved to DashboardController
 
     /**
-     * Get office visit notifications (optimized - no N+1 queries)
+     * Office-visit assignment toasts are paused.
+     * Keep the route so already-open pages do not 404, and skip the query.
      */
     public function fetchOfficeVisitNotifications(Request $request)
     {
-        // Fetch notifications with sender relationship eager loaded
-        $notifications = \App\Models\Notification::with(['sender:id,first_name,last_name'])
-            ->where('receiver_id', Auth::id())
-            ->where('notification_type', 'officevisit')
-            ->where('receiver_status', 0)
-            ->orderBy('created_at', 'DESC')
-            ->get();
-
-        if ($notifications->isEmpty()) {
-            return response()->json(['notifications' => [], 'count' => 0]);
-        }
-
-        // Batch-load all checkin logs (eliminates N+1)
-        $checkinLogIds = $notifications->pluck('module_id')->filter()->unique();
-        $checkinLogs = \App\Models\CheckinLog::whereIn('id', $checkinLogIds)
-            ->where('status', 0)
-            ->get()
-            ->keyBy('id');
-
-        // If no active checkin logs, return empty
-        if ($checkinLogs->isEmpty()) {
-            return response()->json(['notifications' => [], 'count' => 0]);
-        }
-
-        $clientIds = $checkinLogs->pluck('client_id')->filter()->unique()->values();
-        $contacts = $clientIds->isNotEmpty()
-            ? \App\Models\Admin::whereIn('type', ['client', 'lead'])->whereIn('id', $clientIds)->get()->keyBy('id')
-            : collect();
-
-        // Build response data
-        $data = [];
-        foreach ($notifications as $notification) {
-            $checkinLog = $checkinLogs->get($notification->module_id);
-            
-            if (!$checkinLog) {
-                continue;
-            }
-
-            $preloaded = $checkinLog->client_id ? $contacts->get($checkinLog->client_id) : null;
-
-            $data[] = [
-                'id' => $notification->id,
-                'checkin_id' => $checkinLog->id,
-                'message' => $notification->message,
-                'sender_name' => $notification->sender 
-                    ? $notification->sender->first_name . ' ' . $notification->sender->last_name 
-                    : 'System',
-                'client_name' => $checkinLog->contactDisplayLabel($preloaded),
-                'visit_purpose' => $checkinLog->visit_purpose,
-                'created_at' => $notification->created_at->format('d/m/Y h:i A'),
-                'url' => $notification->url
-            ];
-        }
-
-        return response()->json(['notifications' => $data, 'count' => count($data)]);
+        return response()->json(['notifications' => [], 'count' => 0]);
     }
 
     /**

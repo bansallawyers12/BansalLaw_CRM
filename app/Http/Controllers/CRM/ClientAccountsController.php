@@ -19,6 +19,7 @@ use App\Models\AccountClientReceipt;
 use App\Models\AccountAllInvoiceReceipt;
 use App\Mail\HubdocInvoiceMail;
 use App\Support\InvoiceChargeTypes;
+use App\Support\MatterScopedAccess;
 use App\Support\InvoiceTimesheetLine;
 use App\Support\InvoiceWorkDate;
 use App\Services\ClientAccountTabService;
@@ -64,6 +65,21 @@ class ClientAccountsController extends Controller
             abort(403, 'Client ID is required.');
         }
         $this->ensureCrmRecordAccessStrict($clientId);
+    }
+
+    /**
+     * Invoice, trust, and receipt lists follow the viewer's matters on this client.
+     *
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     */
+    protected function scopeAccountQueryToViewerMatters($query, Request $request): void
+    {
+        $clientId = (int) $request->input('client_id', 0);
+        if ($clientId <= 0) {
+            return;
+        }
+
+        MatterScopedAccess::scopeColumnToViewerMatters($query, 'client_matter_id', $clientId, true);
     }
 
     /**
@@ -1874,6 +1890,14 @@ class ClientAccountsController extends Controller
         $requestData         =     $request->all();
         if (!empty($requestData['client_id'])) {
             $this->ensureCrmRecordAccess((int) $requestData['client_id']);
+        }
+        $selectedMatter = (int) ($requestData['selectedMatter'] ?? 0);
+        if ($selectedMatter > 0) {
+            $matter = \App\Models\ClientMatter::query()->find($selectedMatter);
+            if (! $matter || (int) $matter->client_id !== (int) ($requestData['client_id'] ?? 0)) {
+                return response()->json(['status' => false, 'message' => 'Invalid matter.'], 422);
+            }
+            $this->ensureClientMatterAccess($matter);
         }
         $response            =     [];
         // Get only non-voided invoices that are unpaid or partially paid
@@ -4458,7 +4482,9 @@ class ClientAccountsController extends Controller
           if ($request->has('client_matter_id') && trim($request->input('client_matter_id')) != '') {
               $subquery->where('client_matter_id', '=', $request->input('client_matter_id'));
           }
+          $this->scopeAccountQueryToViewerMatters($subquery, $request);
       })->where('receipt_type', 3);
+      $this->scopeAccountQueryToViewerMatters($query, $request);
       
       // Filter: Client ID
       if ($request->has('client_id') && trim($request->input('client_id')) != '') {
@@ -4805,6 +4831,7 @@ class ClientAccountsController extends Controller
       if ($request->has('client_matter_id') && trim($request->input('client_matter_id')) != '') {
           $query->where('client_matter_id', '=', $request->input('client_matter_id'));
       }
+      $this->scopeAccountQueryToViewerMatters($query, $request);
 
       // Enhanced Date Filtering
       $this->applyDateFilters($query, $request);
@@ -4880,6 +4907,7 @@ class ClientAccountsController extends Controller
       if ($request->has('client_matter_id') && trim($request->input('client_matter_id')) != '') {
           $query->where('client_matter_id', '=', $request->input('client_matter_id'));
       }
+      $this->scopeAccountQueryToViewerMatters($query, $request);
 
       // Enhanced Date Filtering
       $this->applyDateFilters($query, $request);

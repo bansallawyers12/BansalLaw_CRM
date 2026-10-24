@@ -9,6 +9,7 @@ use App\Models\EmailLog;
 use App\Models\EmailLogAttachment;
 use App\Services\Email\EmailCalendarMergeService;
 use App\Support\EmailTimelineActivity;
+use App\Support\MatterScopedAccess;
 use App\Support\StaffClientVisibility;
 use App\Traits\LogsClientActivity;
 use Illuminate\Database\Eloquent\Collection;
@@ -71,6 +72,10 @@ class UnassignedEmailAssignmentService
             ->first();
         if (! $matter) {
             return ['success' => false, 'message' => 'Client matter not found for this client.'];
+        }
+
+        if ($enforceStaffAccess && $user && ! MatterScopedAccess::canAccessClientMatter($clientMatterId, $user)) {
+            return ['success' => false, 'message' => 'You can only file mail onto a matter you are on.'];
         }
 
         $destPrefix = $this->clientStoragePrefix($client);

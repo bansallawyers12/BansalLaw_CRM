@@ -91,6 +91,7 @@ class ESignatureController extends Controller
         
         $query = \App\Models\Document::with(['creator', 'signers', 'client', 'lead', 'notes'])
             ->notArchived();
+        \App\Support\StaffClientVisibility::restrictDocumentEloquentQuery($query);
         
         if ($request->filled('start_date')) {
             $query->where('created_at', '>=', $request->start_date);
