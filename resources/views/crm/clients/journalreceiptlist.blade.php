@@ -408,9 +408,6 @@
                     <div class="d-flex justify-content-between align-items-center w-100 flex-wrap" style="gap: 12px;">
                         <h4 class="mb-0" style="flex: 1 1 auto;">All Journal Receipt List</h4>
                         <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
-                            @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
-                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard"><i class="fa-solid fa-chart-line"></i> Analytics</a>
-                            @endif
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
                             @if (Auth::user() instanceof \App\Models\Staff && Auth::user()->hasEffectiveSuperAdminPrivileges())
                                 <button class="btn btn-danger Delete_Receipt" style="margin-right: 10px;">

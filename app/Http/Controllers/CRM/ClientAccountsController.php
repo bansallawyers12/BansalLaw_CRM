@@ -22,12 +22,10 @@ use App\Support\InvoiceChargeTypes;
 use App\Support\InvoiceTimesheetLine;
 use App\Support\InvoiceWorkDate;
 use App\Services\ClientAccountTabService;
-use App\Services\FinancialStatsService;
 use App\Services\CrmDurableStorage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
-use Carbon\Carbon;
 
 /**
  * ClientAccountsController
@@ -4970,67 +4968,6 @@ class ClientAccountsController extends Controller
       $perPage = $this->accountTabService->resolveListPerPage((int) $request->get('per_page', 20));
       $lists = $query->paginate($perPage);
       return view('crm.clients.journalreceiptlist', compact(['lists', 'totalData', 'perPage']));
-  }
-
-  /**
-   * Analytics Dashboard
-   * 
-   * Display comprehensive financial statistics and analytics
-   */
-  public function analyticsDashboard(Request $request)
-  {
-      $analyticsUser = Auth::user();
-      $analyticsOk = ($analyticsUser instanceof Staff && $analyticsUser->hasEffectiveSuperAdminPrivileges())
-          || in_array((int) ($analyticsUser->role ?? 0), [12], true);
-      if (! $analyticsOk) {
-          return redirect()->back()->with('error', 'Only admin and super admin can view the analytics dashboard.');
-      }
-
-      $statsService = new FinancialStatsService();
-      
-      // Get quick_select parameter
-      $quickSelect = $request->input('quick_select', '');
-      
-      // Get date range from request or default to current month
-      try {
-          $startDate = $request->filled('start_date') 
-              ? Carbon::parse($request->input('start_date')) 
-              : Carbon::now()->startOfMonth();
-      } catch (\Throwable $e) {
-          $startDate = Carbon::now()->startOfMonth();
-      }
-      
-      try {
-          $endDate = $request->filled('end_date') 
-              ? Carbon::parse($request->input('end_date')) 
-              : Carbon::now()->endOfMonth();
-      } catch (\Throwable $e) {
-          $endDate = Carbon::now()->endOfMonth();
-      }
-      
-      // Get receipt_type filter (null = all, 1-4 = specific type)
-      $receiptType = $request->has('receipt_type') && $request->input('receipt_type') !== ''
-          ? (int)$request->input('receipt_type')
-          : null;
-      
-      // Get all statistics
-      $dashboardStats = $statsService->getDashboardStats([
-          'start_date' => $startDate,
-          'end_date' => $endDate,
-          'receipt_type' => $receiptType,
-      ]);
-      
-      // Get payment method breakdown
-      $paymentMethods = $statsService->getPaymentMethodBreakdown($startDate, $endDate);
-      
-      return view('crm.clients.analytics-dashboard', compact([
-          'dashboardStats',
-          'paymentMethods',
-          'startDate',
-          'endDate',
-          'receiptType',
-          'quickSelect',
-      ]));
   }
 
   public function validate_receipt(Request $request){

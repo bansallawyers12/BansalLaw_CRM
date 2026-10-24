@@ -456,9 +456,6 @@
                         <h4 style="margin-bottom: 0; flex-shrink: 0;">All Clients Receipt List</h4>
                         
                         <div class="d-flex align-items-center" style="margin-left: auto;">
-                            @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
-                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard" style="margin-right: 10px;"><i class="fa-solid fa-chart-line"></i> Analytics</a>
-                            @endif
                             <select name="per_page" id="per_page" class="form-control" style="width: auto; min-width: 80px; border-radius: 0; border: 1px solid #ddd; padding: 6px 12px; margin-right: 10px;">
                                 <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
                                 <option value="20" {{ $perPage == 20 ? 'selected' : '' }}>20</option>

@@ -437,9 +437,6 @@
                     <div class="d-flex justify-content-between align-items-center w-100 flex-wrap" style="gap: 12px;">
                         <h4 class="mb-0" style="flex: 1 1 auto;">All Offices Receipt List</h4>
                         <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
-                            @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
-                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard"><i class="fa-solid fa-chart-line"></i> Analytics</a>
-                            @endif
                             <label for="per_page" class="sr-only">Items per page</label>
                             <select name="per_page" id="per_page" class="form-control per-page-select">
                                 <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>

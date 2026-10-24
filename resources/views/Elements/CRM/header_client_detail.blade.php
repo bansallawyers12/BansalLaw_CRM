@@ -22,7 +22,6 @@
         'clients.clientreceiptlist',
         'clients.officereceiptlist',
         'clients.journalreceiptlist',
-        'clients.analytics-dashboard',
     ], true);
     $_navUnassigned = $_routeName === 'clients.unassigned-emails';
     $_navActive = [
@@ -162,15 +161,10 @@
             <div class="icon-dropdown js-dropdown">
                 <a href="{{route('clients.invoicelist')}}" class="icon-btn{{ $_navActive['accounts'] ? ' active' : '' }}" title="Accounts"@if($_navActive['accounts']) aria-current="page"@endif><i class="fa-solid fa-briefcase"></i></a>
                 <div class="icon-dropdown-menu">
-                    @if($_crmTopAdminish)
-                    <a class="dropdown-item" href="{{route('clients.analytics-dashboard')}}" style="background: linear-gradient(135deg, var(--navy)15 0%, var(--sidebar-active)15 100%); font-weight: 600;"><i class="fa-solid fa-chart-line me-2" style="color: var(--navy);"></i> Analytics Dashboard</a>
-                    <div class="dropdown-divider"></div>
-                    @endif
                     <a class="dropdown-item" href="{{route('clients.clientreceiptlist')}}"><i class="fa-solid fa-receipt me-2"></i> Client Receipts</a>
                     <a class="dropdown-item" href="{{route('clients.invoicelist')}}"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Invoice Lists</a>
                     <a class="dropdown-item" href="{{route('clients.officereceiptlist')}}"><i class="fa-solid fa-building me-2"></i> Office Receipts</a>
                     <a class="dropdown-item" href="{{route('clients.journalreceiptlist')}}"><i class="fa-solid fa-book me-2"></i> Journal Receipts</a>
-                    <div class="dropdown-divider"></div>
                 </div>
             </div>
             @endif
