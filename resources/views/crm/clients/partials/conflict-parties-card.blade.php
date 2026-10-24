@@ -852,12 +852,14 @@
             ? '<div class="cp-match-meta"><i class="fa-solid fa-circle-info"></i> ' + esc(m.informational_reason) + '</div>'
             : '';
         var badge = informational ? '<span class="cp-info-badge">Informational</span>' : '';
+        var metaHtml = m.access_locked
+            ? esc(m.context || 'Another file. Ask a partner if you need the details.')
+            : esc(m.context || '') +
+                (m.matched_on ? ' · Matched on ' + esc(m.matched_on) : '') +
+                (m.party_role ? ' · ' + esc(m.party_role) : '');
         div.innerHTML =
-            '<div class="cp-match-name">' + esc(m.name || 'Unknown') + badge + link + '</div>' +
-            '<div class="cp-match-meta">' + esc(m.context || '') +
-            (m.matched_on ? ' · Matched on ' + esc(m.matched_on) : '') +
-            (m.party_role ? ' · ' + esc(m.party_role) : '') +
-            '</div>' +
+            '<div class="cp-match-name">' + esc(m.access_locked ? 'Possible conflict' : (m.name || 'Unknown')) + badge + link + '</div>' +
+            '<div class="cp-match-meta">' + metaHtml + '</div>' +
             reason;
         return div;
     }

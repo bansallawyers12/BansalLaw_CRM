@@ -2452,9 +2452,8 @@
             }
         };
         
-        // Office visit toasts: HTTP polling
-        loadOfficeVisitNotifications();
-        setInterval(loadOfficeVisitNotifications, 30000);
+        // Office-visit assignment toasts are paused. Do not poll
+        // /dashboard/fetch-office-visit-notifications from this layout.
     });
     </script>
     <script>

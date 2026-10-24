@@ -931,12 +931,39 @@ class ConflictCheckService
      */
     public function sanitizeStoredMatchesForViewer(array $matches): array
     {
+        return $this->presentMatchesForViewer($matches);
+    }
+
+    /**
+     * Copy matches for the current viewer. Staff who cannot open the other file
+     * see that a conflict exists, without that file's name, contact details, or reference.
+     *
+     * @param  list<array<string, mixed>>  $matches
+     * @return list<array<string, mixed>>
+     */
+    public function presentMatchesForViewer(array $matches): array
+    {
         return array_map(function ($match) {
             if (! is_array($match)) {
                 return $match;
             }
 
             $this->applyMatchAccessGating($match);
+
+            if (empty($match['access_locked'])) {
+                return $match;
+            }
+
+            $match['name'] = 'Possible conflict';
+            $match['matched_on'] = null;
+            $match['context'] = 'Another file. Ask a partner if you need the details.';
+            unset(
+                $match['client_id'],
+                $match['client_ref'],
+                $match['source_id'],
+                $match['matter_id'],
+                $match['opposing_lead_id']
+            );
 
             return $match;
         }, $matches);

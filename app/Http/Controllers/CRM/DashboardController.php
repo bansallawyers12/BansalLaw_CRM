@@ -337,15 +337,13 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get office visit notifications
+     * Office-visit assignment toasts are paused. Skip the query.
      */
     public function fetchOfficeVisitNotifications(Request $request)
     {
-        $notifications = $this->dashboardService->getOfficeVisitNotifications();
-        
         return response()->json([
-            'notifications' => $notifications,
-            'count' => count($notifications)
+            'notifications' => [],
+            'count' => 0,
         ]);
     }
 
