@@ -420,7 +420,6 @@ All routes below require a valid staff session unless noted.
 | GET | `/clientsmatterslist` | `clients.clientsmatterslist` |
 | GET | `/clientsclosedmatterslist` | `clients.closedmatterslist` |
 | GET | `/clients/invoicelist` | `clients.invoicelist` |
-| GET | `/clients/analytics-dashboard` | `clients.analytics-dashboard` |
 | GET | `/clients/insights` | `clients.insights` |
 | POST | `/clients/save-section` | `clients.saveSection` |
 | GET | `/clients/export/{id}` | `clients.export` |
