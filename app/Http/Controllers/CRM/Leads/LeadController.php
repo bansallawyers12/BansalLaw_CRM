@@ -25,7 +25,6 @@ use App\Services\LeadSpreadsheetImportService;
 use App\Services\ContactVerificationService;
 use App\Models\Staff;
 use App\Models\ClientAddress;
-use App\Support\CrmWafJsonPost;
 
 class LeadController extends Controller
 {
@@ -840,15 +839,6 @@ class LeadController extends Controller
     public function create(Request $request, LeadFormDataService $formData)
     {
         return view('crm.leads.create', $formData->createFormData());
-    }
-
-    /**
-     * TEMPORARY: Accept lead create as JSON (no multipart) for WAF/hosting blocks.
-     * Delegates to {@see store()}. Disable via config crm.temporary_waf_safe_lead_store.
-     */
-    public function storeWafJson(Request $request)
-    {
-        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->store($inner));
     }
 
     /**

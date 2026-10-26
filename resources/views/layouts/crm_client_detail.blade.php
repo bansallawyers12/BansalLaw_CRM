@@ -1722,10 +1722,6 @@
         window.__CRM_COMPOSE_MAX_ATTACHMENT_BYTES__ = {{ (int) config('crm.compose_max_total_attachment_bytes', 18 * 1024 * 1024) }};
     </script>
     <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
-    <script>window.CRM_ERROR_PAGE_URL = {!! json_encode(url('/error')) !!};</script>
-    <script src="{{ asset('js/crm-http-errors.js') }}?v={{ file_exists(public_path('js/crm-http-errors.js')) ? filemtime(public_path('js/crm-http-errors.js')) : 1 }}"></script>
-    <script src="{{ asset('js/crm-waf-json-post.js') }}?v={{ file_exists(public_path('js/crm-waf-json-post.js')) ? filemtime(public_path('js/crm-waf-json-post.js')) : 1 }}"></script>
-    @include('components.crm-waf-json-post-config')
     <script src="{{ asset('js/custom-form-validation.js') }}?v={{ file_exists(public_path('js/custom-form-validation.js')) ? filemtime(public_path('js/custom-form-validation.js')) : 1 }}"></script>
     @include('components.bootstrap5-scripts')
     <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>

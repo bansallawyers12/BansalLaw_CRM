@@ -46,22 +46,13 @@ Route::controller(BookingAppointmentsController::class)
         Route::post('/appointments/{id}/update-status', 'updateStatus')
             ->name('appointments.update-status')
             ->whereNumber('id');
-        Route::post('/appointments/{id}/update-status-waf-json', 'updateStatusWafJson')
-            ->name('appointments.update-status.waf_json')
-            ->whereNumber('id');
 
         Route::post('/appointments/{id}/update-consultant', 'updateConsultant')
             ->name('appointments.update-consultant')
             ->whereNumber('id');
-        Route::post('/appointments/{id}/update-consultant-waf-json', 'updateConsultantWafJson')
-            ->name('appointments.update-consultant.waf_json')
-            ->whereNumber('id');
 
         Route::post('/appointments/{id}/update-meeting-type', 'updateMeetingType')
             ->name('appointments.update-meeting-type')
-            ->whereNumber('id');
-        Route::post('/appointments/{id}/update-meeting-type-waf-json', 'updateMeetingTypeWafJson')
-            ->name('appointments.update-meeting-type.waf_json')
             ->whereNumber('id');
 
         Route::get('/appointments/{id}/update-meeting-type', function (int|string $id) {
@@ -70,9 +61,6 @@ Route::controller(BookingAppointmentsController::class)
 
         Route::post('/appointments/{id}/update-datetime', 'updateDatetime')
             ->name('appointments.update-datetime')
-            ->whereNumber('id');
-        Route::post('/appointments/{id}/update-datetime-waf-json', 'updateDatetimeWafJson')
-            ->name('appointments.update-datetime.waf_json')
             ->whereNumber('id');
 
         Route::post('/appointments/{id}/add-note', 'addNote')

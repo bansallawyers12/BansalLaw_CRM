@@ -170,7 +170,7 @@
                     </div>
                 @endif
                 
-                <form id="createLeadForm" action="{{ route('leads.store') }}" method="POST" novalidate>
+                <form id="createLeadForm" action="{{ route('leads.store') }}" method="POST" enctype="multipart/form-data" novalidate>
                     @csrf
 
 
@@ -2145,6 +2145,17 @@
                 alertContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
 
+            function messageFromForbiddenHtml(html) {
+                if (!html) return '';
+                try {
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    var el = doc.querySelector('.error-message, .error-heading, h1');
+                    var text = el ? String(el.textContent || '').trim() : '';
+                    if (text) return text;
+                } catch (e) { /* ignore */ }
+                return '';
+            }
+
             function collectErrorMessages(data) {
                 const allMessages = [];
                 const errors = data && data.errors;
@@ -2202,28 +2213,15 @@
 
                 try {
                     const formData = new FormData(form);
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || formData.get('_token') || '';
-                    const commonHeaders = {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    };
-                    const wafJsonUrl = typeof window.crmResolveWafJsonPostUrl === 'function'
-                        ? window.crmResolveWafJsonPostUrl(form.action)
-                        : form.action;
-                    const useWafJson = window.CRM_WAF_JSON_POST_ENABLED
-                        && wafJsonUrl
-                        && wafJsonUrl !== form.action
-                        && typeof window.crmLeadFormToPayload === 'function';
-                    const response = await fetch(useWafJson ? wafJsonUrl : form.action, {
+                    const response = await fetch(form.action, {
                         method: 'POST',
-                        body: useWafJson
-                            ? JSON.stringify({ payload: window.crmLeadFormToPayload(form) })
-                            : new URLSearchParams(formData),
+                        body: formData,
                         credentials: 'same-origin',
-                        headers: useWafJson
-                            ? Object.assign({ 'Content-Type': 'application/json' }, commonHeaders)
-                            : commonHeaders
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || formData.get('_token') || ''
+                        }
                     });
 
                     let data = {};
@@ -2236,11 +2234,9 @@
                             if (response.status === 419) {
                                 renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
                             } else if (response.status === 403) {
-                                if (typeof window.crmRedirectHttpErrorFromAjax === 'function'
-                                    && window.crmRedirectHttpErrorFromAjax(403, rawBody, null)) {
-                                    return;
-                                }
-                                renderSpaErrorSummary(['Access was denied (HTTP 403).']);
+                                var forbiddenMsg = messageFromForbiddenHtml(rawBody)
+                                    || 'Access was denied (HTTP 403). Ask your admin to run route:clear and config:clear on the server after the latest deploy, and ensure CRM_RESTRICTED_ACCESS_ENABLED is not set.';
+                                renderSpaErrorSummary([forbiddenMsg]);
                             } else if (response.status === 401) {
                                 renderSpaErrorSummary(['Your session expired. Please refresh the page and sign in again.']);
                             } else {
@@ -2270,11 +2266,9 @@
                     if (allMessages.length > 0) {
                         renderSpaErrorSummary(allMessages);
                     } else if (response.status === 403) {
-                        if (typeof window.crmRedirectHttpErrorFromAjax === 'function'
-                            && window.crmRedirectHttpErrorFromAjax(403, rawBody, data)) {
-                            return;
-                        }
-                        renderSpaErrorSummary(['Access was denied while saving this lead (HTTP 403).']);
+                        var msg403 = (data && data.message) || messageFromForbiddenHtml(rawBody)
+                            || 'Access was denied while saving this lead (HTTP 403).';
+                        renderSpaErrorSummary([msg403]);
                     } else if (response.status === 419) {
                         renderSpaErrorSummary(['Your session expired. Please refresh the page and try again.']);
                     } else {

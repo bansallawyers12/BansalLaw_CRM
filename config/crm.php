@@ -386,59 +386,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | TEMPORARY: WAF-safe JSON POST (not multipart/form-data)
-    |--------------------------------------------------------------------------
-    |
-    | When true, selected CRM saves use companion *-waf-json routes with
-    | Content-Type: application/json (notes without attachments, tasks/reminders,
-    | book appointment, create lead). Transport workaround only — remove when
-    | hosting/WAF allows normal POST and PHP file uploads.
-    |
-    | CRM_TEMPORARY_WAF_SAFE_LEAD_STORE is a legacy alias for the same flag.
-    |
-    */
-    'temporary_waf_safe_json_post' => filter_var(
-        env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', true)),
-        FILTER_VALIDATE_BOOLEAN
-    ),
-
-    'temporary_waf_safe_lead_store' => filter_var(
-        env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', true)),
-        FILTER_VALIDATE_BOOLEAN
-    ),
-
-    'temporary_waf_safe_json_post_endpoints' => [
-        'leads.store' => 'leads.store.waf_json',
-        'clients.createnote' => 'clients.createnote.waf_json',
-        'crm.matter.create_app_note' => 'crm.matter.create_app_note.waf_json',
-        'clients.matterTask.store' => 'clients.matterTask.store.waf_json',
-        'clients.add_appointment_book' => 'clients.add_appointment_book.waf_json',
-        'clients.storeLeadMatterFromEdit' => 'clients.storeLeadMatterFromEdit.waf_json',
-        'booking.appointments.update-datetime' => 'booking.appointments.update-datetime.waf_json',
-        'booking.appointments.update-status' => 'booking.appointments.update-status.waf_json',
-        'booking.appointments.update-consultant' => 'booking.appointments.update-consultant.waf_json',
-        'booking.appointments.update-meeting-type' => 'booking.appointments.update-meeting-type.waf_json',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | TEMPORARY: Hide note file attachments (text-only notes)
-    |--------------------------------------------------------------------------
-    |
-    | Hides the attachment UI and skips file storage until hosting allows
-    | multipart uploads again. Defaults on when WAF JSON POST workaround is on.
-    |
-    */
-    'temporary_notes_disable_attachments' => filter_var(
-        env(
-            'CRM_TEMPORARY_NOTES_DISABLE_ATTACHMENTS',
-            env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', true))
-        ),
-        FILTER_VALIDATE_BOOLEAN
-    ),
-
-    /*
-    |--------------------------------------------------------------------------
     | Personal document video upload queue
     |--------------------------------------------------------------------------
     | Default sync + afterResponse processes videos in the same web request after

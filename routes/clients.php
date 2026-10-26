@@ -151,7 +151,6 @@ Route::prefix('mail-attachments')->name('mail-attachments.')->group(function () 
 
 /*---------- Client Notes ----------*/
 Route::post('/create-note', [ClientNotesController::class, 'createnote'])->name('clients.createnote');
-Route::post('/create-note-waf-json', [ClientNotesController::class, 'createnoteWafJson'])->name('clients.createnote.waf_json');
 Route::post('/update-note-datetime', [ClientNotesController::class, 'updateNoteDatetime'])->name('clients.updateNoteDatetime');
 Route::get('/getnotedetail', [ClientNotesController::class, 'getnotedetail'])->name('clients.getnotedetail');
 Route::post('/deletenote', [ClientNotesController::class, 'deletenote'])->name('clients.deletenote');
@@ -165,7 +164,6 @@ Route::get('/note-attachments/{id}/preview', [ClientNotesController::class, 'pre
 
 Route::get('/clients/matter-tasks', [ClientMatterTaskController::class, 'index'])->name('clients.matterTask.index');
 Route::post('/clients/matter-tasks', [ClientMatterTaskController::class, 'store'])->name('clients.matterTask.store');
-Route::post('/clients/matter-tasks-waf-json', [ClientMatterTaskController::class, 'storeWafJson'])->name('clients.matterTask.store.waf_json');
 Route::post('/clients/matter-tasks/{task}/update', [ClientMatterTaskController::class, 'update'])->name('clients.matterTask.update');
 Route::post('/clients/matter-tasks/{task}/delete', [ClientMatterTaskController::class, 'destroy'])->name('clients.matterTask.destroy');
 Route::post('/clients/matter-reminders/{event}/delete', [ClientMatterTaskController::class, 'destroyReminder'])
@@ -318,7 +316,6 @@ Route::post('/clients/court-hearings/{id}/delete', [ClientsController::class, 'd
 Route::get('/get-matter-templates', [CRMUtilityController::class, 'getmattertemplates'])->name('clients.getmattertemplates');
 Route::get('/get-client-matters/{clientId}', [ClientsController::class, 'getClientMatters'])->name('clients.getClientMatters');
 Route::post('/clients/store-lead-matter', [ClientsController::class, 'storeLeadMatterFromEdit'])->name('clients.storeLeadMatterFromEdit');
-Route::post('/clients/store-lead-matter-waf-json', [ClientsController::class, 'storeLeadMatterFromEditWafJson'])->name('clients.storeLeadMatterFromEdit.waf_json');
 Route::post('/clients/fetchClientMatterAssignee', [ClientPersonalDetailsController::class, 'fetchClientMatterAssignee']);
 Route::post('/clients/updateClientMatterAssignee', [ClientPersonalDetailsController::class, 'updateClientMatterAssignee']);
 Route::post('/clients/clearMatterTeamAssignee', [ClientPersonalDetailsController::class, 'clearMatterTeamAssignee'])->name('clients.clearMatterTeamAssignee');
@@ -341,8 +338,7 @@ Route::post('/clients/getAllStaff', [ClientsController::class, 'getAllStaff'])->
 
 /*---------- Appointments ----------*/
 Route::post('/add-appointment', [ClientsController::class, 'addAppointment']);
-Route::post('/add-appointment-book', [ClientsController::class, 'addAppointmentBook'])->name('clients.add_appointment_book');
-Route::post('/add-appointment-book-waf-json', [ClientsController::class, 'addAppointmentBookWafJson'])->name('clients.add_appointment_book.waf_json');
+Route::post('/add-appointment-book', [ClientsController::class, 'addAppointmentBook']);
 Route::get('/get-appointments', [ClientsController::class, 'getAppointments']);
 
 /*---------- Client Validation & Utilities ----------*/

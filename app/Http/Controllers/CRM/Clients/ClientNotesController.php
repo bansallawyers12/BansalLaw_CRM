@@ -31,7 +31,6 @@ use Carbon\Carbon;
 | * Maps to: resources/views/Admin/clients/tabs/notes.blade.php
 | */
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
-use App\Support\CrmWafJsonPost;
 
 class ClientNotesController extends Controller
 {
@@ -45,12 +44,6 @@ class ClientNotesController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
-    }
-
-    /** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. Skips when note has file attachments (client uses multipart). */
-    public function createnoteWafJson(Request $request)
-    {
-        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->createnote($inner));
     }
 
     /**
@@ -148,12 +141,9 @@ class ClientNotesController extends Controller
                 : null;
         }
 
-        $noteAttachmentsDisabled = \App\Support\CrmWafJsonPost::noteAttachmentsDisabled();
-        if (! $noteAttachmentsDisabled) {
-            $uploadError = NoteAttachmentService::validateUploads($request->file('attachments'));
-            if ($uploadError) {
-                return response()->json(['status' => false, 'message' => $uploadError], 200, [], JSON_UNESCAPED_UNICODE);
-            }
+        $uploadError = NoteAttachmentService::validateUploads($request->file('attachments'));
+        if ($uploadError) {
+            return response()->json(['status' => false, 'message' => $uploadError], 200, [], JSON_UNESCAPED_UNICODE);
         }
         
         // PostgreSQL NOT NULL constraints - must set these fields
@@ -172,17 +162,15 @@ class ClientNotesController extends Controller
                 if (! is_array($removeIds)) {
                     $removeIds = $removeIds !== null && $removeIds !== '' ? [$removeIds] : [];
                 }
-                if (! $noteAttachmentsDisabled) {
-                    if ($isUpdate && $removeIds !== []) {
-                        $toRemove = NoteAttachment::where('note_id', $obj->id)
-                            ->whereIn('id', array_map('intval', $removeIds))
-                            ->get();
-                        foreach ($toRemove as $attachment) {
-                            NoteAttachmentService::deleteAttachment($attachment);
-                        }
+                if ($isUpdate && $removeIds !== []) {
+                    $toRemove = NoteAttachment::where('note_id', $obj->id)
+                        ->whereIn('id', array_map('intval', $removeIds))
+                        ->get();
+                    foreach ($toRemove as $attachment) {
+                        NoteAttachmentService::deleteAttachment($attachment);
                     }
-                    $matterDocumentRefresh = NoteAttachmentService::storeForNote($obj, $request->file('attachments'));
                 }
+                $matterDocumentRefresh = NoteAttachmentService::storeForNote($obj, $request->file('attachments'));
             }
             
             if($saved){

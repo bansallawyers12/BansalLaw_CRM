@@ -383,21 +383,17 @@
     }
 
     function postJson(url, body) {
-        var fetchPromise =
-            typeof window.crmPostJsonWafSafe === 'function'
-                ? window.crmPostJsonWafSafe(url, body || {})
-                : fetch(url, {
-                      method: 'POST',
-                      headers: {
-                          'Content-Type': 'application/json',
-                          Accept: 'application/json',
-                          'X-Requested-With': 'XMLHttpRequest',
-                          'X-CSRF-TOKEN': csrfToken(),
-                      },
-                      credentials: 'same-origin',
-                      body: JSON.stringify(body || {}),
-                  });
-        return fetchPromise.then(async function (response) {
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken(),
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(body || {}),
+        }).then(async function (response) {
             var data = {};
             try {
                 data = await response.json();
@@ -501,7 +497,7 @@
             });
     }
 
-    function reschedule(appointmentId, slotKey) {
+    function reschedule(appointmentId, slotKey, meetingType, preferredLanguage) {
         var dateEl = document.getElementById('rescheduleDate-' + slotKey);
         var timeEl = document.getElementById('rescheduleTime-' + slotKey);
         if (!dateEl || !timeEl) return;
@@ -511,17 +507,42 @@
             showToast('warning', 'Choose a date and time');
             return;
         }
-        postJson(bookingBase() + '/appointments/' + appointmentId + '/update-datetime', {
-            appointment_date: date,
-            appointment_time: time,
+        var formData = new FormData();
+        formData.append('_method', 'PUT');
+        formData.append('appointment_date', date);
+        formData.append('appointment_time', time);
+        formData.append('meeting_type', meetingType || 'in_person');
+        formData.append('preferred_language', preferredLanguage || 'English');
+
+        fetch(bookingBase() + '/appointments/' + appointmentId, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken(),
+            },
+            credentials: 'same-origin',
+            body: formData,
         })
+            .then(async function (response) {
+                var data = {};
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = {};
+                }
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.message || 'Failed to reschedule');
+                }
+                return data;
+            })
             .then(function () {
                 showToast('success', 'Appointment rescheduled');
                 hideModal('eventModal');
                 notifyChanged();
             })
             .catch(function (err) {
-                showToast('danger', err.message || 'Failed to reschedule appointment. Please try again.');
+                showToast('danger', err.message || 'Failed to reschedule');
             });
     }
 
@@ -534,7 +555,12 @@
         if (action === 'status') {
             updateStatus(id, btn.getAttribute('data-status'), btn);
         } else if (action === 'reschedule') {
-            reschedule(id, btn.getAttribute('data-slot'));
+            reschedule(
+                id,
+                btn.getAttribute('data-slot'),
+                btn.getAttribute('data-meeting-type'),
+                btn.getAttribute('data-language')
+            );
         }
     }
 

@@ -6,11 +6,7 @@
     <p class="error-code" aria-hidden="true">403</p>
     <h1 class="error-heading">Access denied</h1>
     <p class="error-message">
-        @if(!empty($detailMessage))
-            {{ $detailMessage }}
-        @else
-            You don’t have permission to open this page. If you think you should, ask an administrator to review your role.
-        @endif
+        You don’t have permission to open this page. If you think you should, ask an administrator to review your role.
     </p>
     <div class="error-actions">
         @auth('admin')

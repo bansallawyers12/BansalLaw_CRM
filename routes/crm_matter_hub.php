@@ -17,8 +17,7 @@ Route::get('/crm/matter/list', [ClientMatterHubController::class, 'listClientMat
 Route::post('/crm/matter/discontinue', [ClientMatterHubController::class, 'discontinueMatter']);
 Route::post('/crm/matter/revert', [ClientMatterHubController::class, 'revertMatter']);
 
-Route::post('/create-app-note', [ClientMatterHubController::class, 'addNote'])->name('crm.matter.create_app_note');
-Route::post('/create-app-note-waf-json', [ClientMatterHubController::class, 'addNoteWafJson'])->name('crm.matter.create_app_note.waf_json');
+Route::post('/create-app-note', [ClientMatterHubController::class, 'addNote']);
 Route::get('/crm/matter/notes', [ClientMatterHubController::class, 'getMatterNotes']);
 Route::post('/crm/matter/sendmail', [ClientMatterHubController::class, 'sendMatterMail']);
 
