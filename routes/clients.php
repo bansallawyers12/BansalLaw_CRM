@@ -318,7 +318,6 @@ Route::post('/clients/court-hearings/{id}/delete', [ClientsController::class, 'd
 Route::get('/get-matter-templates', [CRMUtilityController::class, 'getmattertemplates'])->name('clients.getmattertemplates');
 Route::get('/get-client-matters/{clientId}', [ClientsController::class, 'getClientMatters'])->name('clients.getClientMatters');
 Route::post('/clients/store-lead-matter', [ClientsController::class, 'storeLeadMatterFromEdit'])->name('clients.storeLeadMatterFromEdit');
-Route::post('/clients/store-lead-matter-waf-json', [ClientsController::class, 'storeLeadMatterFromEditWafJson'])->name('clients.storeLeadMatterFromEdit.waf_json');
 Route::post('/clients/fetchClientMatterAssignee', [ClientPersonalDetailsController::class, 'fetchClientMatterAssignee']);
 Route::post('/clients/updateClientMatterAssignee', [ClientPersonalDetailsController::class, 'updateClientMatterAssignee']);
 Route::post('/clients/clearMatterTeamAssignee', [ClientPersonalDetailsController::class, 'clearMatterTeamAssignee'])->name('clients.clearMatterTeamAssignee');
