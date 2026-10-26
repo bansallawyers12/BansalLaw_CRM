@@ -409,23 +409,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | TEMPORARY: Hide note file attachments (text-only notes)
-    |--------------------------------------------------------------------------
-    |
-    | Hides the attachment UI and skips file storage until hosting allows
-    | multipart uploads again. Defaults on when WAF JSON POST workaround is on.
-    |
-    */
-    'temporary_notes_disable_attachments' => filter_var(
-        env(
-            'CRM_TEMPORARY_NOTES_DISABLE_ATTACHMENTS',
-            env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', true)
-        ),
-        FILTER_VALIDATE_BOOLEAN
-    ),
-
-    /*
-    |--------------------------------------------------------------------------
     | Personal document video upload queue
     |--------------------------------------------------------------------------
     | Default sync + afterResponse processes videos in the same web request after

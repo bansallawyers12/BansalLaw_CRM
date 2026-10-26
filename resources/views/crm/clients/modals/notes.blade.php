@@ -2,9 +2,6 @@
     ALL NOTE-RELATED MODALS
     This file contains all note modals for the client detail page
     ======================================== --}}
-@php
-    $crmNoteFormMultipart = ! \App\Support\CrmWafJsonPost::noteAttachmentsDisabled();
-@endphp
 
 {{-- 1. Create Note Modal (Simple) --}}
 <!-- Update note Modal -->
@@ -18,7 +15,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-			<form method="post" action="{{URL::to('/create-note')}}" name="notetermform" autocomplete="off" id="notetermform"@if($crmNoteFormMultipart) enctype="multipart/form-data"@endif>
+			<form method="post" action="{{URL::to('/create-note')}}" name="notetermform" autocomplete="off" id="notetermform" enctype="multipart/form-data">
 			@csrf
 			<input type="hidden" name="client_id" id="note_simple_client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" name="context_matter_id" value="{{ $activeClientMatterId ?? '' }}">
@@ -87,14 +84,12 @@
 					</div>
 				</form>
 			</div>
-			@if($crmNoteFormMultipart)
 			<div class="note-page-drop-overlay" aria-hidden="true">
 				<div class="note-page-drop-overlay__inner">
 					<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
 					<p>Drop files to attach</p>
 				</div>
 			</div>
-			@endif
 		</div>
 	</div>
 </div>
@@ -107,7 +102,7 @@
 				<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
 				<x-crm.modal-close />
 			</div>
-			<form method="post" action="{{URL::to('/create-note')}}" name="notetermform_n" autocomplete="off" id="notetermform_n"@if($crmNoteFormMultipart) enctype="multipart/form-data"@endif>
+			<form method="post" action="{{URL::to('/create-note')}}" name="notetermform_n" autocomplete="off" id="notetermform_n" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="client_id" id="note_form_client_id_d" value="{{$fetchedData->id}}">
                     <input type="hidden" name="context_matter_id" value="{{ $activeClientMatterId ?? '' }}">
@@ -210,14 +205,12 @@
 					</button>
 				</div>
 			</form>
-			@if($crmNoteFormMultipart)
 			<div class="note-page-drop-overlay" aria-hidden="true">
 				<div class="note-page-drop-overlay__inner">
 					<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
 					<p>Drop files to attach</p>
 				</div>
 			</div>
-			@endif
 		</div>
 	</div>
 </div>
@@ -269,7 +262,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/create-app-note')}}" name="appnotetermform" autocomplete="off" id="appnotetermform"@if($crmNoteFormMultipart) enctype="multipart/form-data"@endif>
+				<form method="post" action="{{URL::to('/create-app-note')}}" name="appnotetermform" autocomplete="off" id="appnotetermform" enctype="multipart/form-data">
 				@csrf
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" name="noteid" id="noteid" value="">
