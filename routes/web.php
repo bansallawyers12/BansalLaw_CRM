@@ -215,8 +215,6 @@ Route::middleware(['auth:admin'])->group(function () {
         // Create
         Route::get('/create', [LeadController::class, 'create'])->name('create');
         Route::post('/store', [LeadController::class, 'store'])->name('store');
-        // TEMPORARY WAF workaround — see config('crm.temporary_waf_safe_lead_store')
-        Route::post('/store-waf-json', [LeadController::class, 'storeWafJson'])->name('store.waf_json');
         Route::get('/import-template', [LeadController::class, 'importTemplate'])->name('import_template');
         Route::get('/check-contact-match', [LeadController::class, 'checkContactMatch'])->name('check.contact.match');
 
@@ -387,36 +385,6 @@ Route::prefix('outlook-addin')->name('outlook-addin.')->group(function () {
     Route::post('/set-staff', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'setStaff'])->name('set-staff');
     Route::post('/log', [\App\Http\Controllers\CRM\OutlookAddinController::class, 'logClient'])->name('log');
 });
-
-// Branded HTTP error pages (also used when AJAX flows redirect on 403/500, etc.)
-Route::get('/error/{code}', function (int $code) {
-    $views = [
-        401 => 'errors.401',
-        403 => 'errors.403',
-        404 => 'errors.404',
-        419 => 'errors.419',
-        500 => 'errors.500',
-        503 => 'errors.503',
-    ];
-    if (! isset($views[$code])) {
-        abort(404);
-    }
-
-    $detailMessage = null;
-    $rawMessage = request()->query('message');
-    if (is_string($rawMessage) && trim($rawMessage) !== '') {
-        $detailMessage = \Illuminate\Support\Str::limit(trim(strip_tags($rawMessage)), 500);
-    }
-
-    $context = request()->query('context');
-    if ($code === 403 && $context === 'blocked' && ! $detailMessage) {
-        $detailMessage = 'The request was blocked by the server or firewall before the CRM could finish. Your sign-in is usually fine—ask IT to review web server or Cloudflare WAF rules for this action.';
-    }
-
-    return response()->view($views[$code], [
-        'detailMessage' => $detailMessage,
-    ], $code);
-})->whereNumber('code')->name('crm.error');
 
 // Unmatched web URLs → custom 404 page (resources/views/errors/404.blade.php)
 Route::fallback(function () {

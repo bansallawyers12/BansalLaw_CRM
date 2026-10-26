@@ -391,24 +391,16 @@ return [
     |
     | When true, selected CRM saves use companion *-waf-json routes with
     | Content-Type: application/json (notes without attachments, tasks/reminders,
-    | book appointment, create lead). Transport workaround only — remove when
-    | hosting/WAF allows normal POST and PHP file uploads.
-    |
-    | CRM_TEMPORARY_WAF_SAFE_LEAD_STORE is a legacy alias for the same flag.
+    | book appointment). Transport workaround only — remove when hosting/WAF
+    | allows normal POST and PHP file uploads.
     |
     */
     'temporary_waf_safe_json_post' => filter_var(
-        env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', true)),
-        FILTER_VALIDATE_BOOLEAN
-    ),
-
-    'temporary_waf_safe_lead_store' => filter_var(
-        env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', true)),
+        env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', true),
         FILTER_VALIDATE_BOOLEAN
     ),
 
     'temporary_waf_safe_json_post_endpoints' => [
-        'leads.store' => 'leads.store.waf_json',
         'clients.createnote' => 'clients.createnote.waf_json',
         'crm.matter.create_app_note' => 'crm.matter.create_app_note.waf_json',
         'clients.matterTask.store' => 'clients.matterTask.store.waf_json',
@@ -432,7 +424,7 @@ return [
     'temporary_notes_disable_attachments' => filter_var(
         env(
             'CRM_TEMPORARY_NOTES_DISABLE_ATTACHMENTS',
-            env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', env('CRM_TEMPORARY_WAF_SAFE_LEAD_STORE', true))
+            env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', true)
         ),
         FILTER_VALIDATE_BOOLEAN
     ),

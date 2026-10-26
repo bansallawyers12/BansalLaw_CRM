@@ -14,10 +14,7 @@ class CrmWafJsonPostRoutesTest extends TestCase
     #[Test]
     public function note_waf_json_route_is_hidden_when_feature_disabled(): void
     {
-        config([
-            'crm.temporary_waf_safe_json_post' => false,
-            'crm.temporary_waf_safe_lead_store' => false,
-        ]);
+        config(['crm.temporary_waf_safe_json_post' => false]);
         $staff = Staff::factory()->create(['status' => 1]);
 
         $this->actingAs($staff, 'admin')
@@ -39,10 +36,7 @@ class CrmWafJsonPostRoutesTest extends TestCase
     #[Test]
     public function store_lead_matter_waf_json_route_is_hidden_when_feature_disabled(): void
     {
-        config([
-            'crm.temporary_waf_safe_json_post' => false,
-            'crm.temporary_waf_safe_lead_store' => false,
-        ]);
+        config(['crm.temporary_waf_safe_json_post' => false]);
         $staff = Staff::factory()->create(['status' => 1]);
 
         $this->actingAs($staff, 'admin')

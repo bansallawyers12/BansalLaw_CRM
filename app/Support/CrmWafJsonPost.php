@@ -12,11 +12,7 @@ final class CrmWafJsonPost
 {
     public static function enabled(): bool
     {
-        if (filter_var(config('crm.temporary_waf_safe_json_post', false), FILTER_VALIDATE_BOOLEAN)) {
-            return true;
-        }
-
-        return filter_var(config('crm.temporary_waf_safe_lead_store', false), FILTER_VALIDATE_BOOLEAN);
+        return filter_var(config('crm.temporary_waf_safe_json_post', false), FILTER_VALIDATE_BOOLEAN);
     }
 
     public static function noteAttachmentsDisabled(): bool
