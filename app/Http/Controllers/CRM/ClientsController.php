@@ -34,7 +34,6 @@ use App\Support\MatterStreamHelper;
 use App\Support\ClientTagStorage;
 use App\Support\ClientActivity;
 use App\Support\ReleaseSessionLock;
-use App\Support\CrmWafJsonPost;
 use App\Support\EmailTimelineActivity;
 
 use Illuminate\Support\Facades\Storage;
@@ -5040,12 +5039,6 @@ class ClientsController extends Controller
             
             return redirect()->back()->with('error', 'Failed to create appointment: ' . $e->getMessage());
         }
-    }
-
-    /** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. */
-    public function addAppointmentBookWafJson(Request $request)
-    {
-        return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->addAppointmentBook($inner));
     }
 
     /**

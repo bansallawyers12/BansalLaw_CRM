@@ -274,13 +274,6 @@ function crmNoteSaveErrorMessage(xhr, status) {
 	return 'Could not save the note. Check your connection and try again.';
 }
 
-function crmAjaxWithOptionalWafJson(settings) {
-	if (typeof window.crmEnhanceAjaxSettingsForWafJson === 'function') {
-		settings = window.crmEnhanceAjaxSettingsForWafJson(settings);
-	}
-	return $.ajax(settings);
-}
-
 function crmSubmitNoteFormAjax(formName, options) {
 	options = options || {};
 	var myform = document.getElementById(formName);
@@ -290,7 +283,7 @@ function crmSubmitNoteFormAjax(formName, options) {
 	}
 	var fd = new FormData(myform);
 	$('.btn-create-note').prop('disabled', true);
-	crmAjaxWithOptionalWafJson({
+	$.ajax({
 		type: 'post',
 		url: $("form[name=" + formName + "]").attr('action'),
 		processData: false,
@@ -564,7 +557,7 @@ function customValidate(formName, savetype = '')
 					{
 						var myform = document.getElementById('addnoteform');
 						var fd = new FormData(myform);
-						crmAjaxWithOptionalWafJson({
+						$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
 							processData: false,
@@ -604,7 +597,7 @@ function customValidate(formName, savetype = '')
 				var noteid = $('#appnotetermform input[name="noteid"]').val();
 						var myform = document.getElementById('appnotetermform');
 						var fd = new FormData(myform);
-						crmAjaxWithOptionalWafJson({
+						$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
 							processData: false,
@@ -628,7 +621,7 @@ function customValidate(formName, savetype = '')
 						var client_id = $('input[name="client_id"]').val();
 						var myform = document.getElementById('clientnotetermform');
 						var fd = new FormData(myform);
-						crmAjaxWithOptionalWafJson({
+						$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
 							processData: false,
@@ -2215,7 +2208,7 @@ function customValidate(formName, savetype = '')
 							// sits in a previously-hidden section or FormData omits it.
 							var sendConfirmation = document.getElementById('send_confirmation_email');
 							fd.set('send_confirmation_email', (sendConfirmation && sendConfirmation.checked) ? '1' : '0');
-                            crmAjaxWithOptionalWafJson({
+                            $.ajax({
                                 type:'post',
                                 url:$("form[name="+formName+"]").attr('action'),
                                 processData: false,

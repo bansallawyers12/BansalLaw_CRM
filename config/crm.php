@@ -386,29 +386,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | TEMPORARY: WAF-safe JSON POST (not multipart/form-data)
-    |--------------------------------------------------------------------------
-    |
-    | When true, selected CRM saves use companion *-waf-json routes with
-    | Content-Type: application/json (notes without attachments, tasks/reminders,
-    | book appointment). Transport workaround only — remove when hosting/WAF
-    | allows normal POST and PHP file uploads.
-    |
-    */
-    'temporary_waf_safe_json_post' => filter_var(
-        env('CRM_TEMPORARY_WAF_SAFE_JSON_POST', true),
-        FILTER_VALIDATE_BOOLEAN
-    ),
-
-    'temporary_waf_safe_json_post_endpoints' => [
-        'clients.createnote' => 'clients.createnote.waf_json',
-        'crm.matter.create_app_note' => 'crm.matter.create_app_note.waf_json',
-        'clients.matterTask.store' => 'clients.matterTask.store.waf_json',
-        'clients.add_appointment_book' => 'clients.add_appointment_book.waf_json',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Personal document video upload queue
     |--------------------------------------------------------------------------
     | Default sync + afterResponse processes videos in the same web request after

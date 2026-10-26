@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Models\Staff;
 use App\Support\MatterScopedAccess;
-use App\Support\CrmWafJsonPost;
 
 /**
  * Staff CRM controller for matters, workflow-adjacent utilities, and documents.
@@ -1248,12 +1247,6 @@ class ClientMatterHubController extends Controller
 			'current_stage' => (string) $currentStage->name,
 			'stages' => $payloadStages,
 		]);
-	}
-
-	/** TEMPORARY WAF JSON ingress — see CrmWafJsonPost. */
-	public function addNoteWafJson(Request $request)
-	{
-		return CrmWafJsonPost::dispatch($request, fn (Request $inner) => $this->addNote($inner));
 	}
 
 	public function addNote(Request $request){
