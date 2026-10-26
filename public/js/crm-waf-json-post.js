@@ -153,36 +153,8 @@
         return settings;
     }
 
-    function csrfTokenFromMeta() {
-        var meta = document.querySelector('meta[name="csrf-token"]');
-        return meta ? meta.getAttribute('content') || '' : '';
-    }
-
-    /**
-     * JSON POST with optional redirect to *-waf-json companion route (payload wrapper).
-     */
-    function postJsonWafSafe(url, body) {
-        var targetUrl = resolveWafJsonPostUrl(url);
-        var jsonBody = body || {};
-        if (window.CRM_WAF_JSON_POST_ENABLED && targetUrl !== url) {
-            jsonBody = { payload: body || {} };
-        }
-        return fetch(targetUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=UTF-8',
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': csrfTokenFromMeta()
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify(jsonBody)
-        });
-    }
-
     window.crmLeadFormToPayload = formToPayload;
     window.crmFormToPayload = formToPayload;
     window.crmResolveWafJsonPostUrl = resolveWafJsonPostUrl;
     window.crmEnhanceAjaxSettingsForWafJson = enhanceAjaxSettingsForWafJson;
-    window.crmPostJsonWafSafe = postJsonWafSafe;
 })(window);
