@@ -805,7 +805,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 #personaldocuments-tab.client-documents-tab.tab-pane.active .checklist-table-container {
   display: flex;
   flex-direction: column;
-  flex: 0 0 380px;
+  flex: 0 0 440px;
   min-height: 100vh;
   height: 100vh;
   max-height: 100vh;
@@ -839,12 +839,9 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 }
 
 #personaldocuments-tab .doc-row a span {
-  word-break: normal;
+  word-break: break-word;
   overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  white-space: normal;
 }
 
 /* Matter documents: list + preview row fills tab panel (avoid nested 100vh overflow) */
@@ -862,7 +859,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 #matterdocuments-tab.client-documents-tab.tab-pane.active .checklist-table-container {
   display: flex;
   flex-direction: column;
-  flex: 0 0 380px;
+  flex: 0 0 440px;
   min-height: 100vh;
   height: 100vh;
   max-height: 100vh;
@@ -896,20 +893,17 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 }
 
 #matterdocuments-tab .doc-row a span {
-  word-break: normal;
+  word-break: break-word;
   overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  white-space: normal;
 }
 
 #matterdocuments-tab.client-documents-tab .checklist-table-container,
 #personaldocuments-tab.client-documents-tab .checklist-table-container {
-  flex: 0 0 380px;
-  min-width: 320px;
-  width: 380px;
-  max-width: 42%;
+  flex: 0 0 440px;
+  min-width: 360px;
+  width: 440px;
+  max-width: 52%;
   height: 100vh;
   min-height: 100vh;
   max-height: 100vh;
@@ -960,7 +954,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   border: 1px solid var(--border, #c8dcef);
   border-radius: 0 0 8px 8px;
   background: var(--card-bg, #fff);
@@ -969,7 +963,8 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 #matterdocuments-tab .checklist-table-scroll .checklist-table,
 #personaldocuments-tab .checklist-table-scroll .checklist-table {
   margin: 0;
-  table-layout: fixed;
+  table-layout: auto;
+  min-width: 100%;
 }
 
 #matterdocuments-tab .checklist-table-scroll .checklist-table td,
@@ -1030,8 +1025,44 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 #matterdocuments-tab .visachecklist-row > span:first-child,
 #personaldocuments-tab .personalchecklist-row > span:first-child {
   word-break: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   line-height: 1.35;
+  white-space: normal;
+}
+
+#matterdocuments-tab .doc-row-cell,
+#personaldocuments-tab .doc-row-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+#matterdocuments-tab .doc-row-cell .doc-row,
+#personaldocuments-tab .doc-row-cell .doc-row {
+  flex: 1;
+  min-width: 0;
+}
+
+#matterdocuments-tab .checklist-actions a,
+#personaldocuments-tab .checklist-actions a,
+#matterdocuments-tab .edit-file-name-btn,
+#personaldocuments-tab .edit-file-name-btn {
+  color: var(--sidebar-active, #3a6fa8);
+  flex-shrink: 0;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+#matterdocuments-tab .checklist-actions a:hover,
+#personaldocuments-tab .checklist-actions a:hover,
+#matterdocuments-tab .edit-file-name-btn:hover,
+#personaldocuments-tab .edit-file-name-btn:hover {
+  color: var(--navy, #1e3d60);
+}
+
+#matterdocuments-tab .checklist-actions .delete-checklist-btn,
+#personaldocuments-tab .checklist-actions .delete-checklist-btn {
+  color: #c0392b;
 }
 
 #matterdocuments-tab .checklist-table-scroll .checklist-table thead th,
@@ -1155,9 +1186,12 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 
 #matterdocuments-tab .client-doc-preview-filename,
 #personaldocuments-tab .client-doc-preview-filename {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
 }
 
 #matterdocuments-tab .client-doc-preview-header-meta,

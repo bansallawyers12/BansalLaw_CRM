@@ -448,6 +448,12 @@
             return openRenameFileModal($(this).closest('.drow'));
         });
 
+        $(document).on('click', '.edit-file-name-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return openRenameFileModal($(this).closest('.drow'));
+        });
+
         $('#renameFileSaveBtn').on('click', function(e) {
             e.preventDefault();
             saveRenameFile();

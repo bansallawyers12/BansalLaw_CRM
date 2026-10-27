@@ -1772,15 +1772,18 @@ class ClientDocumentsController extends Controller
             $res = DB::table('documents')->where('id', @$id)->update(['checklist' => $checklist]);
             if($res){
                 // Build complete HTML structure to restore UI state
-                $html = '<span style="flex: 1;">' . DocumentLabel::forDisplay($checklist) . '</span>';
-                
-                // Only show edit/delete buttons if no file uploaded
+                $isMatterDoc = in_array($doc->doc_type ?? '', ['matter', 'visa'], true);
+                $labelClass = $isMatterDoc ? 'md-checklist-label' : '';
+                $labelStyle = $isMatterDoc ? '' : ' style="flex: 1;"';
+                $labelClassAttr = $labelClass !== '' ? ' class="' . $labelClass . '"' : '';
+                $displayChecklist = DocumentLabel::forDisplay($checklist);
+                $html = '<span' . $labelClassAttr . $labelStyle . ' title="' . e($displayChecklist) . '">' . $displayChecklist . '</span>';
+                $html .= '<div class="checklist-actions" style="display: flex; gap: 5px;">';
+                $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . e($displayChecklist) . '" title="Rename checklist"><i class="fa-solid fa-pen-to-square"></i></a>';
                 if (!$doc->file_name) {
-                    $html .= '<div class="checklist-actions" style="display: flex; gap: 5px;">';
-                    $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . DocumentLabel::forDisplay($checklist) . '" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></a>';
-                    $html .= '<a href="javascript:;" class="delete-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . DocumentLabel::forDisplay($checklist) . '" title="Delete Checklist" style="color: #dc3545; cursor: pointer;"><i class="fa-solid fa-trash"></i></a>';
-                    $html .= '</div>';
+                    $html .= '<a href="javascript:;" class="delete-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . e($displayChecklist) . '" title="Delete Checklist"><i class="fa-solid fa-trash"></i></a>';
                 }
+                $html .= '</div>';
                 
                 $response['status'] = true;
                 $response['data'] = 'Checklist renamed successfully';

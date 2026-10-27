@@ -150,12 +150,12 @@
                                                     <tr class="drow" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
                                                             <div data-id="<?= $fetch->id ?>" data-personalchecklistname="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" class="personalchecklist-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;">
-                                                                <span style="flex: 1;"><?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?></span>
+                                                                <span style="flex: 1;" title="<?= e(\App\Support\DocumentLabel::forDisplay($fetch->checklist)) ?>"><?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?></span>
                                                                 <div class="checklist-actions" style="display: flex; gap: 5px;">
-                                                                    <?php if (!$fetch->file_name): ?>
-                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Edit Checklist Name">
+                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Rename checklist">
                                                                         <i class="fa-solid fa-pen-to-square"></i>
                                                                     </a>
+                                                                    <?php if (!$fetch->file_name): ?>
                                                                     <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Delete Checklist">
                                                                         <i class="fa-solid fa-trash"></i>
                                                                     </a>
@@ -165,10 +165,13 @@
                                                         </td>
                                                         <td style="white-space: initial;">
                                                             <?php if ($fetch->file_name): ?>
-                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= \App\Support\DocumentLabel::forDisplay($fetch->file_name) ?>" data-uploaded-at="<?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" class="doc-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? '') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
-                                                                    <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-' . $id) ?>)'>
-                                                                        <i class="fa-solid <?= $fileIcon ?>"></i> <span><?= \App\Support\DocumentLabel::forDisplay($fetch->file_name . '.' . $fetch->filetype) ?></span>
-                                                                    </a>
+                                                                <div class="doc-row-cell">
+                                                                    <div data-id="<?= $fetch->id ?>" data-name="<?= \App\Support\DocumentLabel::forDisplay($fetch->file_name) ?>" data-uploaded-at="<?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" class="doc-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? '') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
+                                                                        <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-' . $id) ?>)'>
+                                                                            <i class="fa-solid <?= $fileIcon ?>"></i> <span title="<?= e(\App\Support\DocumentLabel::forDisplay($fetch->file_name . '.' . $fetch->filetype)) ?>"><?= \App\Support\DocumentLabel::forDisplay($fetch->file_name . '.' . $fetch->filetype) ?></span>
+                                                                        </a>
+                                                                    </div>
+                                                                    <a href="javascript:;" class="edit-file-name-btn" title="Rename file" aria-label="Rename file"><i class="fa-solid fa-pen-to-square"></i></a>
                                                                 </div>
                                                             <?php else: ?>
                                                                 <div class="upload_document" style="display: inline-block;">

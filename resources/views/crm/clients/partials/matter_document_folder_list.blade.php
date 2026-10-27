@@ -10,12 +10,12 @@
     <tr class="drow" data-matterid="{{ $fetch->client_matter_id }}" data-catid="{{ $fetch->folder_name }}" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">
             <div data-id="{{ $fetch->id }}" data-visachecklistname="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" class="visachecklist-row md-checklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}">
-                <span class="md-checklist-label">{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}</span>
+                <span class="md-checklist-label" title="{{ e(\App\Support\DocumentLabel::normalize($fetch->checklist)) }}">{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}</span>
                 <div class="checklist-actions">
+                    <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" title="Rename checklist">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </a>
                     @if (!$fetch->file_name)
-                        <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" title="Edit Checklist Name">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
                         <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" title="Delete Checklist">
                             <i class="fa-solid fa-trash"></i>
                         </a>
@@ -39,10 +39,13 @@
                         $matterFileIcon = 'fa-file-image';
                     }
                 @endphp
-                <div data-id="{{ $fetch->id }}" data-name="{{ htmlspecialchars($fetch->file_name) }}" data-uploaded-at="{{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" class="doc-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" oncontextmenu="showVisaFileContextMenu(event, {{ (int) $fetch->id }}, {{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode((string) $fetch->folder_name) }}, {{ json_encode($fetch->status ?? 'draft') }}); return false;">
-                    <a href="javascript:void(0);" onclick="previewFile({{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode('preview-container-matter-' . $fetch->folder_name) }})">
-                        <i class="fa-solid {{ $matterFileIcon }} matter-doc-file-icon"></i> <span>{{ htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) }}</span>
-                    </a>
+                <div class="doc-row-cell">
+                    <div data-id="{{ $fetch->id }}" data-name="{{ htmlspecialchars($fetch->file_name) }}" data-uploaded-at="{{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" class="doc-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" oncontextmenu="showVisaFileContextMenu(event, {{ (int) $fetch->id }}, {{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode((string) $fetch->folder_name) }}, {{ json_encode($fetch->status ?? 'draft') }}); return false;">
+                        <a href="javascript:void(0);" onclick="previewFile({{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode('preview-container-matter-' . $fetch->folder_name) }})">
+                            <i class="fa-solid {{ $matterFileIcon }} matter-doc-file-icon"></i> <span title="{{ e($fetch->file_name . '.' . $fetch->filetype) }}">{{ htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) }}</span>
+                        </a>
+                    </div>
+                    <a href="javascript:;" class="edit-file-name-btn" title="Rename file" aria-label="Rename file"><i class="fa-solid fa-pen-to-square"></i></a>
                 </div>
             @else
                 <div class="migration_upload_document" style="display: inline-block;">

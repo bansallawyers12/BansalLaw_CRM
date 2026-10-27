@@ -46,10 +46,15 @@
             return;
         }
         var isVisa = $parent.hasClass('visachecklist-row');
+        var fallbackHtml = isVisa
+            ? '<span class="md-checklist-label" title="' + $('<div>').text(obj.checklist).html() + '">' + $('<div>').text(obj.checklist).html() + '</span>'
+                + '<div class="checklist-actions"><a href="javascript:;" class="edit-checklist-btn" data-id="' + obj.Id + '" data-checklist="' + $('<div>').text(obj.checklist).html() + '" title="Rename checklist"><i class="fa-solid fa-pen-to-square"></i></a></div>'
+            : '<span style="flex: 1;" title="' + $('<div>').text(obj.checklist).html() + '">' + $('<div>').text(obj.checklist).html() + '</span>'
+                + '<div class="checklist-actions" style="display:flex;gap:5px;"><a href="javascript:;" class="edit-checklist-btn" data-id="' + obj.Id + '" data-checklist="' + $('<div>').text(obj.checklist).html() + '" title="Rename checklist"><i class="fa-solid fa-pen-to-square"></i></a></div>';
         $parent.empty()
             .data('id', obj.Id)
             .data(isVisa ? 'visachecklistname' : 'personalchecklistname', obj.checklist)
-            .html(obj.html || '<span style="flex: 1;">' + obj.checklist + '</span>');
+            .html(obj.html || fallbackHtml);
         if ($('#grid_' + obj.Id).length) {
             $('#grid_' + obj.Id).html(obj.checklist);
         }
