@@ -46,13 +46,31 @@
             $wrap.empty().hide();
             return;
         }
-        $wrap.show();
+        $wrap.show().attr('data-has-more', '1');
         var $btn = $wrap.find('.notes-load-more');
         if (!$btn.length) {
             $btn = $('<button type="button" class="btn btn-sm btn-outline-secondary notes-load-more">Load more</button>');
             $wrap.html($btn);
         }
         $btn.prop('disabled', notesLoading).attr('data-next-offset', notesNextOffset);
+        $wrap.attr('data-next-offset', notesNextOffset);
+    }
+
+    function initNotesPaginationFromDom() {
+        var $pane = $('#noteterm-tab');
+        if (!$pane.length) {
+            return;
+        }
+        var $btn = $pane.find('.notes-load-more').first();
+        var $wrap = $pane.find('.notes-load-more-wrap').first();
+        if ($btn.length || ($wrap.length && String($wrap.attr('data-has-more') || '') === '1')) {
+            notesHasMore = true;
+            var next = parseInt($btn.attr('data-next-offset') || $wrap.attr('data-next-offset'), 10);
+            if (next > 0) {
+                notesNextOffset = next;
+            }
+        }
+        syncNotesLoadMore();
     }
 
     function applyNotesFilter() {
@@ -130,6 +148,12 @@
                 notesHasMore = !!payload.has_more;
                 notesNextOffset = payload.next_offset != null ? parseInt(payload.next_offset, 10) || 0 : 0;
                 syncNotesLoadMore();
+                if (notesHasMore && payload.total != null) {
+                    var remaining = Math.max(0, parseInt(payload.total, 10) - notesNextOffset);
+                    ensureLoadMoreWrap().find('.notes-load-more').text(
+                        remaining > 0 ? ('Load more notes (' + remaining + ' remaining)') : 'Load more notes'
+                    );
+                }
                 applyNotesFilter();
                 if (typeof adjustActivityFeedHeight === 'function') {
                     adjustActivityFeedHeight();
@@ -159,12 +183,16 @@
 
     $(document).on('click', '.notes-load-more', function(e) {
         e.preventDefault();
-        if (notesLoading || !notesHasMore) {
-            return;
-        }
         var offset = parseInt($(this).attr('data-next-offset'), 10);
         if (!(offset > 0)) {
             offset = notesNextOffset;
+        }
+        if (!notesHasMore && offset > 0) {
+            notesHasMore = true;
+            notesNextOffset = offset;
+        }
+        if (notesLoading || !notesHasMore || !(offset > 0)) {
+            return;
         }
         fetchNotesPage(offset, true);
     });
@@ -426,14 +454,19 @@
     }
 
     window.resetNoteAttachments = resetNoteAttachments;
+    window.initNotesPaginationFromDom = initNotesPaginationFromDom;
+
+    $(document).on('clientTabContentLoaded', function(_e, tabId) {
+        if (String(tabId || '').toLowerCase() === 'noteterm') {
+            initNotesPaginationFromDom();
+            if (window.ClientDetailShared && typeof window.ClientDetailShared.refreshNotesTabDisplay === 'function') {
+                window.ClientDetailShared.refreshNotesTabDisplay({ syncMatterFromUrl: true });
+            }
+        }
+    });
 
     $(document).ready(function() {
-        var $ssrBtn = $('.notes-load-more').first();
-        if ($ssrBtn.length) {
-            notesHasMore = true;
-            notesNextOffset = parseInt($ssrBtn.attr('data-next-offset'), 10) || 0;
-            syncNotesLoadMore();
-        }
+        initNotesPaginationFromDom();
 
         bindNoteAttachmentUi($('#create_note'));
         bindNoteAttachmentUi($('#create_note_d'));

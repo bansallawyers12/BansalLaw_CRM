@@ -272,9 +272,9 @@
                         {!! $notesPage['html'] !!}
                     </div>
                     @if (!empty($notesPage['has_more']))
-                        <div class="notes-load-more-wrap text-center py-3">
+                        <div class="notes-load-more-wrap text-center py-3" data-has-more="1" data-next-offset="{{ $notesPage['next_offset'] }}">
                             <button type="button" class="btn btn-sm btn-outline-secondary notes-load-more" data-next-offset="{{ $notesPage['next_offset'] }}">
-                                Load more
+                                Load more notes ({{ $notesPage['total'] - $notesPage['next_offset'] }} remaining)
                             </button>
                         </div>
                     @endif
@@ -342,7 +342,17 @@
                 unpinned.forEach(function(c) { listRoot.appendChild(c); });
             };
 
-            document.addEventListener('DOMContentLoaded', function() {
+            function initNotesTabPanelUi() {
+                var pane = document.getElementById('noteterm-tab');
+                if (!pane || pane.getAttribute('data-notes-ui-bound') === '1') {
+                    return;
+                }
+                pane.setAttribute('data-notes-ui-bound', '1');
+
+                if (typeof window.initNotesPaginationFromDom === 'function') {
+                    window.initNotesPaginationFromDom();
+                }
+
                 // Sort dropdown event listener
                 var notesSortOrder = document.getElementById('notesSortOrder');
                 if (notesSortOrder) {
@@ -407,5 +417,11 @@
                         $('.note-card-redesign .dropdown-toggle').attr('aria-expanded', 'false');
                     }, 100);
                 });
-            });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initNotesTabPanelUi);
+            } else {
+                initNotesTabPanelUi();
+            }
             </script>

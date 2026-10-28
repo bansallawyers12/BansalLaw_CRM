@@ -104,6 +104,7 @@
 
 /* Notes Tab CSS */
 .notes-container { padding: 25px; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #e9ecef; }
+.notes-load-more-wrap { flex-shrink: 0; padding-bottom: 8px; }
 .notes-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #e9ecef; }
 .notes-header h3 { font-size: 1.4rem; font-weight: 600; color: #1a1a1a; margin: 0; display: flex; align-items: center; }
 .notes-header h3 i { margin-right: 10px; color: #6c757d; }
