@@ -6,8 +6,7 @@
                     $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                     $allowedMatterIds = \App\Support\MatterScopedAccess::accessibleMatterIdsForClient((int) $fetchedData->id);
                     $limitMatterDocs = \App\Support\MatterScopedAccess::isEnabled()
-                        && ! \App\Support\MatterScopedAccess::bypassesMatterTeamEnforcement()
-                        && ! \App\Support\StaffClientVisibility::seesAllClientMatters(auth()->guard('admin')->user());
+                        && ! \App\Support\MatterScopedAccess::bypassesMatterTeamEnforcement();
                     $matterIdLimit = $allowedMatterIds !== [] ? $allowedMatterIds : [0];
                     if( $matter_cnt >0 ) {
                         //if client unique reference id is present in url

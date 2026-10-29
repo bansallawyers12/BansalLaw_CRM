@@ -104,24 +104,14 @@ final class MatterScopedAccess
     }
 
     /**
-     * Only these roles bypass per-matter team checks (default: Super Admin role 1).
-     * Other allocation-exempt roles still need LP/PR/PA or an active matter_temp grant per matter.
+     * Super Admin, the Calling Team, and Ajay, Khushi, and Kabir skip the matter team.
+     * The full-CRM flag does not. Everyone else needs to be listed, or hold a grant.
      */
     public static function bypassesMatterTeamEnforcement(?Authenticatable $user = null): bool
     {
         $user = $user ?? Auth::guard('admin')->user();
-        if (! $user instanceof Staff || (int) ($user->status ?? 0) !== 1) {
-            return false;
-        }
 
-        if ($user->hasFullCrmAllocationAccess()) {
-            return true;
-        }
-
-        $role = (int) ($user->role ?? 0);
-        $allowed = config('crm_access.matter_scope_bypass_role_ids', [1]);
-
-        return in_array($role, array_map('intval', (array) $allowed), true);
+        return StaffClientVisibility::seesEveryMatter($user);
     }
 
     public static function matterGrantNote(int $clientMatterId, ?string $roleKey = null): string
@@ -460,7 +450,7 @@ final class MatterScopedAccess
             );
         }
 
-        if (self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
+        if (self::bypassesMatterTeamEnforcement($user)) {
             return true;
         }
 
@@ -531,7 +521,7 @@ final class MatterScopedAccess
     public static function filterMattersForViewer($matters, ?Authenticatable $user = null)
     {
         $user = $user ?? Auth::guard('admin')->user();
-        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
+        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user)) {
             return $matters;
         }
 
@@ -542,14 +532,14 @@ final class MatterScopedAccess
 
     /**
      * Hide client_matters rows the viewer is not assigned to.
-     * No-op for Super Admin, Calling Team, Kabir, Ajay, and Khusi.
+     * No-op for Super Admin, the Calling Team, and Ajay, Khushi, and Kabir.
      *
      * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
      */
     public static function constrainMatterRows($query, string $table = 'client_matters', ?Authenticatable $user = null): void
     {
         $user = $user ?? Auth::guard('admin')->user();
-        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
+        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user)) {
             return;
         }
 
@@ -593,7 +583,7 @@ final class MatterScopedAccess
             return [];
         }
 
-        if (! self::isEnabled() || self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
+        if (! self::isEnabled() || self::bypassesMatterTeamEnforcement($user)) {
             return ClientMatter::query()
                 ->where('client_id', $clientAdminId)
                 ->pluck('id')
@@ -640,7 +630,7 @@ final class MatterScopedAccess
     public static function scopeColumnToViewerMatters($query, string $column, int $clientAdminId, bool $includeRowsWithoutMatter = true): void
     {
         $user = Auth::guard('admin')->user() ?: Auth::user();
-        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user) || StaffClientVisibility::seesAllClientMatters($user)) {
+        if (! self::isEnabled() || ! $user || self::bypassesMatterTeamEnforcement($user)) {
             return;
         }
 

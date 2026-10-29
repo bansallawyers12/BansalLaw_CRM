@@ -323,9 +323,24 @@ class MatterScopedAccessTest extends TestCase
             'sel_legal_practitioner' => 99999,
         ]);
 
-        foreach ([$calling, $ajay, $kabir, $khusi] as $viewer) {
+        \Illuminate\Support\Facades\DB::table('user_roles')->insertOrIgnore([
+            ['id' => 17, 'name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $superAdmin = Staff::factory()->superAdmin()->create(['status' => 1, 'first_name' => 'Office', 'last_name' => 'Admin']);
+        $fullCrm = Staff::factory()->create([
+            'status' => 1,
+            'role' => 17,
+            'first_name' => 'Michael',
+            'last_name' => 'Saleh',
+            'has_full_crm_allocation_access' => true,
+        ]);
+
+        foreach ([$calling, $ajay, $kabir, $khusi, $superAdmin] as $viewer) {
             $this->assertTrue(MatterScopedAccess::canAccessClientMatter((int) $other->id, $viewer));
         }
+
+        $this->assertFalse(MatterScopedAccess::canAccessClientMatter((int) $other->id, $fullCrm));
 
         $this->assertTrue(MatterScopedAccess::canAccessClientMatter((int) $assigned->id, $solicitor));
         $this->assertFalse(MatterScopedAccess::canAccessClientMatter((int) $other->id, $solicitor));

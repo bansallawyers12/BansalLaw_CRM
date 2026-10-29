@@ -3,7 +3,10 @@
     $__crmSolicitorStaff = \App\Services\ClientEditService::staffSelectableForSolicitorRole();
     $__crmPersonResponsibleStaff = \App\Services\ClientEditService::staffSelectableForPersonResponsibleRole();
     $__crmPersonAssistingStaff = \App\Services\ClientEditService::staffSelectableForPersonAssistingRole();
-    $__crmOffices = \App\Models\Branch::orderBy('office_name')->get(['id', 'office_name']);
+    $__crmMatterTeamLabels = \App\Support\MatterScopedAccess::matterTeamRoleLabels();
+    $__crmPrincipalLabel = $__crmMatterTeamLabels[\App\Support\MatterScopedAccess::ROLE_LEGAL_PRACTITIONER];
+    $__crmResponsibleLabel = $__crmMatterTeamLabels[\App\Support\MatterScopedAccess::ROLE_PERSON_RESPONSIBLE];
+    $__crmAssistingLabel = $__crmMatterTeamLabels[\App\Support\MatterScopedAccess::ROLE_PERSON_ASSISTING];
     $__crmStaffOptionLabel = static function ($staff): string {
         return trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''));
     };
@@ -33,9 +36,9 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="form-group">
-                                <label for="change_sel_legal_practitioner_id">Legal Practitioner <span class="span_req">*</span></label>
+                                <label for="change_sel_legal_practitioner_id">{{ $__crmPrincipalLabel }} <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control" name="legal_practitioner" id="change_sel_legal_practitioner_id">
-                                    <option value="">Select responsible solicitor</option>
+                                    <option value="">Select {{ $__crmPrincipalLabel }}</option>
                                     @foreach($__crmSolicitorStaff as $migAgntlist)
                                         <option value="{{$migAgntlist->id}}">{{ $__crmStaffOptionLabel($migAgntlist) }}</option>
                                     @endforeach
@@ -45,9 +48,9 @@
 
                         <div class="col-12">
                             <div class="form-group">
-                                <label for="change_sel_person_responsible_id">Person Responsible <span class="span_req">*</span></label>
+                                <label for="change_sel_person_responsible_id">{{ $__crmResponsibleLabel }} <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control" name="person_responsible" id="change_sel_person_responsible_id">
-                                    <option value="">Select Person Responsible</option>
+                                    <option value="">Select {{ $__crmResponsibleLabel }}</option>
                                     @foreach($__crmPersonResponsibleStaff as $perreslist)
                                         <option value="{{$perreslist->id}}">{{ $__crmStaffOptionLabel($perreslist) }}</option>
                                     @endforeach
@@ -57,9 +60,9 @@
 
                         <div class="col-12">
                             <div class="form-group">
-                                <label for="change_sel_person_assisting_id">Person Assisting <span class="span_req">*</span></label>
+                                <label for="change_sel_person_assisting_id">{{ $__crmAssistingLabel }} <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control" name="person_assisting" id="change_sel_person_assisting_id">
-                                    <option value="">Select Person Assisting</option>
+                                    <option value="">Select {{ $__crmAssistingLabel }}</option>
                                     @foreach($__crmPersonAssistingStaff as $perassislist)
                                         <option value="{{$perassislist->id}}">{{ $__crmStaffOptionLabel($perassislist) }}</option>
                                     @endforeach
@@ -67,20 +70,7 @@
                             </div>
                         </div>
 
-                        <div class="col-12">
-                            <div class="form-group">
-                                <label for="change_office_id">Handling Office</label>
-                                <select class="form-control" name="office_id" id="change_office_id">
-                                    <option value="">Select Office</option>
-                                    @foreach($__crmOffices as $office)
-                                        <option value="{{$office->id}}">{{$office->office_name}}</option>
-                                    @endforeach
-                                </select>
-                                <small class="form-text text-muted">
-                                    <i class="fa-solid fa-building"></i> Optional - Leave blank to keep current office
-                                </small>
-                            </div>
-                        </div>
+                        {{-- Office picker hidden while the firm has a single office. Omitting office_id keeps the current office. --}}
 
                         <div class="col-12">
                             <div class="form-group">

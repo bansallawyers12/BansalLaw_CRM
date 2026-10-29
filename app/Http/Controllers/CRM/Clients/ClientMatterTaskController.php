@@ -25,6 +25,19 @@ class ClientMatterTaskController extends Controller
         $this->middleware('auth:admin');
     }
 
+    private function ensureExistingTaskMatterAccess(ClientMatterTask $task): void
+    {
+        $matterId = (int) ($task->client_matter_id ?? 0);
+        if ($matterId < 1) {
+            return;
+        }
+
+        $matter = ClientMatter::query()->find($matterId);
+        if ($matter) {
+            $this->ensureClientMatterAccess($matter);
+        }
+    }
+
     private function resolveMatter(int $clientId, int $matterId): ?ClientMatter
     {
         if ($clientId < 1 || $matterId < 1) {
@@ -82,6 +95,9 @@ class ClientMatterTaskController extends Controller
         $this->ensureCrmRecordAccess($clientId);
 
         $matter = $this->resolveMatterFromRequest($request, $clientId);
+        if ($matter) {
+            $this->ensureClientMatterAccess($matter);
+        }
         if (! $matter) {
             $perPage = (int) ($request->query('per_page') ?: config('crm.notes.matter_task_per_page', 50));
             $perPage = max(5, min(200, $perPage));
@@ -248,6 +264,9 @@ class ClientMatterTaskController extends Controller
         if (! $matter && ! $this->recordAllowsTasksWithoutMatter($clientId)) {
             return response()->json(['status' => false, 'message' => 'Matter not found for this client. Select a matter before creating tasks.'], 422);
         }
+        if ($matter) {
+            $this->ensureClientMatterAccess($matter);
+        }
 
         $title = trim($validated['title']);
         if ($title === '') {
@@ -310,6 +329,9 @@ class ClientMatterTaskController extends Controller
         $clientId = (int) $validated['client_id'];
         $this->ensureCrmRecordAccess($clientId);
         $matter = $this->resolveMatterFromRequest($request, $clientId);
+        if ($matter) {
+            $this->ensureClientMatterAccess($matter);
+        }
 
         $title = trim((string) $validated['title']);
         if ($title === '') {
@@ -356,6 +378,7 @@ class ClientMatterTaskController extends Controller
     public function update(Request $request, ClientMatterTask $task)
     {
         $this->ensureCrmRecordAccess((int) $task->client_id);
+        $this->ensureExistingTaskMatterAccess($task);
 
         $clientIdInput = (int) $request->input('client_id');
         if ($clientIdInput > 0 && $clientIdInput !== (int) $task->client_id) {
@@ -443,6 +466,7 @@ class ClientMatterTaskController extends Controller
     public function destroy(Request $request, ClientMatterTask $task)
     {
         $this->ensureCrmRecordAccess((int) $task->client_id);
+        $this->ensureExistingTaskMatterAccess($task);
 
         $clientIdInput = (int) $request->input('client_id');
         if ($clientIdInput > 0 && $clientIdInput !== (int) $task->client_id) {

@@ -162,8 +162,59 @@ final class StaffClientVisibility
     }
 
     /**
-     * Full client-matter visibility: Super Admin, Calling Team (role or department), and Kabir / Ajay / Khusi.
-     * Everyone else is limited to matters they are assigned to.
+     * Ajay, Khushi, and Kabir may open every matter by name.
+     */
+    public static function isNamedMatterExempt(?Authenticatable $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user instanceof Staff && array_key_exists('status', $user->getAttributes()) && (int) $user->status !== 1) {
+            return false;
+        }
+
+        return self::isNamedMatterVisibilityException($user);
+    }
+
+    /**
+     * People who may open every matter: Super Admin, the Calling Team, and Ajay, Khushi, and Kabir.
+     * The full-CRM flag does not skip the matter team.
+     */
+    public static function seesEveryMatter(?Authenticatable $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if (self::isNamedMatterExempt($user)) {
+            return true;
+        }
+
+        if (! $user instanceof Staff) {
+            return false;
+        }
+
+        if (array_key_exists('status', $user->getAttributes()) && (int) $user->status !== 1) {
+            return false;
+        }
+
+        if ($user->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        if (in_array((int) ($user->role ?? 0), config('crm_access.quick_access_only_role_ids', [14]), true)) {
+            return true;
+        }
+
+        $teamId = (int) ($user->team ?? 0);
+
+        return $teamId > 0 && $teamId === self::callingTeamId();
+    }
+
+    /**
+     * Full client-file visibility: Super Admin, the full-CRM flag, Calling Team, and Kabir / Ajay / Khusi.
+     * Opening every matter is {@see seesEveryMatter()} — the full-CRM flag is not included.
      */
     public static function seesAllClientMatters(?Authenticatable $user): bool
     {
@@ -192,7 +243,7 @@ final class StaffClientVisibility
             return true;
         }
 
-        return self::isNamedMatterVisibilityException($user);
+        return self::isNamedMatterExempt($user);
     }
 
     private static function callingTeamId(): int
@@ -333,7 +384,7 @@ final class StaffClientVisibility
     public static function restrictMatterListToAllocatedClients($query, string $cmAlias = 'cm', string $adAlias = 'ad'): void
     {
         $user = self::currentStaff();
-        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesEveryMatter($user)) {
             return;
         }
 
@@ -565,7 +616,7 @@ final class StaffClientVisibility
         }
 
         if (MatterScopedAccess::isEnabled()) {
-            if (MatterScopedAccess::bypassesMatterTeamEnforcement($user) || self::seesAllClientMatters($user)) {
+            if (self::seesEveryMatter($user)) {
                 return $results;
             }
         } elseif (self::isExemptFromAllocation($user) || self::seesAllClientMatters($user)) {
@@ -754,7 +805,7 @@ final class StaffClientVisibility
     public static function restrictDocumentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
     {
         $user = self::currentStaff($user);
-        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::seesEveryMatter($user)) {
             return;
         }
 
@@ -852,7 +903,7 @@ final class StaffClientVisibility
             return false;
         }
 
-        if (! self::isAllocationEnforcementEnabled() || self::seesAllClientMatters($user)) {
+        if (! self::isAllocationEnforcementEnabled() || self::seesEveryMatter($user)) {
             return true;
         }
 

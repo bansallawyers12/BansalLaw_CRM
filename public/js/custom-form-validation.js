@@ -485,7 +485,7 @@ function customValidate(formName, savetype = '')
 					console.warn('[ConvertLeadToClient] Validation failed (i=' + i + '), form not submitted');
 				}
 				if (formName === 'change_matter_assignee') {
-					console.warn('[ChangeMatterAssignee] Validation FAILED, error count i=' + i + ', form will NOT submit. Check required fields (Legal Practitioner, Person Responsible, Person Assisting).');
+					console.warn('[ChangeMatterAssignee] Validation FAILED, error count i=' + i + ', form will NOT submit. Check required fields (Principal Solicitor, Responsible Solicitor, Paralegal).');
 				}
 				if (formName === 'invoice_receipt_form' || formName === 'create_invoice_receipt') {
 					if (typeof crmToast === 'function') {
@@ -917,7 +917,6 @@ function customValidate(formName, savetype = '')
                                 'change_sel_legal_practitioner_id',
                                 'change_sel_person_responsible_id',
                                 'change_sel_person_assisting_id',
-                                'change_office_id',
                                 'change_sel_matter_id',
                                 'change_matter_our_party_role'
                             ];

@@ -402,9 +402,9 @@ class ClientsController extends Controller
         $sortDirection = $request->get('direction', 'desc');
 
         $staffUser = auth('admin')->user();
-        // Closed Matters browse tab is broad-visibility only, regardless of
-        // restricted-access mode. Assigned staff may still open a closed
-        // matter from their client's record (unchanged detail/hub checks).
+        // Closed Matters browse tab stays with people who can see client files broadly.
+        // Super Admin, the Calling Team, and Ajay, Khushi, and Kabir see every row.
+        // Everyone else only sees closed matters they are listed on.
         $canSeeClosedMattersTab = $staffUser instanceof \Illuminate\Contracts\Auth\Authenticatable
             && StaffClientVisibility::seesAllClientMatters($staffUser);
         if ($isClosed && ! $canSeeClosedMattersTab) {

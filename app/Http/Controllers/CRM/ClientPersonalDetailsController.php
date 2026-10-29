@@ -637,6 +637,15 @@ class ClientPersonalDetailsController extends Controller
             $clientId = DB::table('client_matters')->where('id', $cmId)->value('client_id');
             if ($clientId) {
                 $this->ensureCrmRecordAccess((int) $clientId);
+                if (MatterScopedAccess::isEnabled() && ! MatterScopedAccess::canAccessClientMatter($cmId)) {
+                    return response()->json([
+                        'matter_info' => [],
+                        'status' => false,
+                        'message' => 'You are not on this matter.',
+                        'opposing_parties' => [],
+                        'matter_options' => [],
+                    ], 403);
+                }
             }
         }
         $matter_info = DB::table('client_matters')->where('id', $cmId)->first();
@@ -726,6 +735,17 @@ class ClientPersonalDetailsController extends Controller
         }
 
         $obj = ClientMatter::find($requstData['selectedMatterLM']);
+        if (! $obj) {
+            $response['message'] = 'Matter not found. Please try again.';
+
+            return response()->json($response);
+        }
+        if (MatterScopedAccess::isEnabled() && ! MatterScopedAccess::canAccessClientMatter((int) $obj->id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You are not on this matter.',
+            ], 403);
+        }
         $previousStaffOnMatter = MatterScopedAccess::staffIdsOnMatterRow($obj);
         $postedClientId = (int) ($requstData['client_id'] ?? 0);
         if ((int) $obj->client_id !== $postedClientId) {

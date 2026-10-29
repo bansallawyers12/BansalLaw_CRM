@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
+use App\Support\MatterScopedAccess;
 use App\Support\StaffClientVisibility;
 
 class DashboardService
@@ -26,7 +27,8 @@ class DashboardService
     private const UPCOMING_MATTER_DEADLINE_DAYS = 7;
 
     /**
-     * Native Super Admin (role 1) or session-elevated grant — same matter/action visibility as role 1.
+     * Super Admin sees every action on the task inbox.
+     * Matter lists stay open for Super Admin, the Calling Team, and Ajay, Khushi, and Kabir.
      */
     public function viewerSeesAllMattersAndTasks($user): bool
     {
@@ -848,7 +850,9 @@ class DashboardService
      */
     private function applyRoleBasedFiltering($query, $user)
     {
-        if ($this->viewerSeesAllMattersAndTasks($user)) {
+        if (MatterScopedAccess::bypassesMatterTeamEnforcement(
+            $user instanceof \Illuminate\Contracts\Auth\Authenticatable ? $user : null
+        )) {
             return;
         }
 
@@ -861,11 +865,6 @@ class DashboardService
         $query->whereHas('client', function ($q) use ($user) {
             StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q, $user);
         });
-
-        // Calling Team, Kabir, Ajay, and Khusi see every non-locked matter. Other staff see assigned rows only.
-        if (StaffClientVisibility::seesAllClientMatters($user)) {
-            return;
-        }
 
         $uid = (int) $user->id;
         $query->where(function ($q) use ($uid) {

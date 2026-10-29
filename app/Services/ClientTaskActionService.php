@@ -7,6 +7,7 @@ use App\Models\ClientMatter;
 use App\Models\Note;
 use App\Models\Notification;
 use App\Models\Staff;
+use App\Support\MatterScopedAccess;
 use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -54,6 +55,9 @@ class ClientTaskActionService
             $clientLabel = $this->taskClientDisplayName($targetClient);
             $actionUniqueId = 'group_' . uniqid('', true);
             $matterId = $this->resolveTaskMatterId($requestData, (int) $clientId);
+            if ($denied = $this->matterAssignmentDeniedMessage($matterId)) {
+                return $this->legacyJson(['success' => false, 'message' => $denied]);
+            }
 
             $mirroredToClientTask = false;
             $taskSync = app(ClientMatterTaskSyncService::class);
@@ -153,7 +157,6 @@ class ClientTaskActionService
                     return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
                 }
                 $clientId = (int) $parsed['client_id'];
-                $matterId = $this->resolveTaskMatterId($requestData, $clientId);
             }
 
             $actionUniqueId = 'group_' . uniqid('', true);
@@ -167,6 +170,11 @@ class ClientTaskActionService
                     return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
                 }
                 $clientLabel = $this->taskClientDisplayName($targetClient);
+            }
+
+            $matterId = $this->resolveTaskMatterId($requestData, $clientId);
+            if ($denied = $this->matterAssignmentDeniedMessage($matterId)) {
+                return response()->json(['success' => false, 'message' => $denied], 403);
             }
 
             $assignees = $requestData['rem_cat'] ?? [];
@@ -273,6 +281,16 @@ class ClientTaskActionService
                 $matterId = $this->resolveTaskMatterId($requestData, $clientId);
             }
 
+            $existingMatterId = (int) ($action->matter_id ?? 0);
+            if ($denied = $this->matterAssignmentDeniedMessage($existingMatterId > 0 ? $existingMatterId : null)) {
+                return response()->json(['success' => false, 'message' => $denied], 403);
+            }
+            if ($matterId && $matterId !== $existingMatterId) {
+                if ($denied = $this->matterAssignmentDeniedMessage($matterId)) {
+                    return response()->json(['success' => false, 'message' => $denied], 403);
+                }
+            }
+
             $action->description = $requestData['description'] ?? null;
             $action->client_id = $clientId;
             if ($matterId) {
@@ -338,6 +356,10 @@ class ClientTaskActionService
                 }
                 $clientLabel = $this->taskClientDisplayName($targetForAction);
                 $matterId = $this->resolveTaskMatterId($requestData, $clientId);
+            }
+
+            if ($denied = $this->matterAssignmentDeniedMessage($matterId)) {
+                return response()->json(['success' => false, 'message' => $denied], 403);
             }
 
             $actionUniqueId = 'group_' . uniqid('', true);
@@ -487,6 +509,23 @@ class ClientTaskActionService
         }
 
         return $result;
+    }
+
+    /**
+     * Staff who are not on the matter team cannot assign or retag a task on that matter.
+     * Client-level tasks with no matter stay on the existing client-access check.
+     */
+    private function matterAssignmentDeniedMessage(?int $matterId): ?string
+    {
+        if ($matterId === null || $matterId <= 0 || ! MatterScopedAccess::isEnabled()) {
+            return null;
+        }
+
+        if (MatterScopedAccess::canAccessClientMatter($matterId, Auth::user())) {
+            return null;
+        }
+
+        return 'You are not on this matter, so you cannot assign a task on it.';
     }
 
     private function resolveTaskMatterId(array $requestData, ?int $clientId): ?int

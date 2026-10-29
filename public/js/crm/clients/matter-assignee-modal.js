@@ -117,7 +117,6 @@
         'change_sel_legal_practitioner_id',
         'change_sel_person_responsible_id',
         'change_sel_person_assisting_id',
-        'change_office_id',
         'change_sel_matter_id',
         'change_matter_our_party_role'
     ];
@@ -404,10 +403,9 @@
         }
         [
             ['#change_sel_matter_id', 'Search law matter type…'],
-            ['#change_sel_legal_practitioner_id', 'Search legal practitioner…'],
-            ['#change_sel_person_responsible_id', 'Search person responsible…'],
-            ['#change_sel_person_assisting_id', 'Search person assisting…'],
-            ['#change_office_id', 'Search office…'],
+            ['#change_sel_legal_practitioner_id', 'Search principal solicitor…'],
+            ['#change_sel_person_responsible_id', 'Search responsible solicitor…'],
+            ['#change_sel_person_assisting_id', 'Search paralegal…'],
             ['#change_matter_our_party_role', 'Search role…']
         ].forEach(function (pair) {
             ensureChangeMatterSearchableSelect(modal.querySelector(pair[0]), pair[1]);
@@ -425,7 +423,6 @@
         setSelectValue(modal.querySelector('#change_sel_legal_practitioner_id'), m.sel_legal_practitioner, labelFromAssigneeStaffMap(staffMap, m.sel_legal_practitioner));
         setSelectValue(modal.querySelector('#change_sel_person_responsible_id'), m.sel_person_responsible, labelFromAssigneeStaffMap(staffMap, m.sel_person_responsible));
         setSelectValue(modal.querySelector('#change_sel_person_assisting_id'), m.sel_person_assisting, labelFromAssigneeStaffMap(staffMap, m.sel_person_assisting));
-        setSelectValue(modal.querySelector('#change_office_id'), m.office_id, '');
 
         var $incidence = $inChangeMatterModal('#change_matter_incidence_type');
         if ($incidence.length) {
@@ -484,7 +481,6 @@
             '#change_sel_legal_practitioner_id',
             '#change_sel_person_responsible_id',
             '#change_sel_person_assisting_id',
-            '#change_office_id',
             '#change_sel_matter_id',
             '#change_matter_our_party_role'
         ].forEach(function (selector) {
@@ -573,7 +569,6 @@
             'change_sel_legal_practitioner_id',
             'change_sel_person_responsible_id',
             'change_sel_person_assisting_id',
-            'change_office_id',
             'change_sel_matter_id',
             'change_matter_our_party_role'
         ].forEach(function (id) {

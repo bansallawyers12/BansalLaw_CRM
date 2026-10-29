@@ -494,8 +494,7 @@ class ClientAccountTabService
         } else {
             $viewer = Auth::guard('admin')->user();
             $showEveryMatter = ! MatterScopedAccess::isEnabled()
-                || MatterScopedAccess::bypassesMatterTeamEnforcement($viewer)
-                || StaffClientVisibility::seesAllClientMatters($viewer);
+                || MatterScopedAccess::bypassesMatterTeamEnforcement($viewer);
             if ($showEveryMatter) {
                 $rows = DB::select('
                     SELECT DISTINCT ON (receipt_id) *
