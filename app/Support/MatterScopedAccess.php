@@ -49,14 +49,17 @@ final class MatterScopedAccess
     }
 
     /**
+     * Display titles for the three matter-team seats.
+     * Overview, tooltips, and temporary-access positions all read this map.
+     *
      * @return array<string, string> role key => display label
      */
     public static function matterTeamRoleLabels(): array
     {
         return [
-            self::ROLE_LEGAL_PRACTITIONER => 'Legal practitioner',
-            self::ROLE_PERSON_RESPONSIBLE => 'Person responsible',
-            self::ROLE_PERSON_ASSISTING => 'Person assisting',
+            self::ROLE_LEGAL_PRACTITIONER => 'Principal Solicitor',
+            self::ROLE_PERSON_RESPONSIBLE => 'Responsible Solicitor',
+            self::ROLE_PERSON_ASSISTING => 'Paralegal',
         ];
     }
 

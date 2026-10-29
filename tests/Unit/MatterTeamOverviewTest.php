@@ -52,8 +52,14 @@ class MatterTeamOverviewTest extends TestCase
 
         $roles = array_column($payload['team'], 'role');
         $this->assertSame(
-            ['Legal practitioner', 'Person responsible', 'Person assisting', 'Handling office'],
+            ['Principal Solicitor', 'Responsible Solicitor', 'Paralegal', 'Handling office'],
             $roles
+        );
+        $staffSlots = array_slice($payload['team'], 0, 3);
+        $this->assertSame(
+            array_column($staffSlots, 'role'),
+            array_column($staffSlots, 'role_title'),
+            'Visible label and tooltip must stay the same title'
         );
     }
 

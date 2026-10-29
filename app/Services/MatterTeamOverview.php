@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ClientMatter;
 use App\Models\Staff;
+use App\Support\MatterScopedAccess;
 use App\Support\MatterStreamHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
@@ -101,31 +102,32 @@ final class MatterTeamOverview
         $hasPersonResponsible = Schema::hasColumn('client_matters', 'sel_person_responsible');
         $hasPersonAssisting = Schema::hasColumn('client_matters', 'sel_person_assisting');
         $hasOffice = Schema::hasColumn('client_matters', 'office_id');
+        $roleLabels = MatterScopedAccess::matterTeamRoleLabels();
 
         return [
             'client_matter_id' => (int) $matter->id,
             'matter_reference' => $ref !== '' ? $ref : null,
             'team' => [
                 self::staffSlot(
-                    'legal_practitioner',
-                    'Legal practitioner',
-                    'Legal Practitioner',
+                    MatterScopedAccess::ROLE_LEGAL_PRACTITIONER,
+                    $roleLabels[MatterScopedAccess::ROLE_LEGAL_PRACTITIONER],
+                    $roleLabels[MatterScopedAccess::ROLE_LEGAL_PRACTITIONER],
                     'navy',
                     $hasLegalPractitioner ? ($matter->sel_legal_practitioner ?? null) : null,
                     $hasLegalPractitioner ? $matter->legalPractitioner : null
                 ),
                 self::staffSlot(
-                    'person_responsible',
-                    'Person responsible',
-                    'Person Responsible',
+                    MatterScopedAccess::ROLE_PERSON_RESPONSIBLE,
+                    $roleLabels[MatterScopedAccess::ROLE_PERSON_RESPONSIBLE],
+                    $roleLabels[MatterScopedAccess::ROLE_PERSON_RESPONSIBLE],
                     'blue',
                     $hasPersonResponsible ? ($matter->sel_person_responsible ?? null) : null,
                     $hasPersonResponsible ? $matter->personResponsible : null
                 ),
                 self::staffSlot(
-                    'person_assisting',
-                    'Person assisting',
-                    'Person Assisting',
+                    MatterScopedAccess::ROLE_PERSON_ASSISTING,
+                    $roleLabels[MatterScopedAccess::ROLE_PERSON_ASSISTING],
+                    $roleLabels[MatterScopedAccess::ROLE_PERSON_ASSISTING],
                     'teal',
                     $hasPersonAssisting ? ($matter->sel_person_assisting ?? null) : null,
                     $hasPersonAssisting ? $matter->personAssisting : null
