@@ -128,7 +128,7 @@ php artisan outlook:manifest --url=https://legal.bansalcrm.com --stdout
 ## 6. Security & Frame Headers
 Taskpane responses allow Office iframes:
 ```http
-Content-Security-Policy: frame-ancestors 'self' https://*.office.com https://*.office365.com https://*.outlook.com https://*.microsoft.com http://localhost:* https://localhost:*;
+Content-Security-Policy: frame-ancestors 'self' https://outlook.live.com https://*.live.com https://*.office.com https://*.office365.com https://*.outlook.com https://*.microsoft.com https://*.office.net https://*.cdn.office.net http://localhost:* https://localhost:* http://127.0.0.1:* https://127.0.0.1:*;
 ```
 `X-Frame-Options` is removed for the taskpane. CSRF is exempt for `outlook-addin/*`.
 

@@ -46,10 +46,11 @@ class OutlookAddinController extends EmailUploadController
         ]);
 
         // Office Add-ins are loaded in an iframe/webview. Remove restrictive frame headers.
+        // Keep existing M365 hosts; also allow Outlook on the web / personal (outlook.live.com) and Office CDNs.
         $response->headers->remove('X-Frame-Options');
         $response->headers->set(
             'Content-Security-Policy',
-            "frame-ancestors 'self' https://*.office.com https://*.office365.com https://*.outlook.com https://*.microsoft.com http://localhost:* https://localhost:*;"
+            "frame-ancestors 'self' https://outlook.live.com https://*.live.com https://*.office.com https://*.office365.com https://*.outlook.com https://*.microsoft.com https://*.office.net https://*.cdn.office.net http://localhost:* https://localhost:* http://127.0.0.1:* https://127.0.0.1:*;"
         );
 
         return $response;
