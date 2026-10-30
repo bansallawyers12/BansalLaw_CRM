@@ -794,21 +794,18 @@ class AssigneeController extends Controller
             return false;
         }
 
+        // Align with Assigned by Me / open-task lists: effective Super Admins already see all
+        // client action tasks, so they may manage/delete them without a second client-file gate.
+        if (method_exists($actor, 'hasEffectiveSuperAdminPrivileges') && $actor->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
         $userId = (int) $actor->id;
         $isCreator = ((int) ($appointment->user_id ?? 0)) === $userId;
         $isAssignee = ((int) ($appointment->assigned_to ?? 0)) === $userId;
-        $isSuperAdmin = method_exists($actor, 'hasEffectiveSuperAdminPrivileges') && $actor->hasEffectiveSuperAdminPrivileges();
-
-        if (!$isCreator && !$isAssignee && !$isSuperAdmin) {
-            return false;
-        }
 
         // Assigner and assignee may complete/delete their task without opening the client file.
-        if ($appointment->client_id && ! $isCreator && ! $isAssignee) {
-            return \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $appointment->client_id, $actor);
-        }
-
-        return true;
+        return $isCreator || $isAssignee;
     }
 
     protected function authorizeNoteManagement(Note $appointment): void
