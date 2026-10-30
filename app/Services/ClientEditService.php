@@ -76,16 +76,19 @@ class ClientEditService
     public const SOLICITOR_STAFF_ROLE = 16;
 
     /**
-     * Legal practitioner dropdown: active staff with Solicitor role (16). If none, single fallback row
-     * for {@see DEFAULT_PERSON_RESPONSIBLE_EMAIL} (Ajay Bansal) when present (required-field safety).
+     * Legal practitioner dropdown: active Solicitor role (16), plus any active staff
+     * flagged as a legal practitioner (is_solicitor), even when their CRM role is Admin.
+     * If none, single fallback row for {@see DEFAULT_PERSON_RESPONSIBLE_EMAIL}.
      */
     public static function staffSelectableForSolicitorRole()
     {
-        $staff = Staff::query()
-            ->where('role', self::SOLICITOR_STAFF_ROLE)
-            ->where('status', 1)
-            ->whereNotNull('first_name')
-            ->where('first_name', '!=', '')
+        $staff = self::activeNamedStaffQuery()
+            ->where(function ($q) {
+                $q->where('role', self::SOLICITOR_STAFF_ROLE);
+                if (Schema::hasColumn('staff', 'is_solicitor')) {
+                    $q->orWhere('is_solicitor', 1);
+                }
+            })
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'email']);
@@ -100,16 +103,19 @@ class ClientEditService
     }
 
     /**
-     * Person Responsible dropdown: active legal practitioners (Solicitor role 16), plus any
-     * staff still on the legacy Person Responsible role (12). If none, Ajay fallback email.
+     * Person Responsible dropdown: active legal practitioners (Solicitor role 16 or
+     * is_solicitor), plus any staff still on the legacy Person Responsible role (12).
+     * If none, Ajay fallback email.
      */
     public static function staffSelectableForPersonResponsibleRole()
     {
-        $staff = Staff::query()
-            ->whereIn('role', [self::SOLICITOR_STAFF_ROLE, self::PERSON_RESPONSIBLE_STAFF_ROLE])
-            ->where('status', 1)
-            ->whereNotNull('first_name')
-            ->where('first_name', '!=', '')
+        $staff = self::activeNamedStaffQuery()
+            ->where(function ($q) {
+                $q->whereIn('role', [self::SOLICITOR_STAFF_ROLE, self::PERSON_RESPONSIBLE_STAFF_ROLE]);
+                if (Schema::hasColumn('staff', 'is_solicitor')) {
+                    $q->orWhere('is_solicitor', 1);
+                }
+            })
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'email']);
@@ -128,11 +134,8 @@ class ClientEditService
      */
     public static function staffSelectableForPersonAssistingRole()
     {
-        $staff = Staff::query()
+        $staff = self::activeNamedStaffQuery()
             ->where('role', self::PERSON_ASSISTING_STAFF_ROLE)
-            ->where('status', 1)
-            ->whereNotNull('first_name')
-            ->where('first_name', '!=', '')
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'email']);
@@ -144,6 +147,14 @@ class ClientEditService
         $fallback = self::staffFallbackSingleByEmail(self::DEFAULT_PERSON_ASSISTING_EMAIL);
 
         return $fallback ? collect([$fallback]) : collect();
+    }
+
+    private static function activeNamedStaffQuery()
+    {
+        return Staff::query()
+            ->where('status', 1)
+            ->whereNotNull('first_name')
+            ->where('first_name', '!=', '');
     }
 
     private static function staffFallbackSingleByEmail(string $email): ?Staff
