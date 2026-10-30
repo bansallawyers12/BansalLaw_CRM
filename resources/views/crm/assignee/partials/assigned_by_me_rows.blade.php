@@ -104,7 +104,7 @@
                         <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                     </button>
                 @endunless
-                <button class="btn btn-danger btn-sm deleteNote" data-remote="/destroy_activity/{{ $list->id }}" data-bs-toggle="tooltip" title="Delete Task">
+                <button class="btn btn-danger btn-sm deleteNote" data-remote="{{ route('assignee.destroy_activity_post', $list->id) }}" data-bs-toggle="tooltip" title="Delete Task">
                     <i class="fa-solid fa-trash" aria-hidden="true"></i>
                 </button>
             </td>

@@ -66,7 +66,7 @@
 
                     <button type="button"
                         class="btn btn-danger btn-sm deleteCompletedNote"
-                        data-remote="{{ route('assignee.destroy_complete_activity', $list->id) }}"
+                        data-remote="{{ route('assignee.destroy_complete_activity_post', $list->id) }}"
                         data-bs-toggle="tooltip"
                         title="Delete">
                         <i class="fa-solid fa-trash" aria-hidden="true"></i>

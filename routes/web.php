@@ -302,7 +302,11 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/tasks/completed', [AssigneeController::class, 'tasksCompleted'])->name('assignee.tasks.completed');
 
     Route::delete('/destroy_activity/{note_id}', [AssigneeController::class, 'destroy_activity'])->name('assignee.destroy_activity'); //delete activity
+    // POST alias: some hosts/WAFs block HTTP DELETE; UI uses this route.
+    Route::post('/destroy_activity/{note_id}/delete', [AssigneeController::class, 'destroy_activity'])->name('assignee.destroy_activity_post');
     Route::delete('/destroy_complete_activity/{note_id}', [AssigneeController::class, 'destroy_complete_activity'])->name('assignee.destroy_complete_activity'); //delete completed activity
+    // POST alias: some hosts/WAFs block HTTP DELETE; UI uses this route.
+    Route::post('/destroy_complete_activity/{note_id}/delete', [AssigneeController::class, 'destroy_complete_activity'])->name('assignee.destroy_complete_activity_post');
 
     /*---------- Assignee AJAX Endpoints (Issue 05) ----------*/
     Route::post('/update_list_status', [AssigneeController::class, 'updateStatus'])->name('assignee.update_status');

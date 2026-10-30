@@ -1388,11 +1388,12 @@ $(function () {
         
         var deleteConfirm = confirm("Are you sure?");
         if (deleteConfirm) {
+            // POST avoids 403 from some proxies/WAFs that block HTTP DELETE.
             $.ajax({
                 url: url,
-                type: 'DELETE',
+                type: 'POST',
                 dataType: 'json',
-                data: {method: '_DELETE', submit: true}
+                data: { submit: true }
             }).done(function(data) {
                 spaReload();
                 if (typeof iziToast !== 'undefined') {

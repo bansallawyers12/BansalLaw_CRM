@@ -959,11 +959,13 @@
                 if (!confirmed) {
                     return;
                 }
+                // POST avoids 403 from some proxies/WAFs that block HTTP DELETE.
                 $.ajax({
-                    type: 'DELETE',
+                    type: 'POST',
                     url: url,
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     dataType: 'json',
+                    data: {},
                     success: function(response) {
                         if (response.success) {
                             if (window.AssignedByMeSpa && typeof window.AssignedByMeSpa.reload === 'function') {
