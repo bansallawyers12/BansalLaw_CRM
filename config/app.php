@@ -71,6 +71,7 @@ return [
     'brand' => [
         'public_email' => env('APP_PUBLIC_EMAIL', 'admin@bansallawyers.com.au'),
         'invoice_email' => env('APP_INVOICE_EMAIL', 'admin@bansallawyers.com.au'),
+        'phone' => env('APP_PUBLIC_PHONE', '0422 905 860'),
         'website_url' => env('APP_PUBLIC_WEBSITE_URL', 'https://www.bansallawyers.com.au'),
         'website_label' => env('APP_PUBLIC_WEBSITE_LABEL', 'www.bansallawyers.com.au'),
         'website_short_url' => env('APP_PUBLIC_WEBSITE_SHORT_URL', 'https://www.bansallawyers.com.au'),

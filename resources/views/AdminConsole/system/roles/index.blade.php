@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Roles and Permissions')
+@section('title', 'Roles')
 
 @section('content')
 <div class="main-content adminconsole-features adminconsole-roles-list adminconsole-roles-spa adminconsole-roles-form"
@@ -25,8 +25,8 @@
                     <div class="card roles-list-card">
                         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <div>
-                                <h4 class="mb-1">Roles and permissions</h4>
-                                <p class="text-muted small mb-0">Manage user roles and module access without leaving this page.</p>
+                                <h4 class="mb-1">Roles</h4>
+                                <p class="text-muted small mb-0">Manage user roles without leaving this page.</p>
                             </div>
                             <div class="card-header-action">
                                 <button type="button" class="btn btn-primary" id="roles-add-btn">
@@ -74,12 +74,12 @@
 
 {{-- Create role modal --}}
 <div class="modal fade roles-form-modal" id="rolesCreateModal" tabindex="-1" aria-labelledby="rolesCreateModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable roles-form-modal-dialog">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable roles-form-modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <div>
                     <h5 class="modal-title mb-1" id="rolesCreateModalLabel">Add role</h5>
-                    <p class="text-muted small mb-0">Set the role name, then expand Module permissions to configure access.</p>
+                    <p class="text-muted small mb-0">Set the role name and description.</p>
                 </div>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
@@ -103,12 +103,12 @@
 
 {{-- Edit role modal --}}
 <div class="modal fade roles-form-modal" id="rolesEditModal" tabindex="-1" aria-labelledby="rolesEditModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable roles-form-modal-dialog">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable roles-form-modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <div>
                     <h5 class="modal-title mb-1" id="rolesEditModalLabel">Edit role</h5>
-                    <p class="text-muted small mb-0">Update role details and module permissions.</p>
+                    <p class="text-muted small mb-0">Update the role name and description.</p>
                 </div>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>

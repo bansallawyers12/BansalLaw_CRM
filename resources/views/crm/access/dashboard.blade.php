@@ -1,9 +1,14 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Access grants dashboard')
 @section('content')
-<div class="main-content crm-access-dashboard-layout">
+<div class="main-content adminconsole-features crm-access-dashboard-layout">
     <section class="section">
         <div class="section-body">
+            <div class="row">
+                <div class="col-3 col-md-3 col-lg-3">
+                    @include('../Elements/CRM/setting')
+                </div>
+                <div class="col-9 col-md-9 col-lg-9">
 
             {{-- ── Pending approvals section (always visible at the top for approvers) ──────── --}}
             <div class="card mb-4" id="crm-access-pending-card">
@@ -169,6 +174,8 @@
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="crm-access-dash-next">Next</button>
                         </div>
                     </div>
+                </div>
+            </div>
                 </div>
             </div>
         </div>

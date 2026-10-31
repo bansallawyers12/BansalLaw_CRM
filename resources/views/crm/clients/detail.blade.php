@@ -1707,6 +1707,7 @@ $(document).ready(function() {
         reopenRequestedById: @json($cdnReopenRequestedById ?? 0),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
         notPickedCallSmsDefault: @json($notPickedCallSmsDefault ?? ''),
+        firmPhone: @json((string) config('app.brand.phone')),
         detailBaseUrl: '{{ url("/clients/detail") }}',
         // SMS Template Variables
         staffName: @json(($staffName ?? '')),

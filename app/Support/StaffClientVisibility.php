@@ -19,13 +19,14 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Row-level visibility for CRM staff.
  *
- * Matter allocation (clients): staff other than Super Admin, Calling Team, and the named
+ * Matter allocation (clients): staff other than Super Admin, Admin access, Calling Team, and the named
  * matter-visibility exceptions (Kabir, Ajay, Khusi/Khushi) only see client_matters rows where they
  * are Legal Practitioner, Person Responsible, or Person Assisting, plus an active matter_temp grant
  * on that same row. Client ownership and a grant on a different matter of the same client do not
  * reveal the rest of that client's matters.
  * Lead listing, bookings, documents, and the global search all use seesAllClientMatters() for the
- * full-visibility group and matter assignment for everyone else.
+ * full-visibility group and matter assignment for everyone else. Admin access is in that group
+ * and also skips the matter team.
  * With CRM_ACCESS_ASSIGNMENT_ONLY=true, other staff only see leads/clients/mail they are assigned to
  * (matter team, lead owner, grants, or synced mail To/Cc/Bcc).
  *
@@ -125,7 +126,7 @@ final class StaffClientVisibility
             return false;
         }
 
-        if ($user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges()) {
+        if ($user instanceof Staff && ($user->hasEffectiveSuperAdminPrivileges() || $user->hasFullCrmAllocationAccess())) {
             return false;
         }
 
@@ -178,8 +179,8 @@ final class StaffClientVisibility
     }
 
     /**
-     * People who may open every matter: Super Admin, the Calling Team, and Ajay, Khushi, and Kabir.
-     * The full-CRM flag does not skip the matter team.
+     * People who may open every matter: Super Admin, Admin access, the Calling Team,
+     * and Ajay, Khushi, and Kabir.
      */
     public static function seesEveryMatter(?Authenticatable $user): bool
     {
@@ -199,7 +200,7 @@ final class StaffClientVisibility
             return false;
         }
 
-        if ($user->hasEffectiveSuperAdminPrivileges()) {
+        if ($user->hasEffectiveSuperAdminPrivileges() || $user->hasFullCrmAllocationAccess()) {
             return true;
         }
 
@@ -207,8 +208,8 @@ final class StaffClientVisibility
     }
 
     /**
-     * Full client-file visibility: Super Admin, the full-CRM flag, Calling Team, and Kabir / Ajay / Khusi.
-     * Opening every matter is {@see seesEveryMatter()} — the full-CRM flag is not included.
+     * Full client-file visibility: Super Admin, Admin access, Calling Team, and Kabir / Ajay / Khusi.
+     * Opening every matter is {@see seesEveryMatter()}.
      */
     public static function seesAllClientMatters(?Authenticatable $user): bool
     {
@@ -433,12 +434,23 @@ final class StaffClientVisibility
     }
 
     /**
+     * Role 1 and Admin access may open the locked client files. The header switch is not required.
+     */
+    public static function mayViewSuperAdminOnlyLockedClients(?Authenticatable $viewer): bool
+    {
+        $viewer = self::currentStaff($viewer);
+
+        return $viewer instanceof Staff
+            && app(CrmAccessService::class)->hasPermanentSuperAdminCapability($viewer);
+    }
+
+    /**
      * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\Admin>|\Illuminate\Database\Query\Builder  $query
      */
     public static function excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, ?Authenticatable $viewer = null): void
     {
         $viewer = self::currentStaff($viewer);
-        if (! $viewer || ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
+        if (! $viewer || self::mayViewSuperAdminOnlyLockedClients($viewer)) {
             return;
         }
 
@@ -469,7 +481,7 @@ final class StaffClientVisibility
     public static function applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, string $adminsAlias, ?Authenticatable $viewer = null): void
     {
         $viewer = self::currentStaff($viewer);
-        if (! $viewer || ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
+        if (! $viewer || self::mayViewSuperAdminOnlyLockedClients($viewer)) {
             return;
         }
 
@@ -644,7 +656,7 @@ final class StaffClientVisibility
         }
 
         if (self::isSuperAdminOnlyLockedClient($row->type ?? null, $row->client_id ?? null)) {
-            return $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
+            return self::mayViewSuperAdminOnlyLockedClients($user);
         }
 
         if (! self::isAllocationEnforcementEnabled()) {

@@ -328,19 +328,18 @@ class MatterScopedAccessTest extends TestCase
         ]);
 
         $superAdmin = Staff::factory()->superAdmin()->create(['status' => 1, 'first_name' => 'Office', 'last_name' => 'Admin']);
-        $fullCrm = Staff::factory()->create([
+        $adminAccess = Staff::factory()->create([
             'status' => 1,
-            'role' => 17,
+            'role' => 16,
             'first_name' => 'Michael',
             'last_name' => 'Saleh',
-            'has_full_crm_allocation_access' => true,
+            'grant_super_admin_access' => 1,
+            'has_full_crm_allocation_access' => false,
         ]);
 
-        foreach ([$calling, $ajay, $kabir, $khusi, $superAdmin] as $viewer) {
+        foreach ([$calling, $ajay, $kabir, $khusi, $superAdmin, $adminAccess] as $viewer) {
             $this->assertTrue(MatterScopedAccess::canAccessClientMatter((int) $other->id, $viewer));
         }
-
-        $this->assertFalse(MatterScopedAccess::canAccessClientMatter((int) $other->id, $fullCrm));
 
         $this->assertTrue(MatterScopedAccess::canAccessClientMatter((int) $assigned->id, $solicitor));
         $this->assertFalse(MatterScopedAccess::canAccessClientMatter((int) $other->id, $solicitor));

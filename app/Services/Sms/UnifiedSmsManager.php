@@ -136,7 +136,7 @@ class UnifiedSmsManager
         ], $context);
 
         if (! $result['success'] && $this->isTemplateMissingError($result)) {
-            $message = "BANSAL IMMIGRATION: Your verification code is {$code}. This code expires in 5 minutes.";
+            $message = "BANSAL LAWYERS: Your verification code is {$code}. This code expires in 5 minutes.";
 
             return $this->sendSms($to, $message, 'verification', $context);
         }

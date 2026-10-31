@@ -74,9 +74,9 @@ Low fill, not empty: `refer_by` (5), `tagname` (7), `followup_date` (86), `marit
 
 These names from the older column guide are columns on `staff` (20 rows):
 
-`first_name`, `last_name`, `email`, `password`, `country_code`, `phone`, `status`, `role`, `position`, `permission`, `office_id`, `show_dashboard_per`, `legal_practitioner_number`, `company_name`, `company_website`, `business_address`, `business_phone`, `business_mobile`, `business_email`, `tax_number`, `remember_token`, `created_at`, `updated_at`, `quick_access_enabled`, `grant_super_admin_access`, `is_solicitor`, `email_signature`, `can_delete_email_with_attachments`, `can_close_discontinue_matter`, `can_sync_inbox_emails`, `can_edit_final_invoice`, `can_view_all_synced_inbox_mail`, `can_pause_mailbox_inbox_sync`, `can_assign_emails_by_subject`, `can_use_timeline_billing`, `can_access_personal_calendar`, `default_calendar_type`, `can_manage_matter_team_access`, `has_full_crm_allocation_access`, `staff_calendar_visibility`, `can_access_admin_console`.
+`first_name`, `last_name`, `email`, `password`, `country_code`, `phone`, `status`, `role`, `position`, `permission`, `office_id`, `show_dashboard_per`, `company_name`, `company_website`, `business_address`, `business_email`, `remember_token`, `created_at`, `updated_at`, `quick_access_enabled`, `grant_super_admin_access`, `is_solicitor`, `email_signature`, `can_delete_email_with_attachments`, `can_close_discontinue_matter`, `can_sync_inbox_emails`, `can_edit_final_invoice`, `can_view_all_synced_inbox_mail`, `can_pause_mailbox_inbox_sync`, `can_assign_emails_by_subject`, `can_use_timeline_billing`, `can_access_personal_calendar`, `default_calendar_type`, `can_manage_matter_team_access`, `has_full_crm_allocation_access`, `staff_calendar_visibility`, `can_access_admin_console`.
 
-`team` is not a column on `staff` or `admins`. `marn_number` is not a column on either table.
+`team` is not a column on `staff` or `admins`. `marn_number` is not a column on either table. `legal_practitioner_number`, `business_phone`, `business_mobile`, and `tax_number` were dropped from `staff` in `2026_10_31_180000_drop_unused_staff_practitioner_columns`.
 
 ---
 

@@ -77,7 +77,45 @@ class StaffClientVisibilityAllocationTest extends TestCase
         $staff->id = 42;
 
         $this->assertTrue(StaffClientVisibility::seesAllClientMatters($staff));
+        $this->assertTrue(StaffClientVisibility::seesEveryMatter($staff));
         $this->assertTrue(StaffClientVisibility::isExemptFromAllocation($staff));
+    }
+
+    public function test_admin_access_sees_all_crm_data_without_the_header_switch(): void
+    {
+        config(['crm_access.allocation_enabled' => true]);
+
+        $staff = new Staff([
+            'role' => 16,
+            'status' => 1,
+            'grant_super_admin_access' => true,
+            'has_full_crm_allocation_access' => false,
+        ]);
+        $staff->id = 77;
+
+        $this->assertTrue($staff->hasFullCrmAllocationAccess());
+        $this->assertTrue(StaffClientVisibility::seesAllClientMatters($staff));
+        $this->assertTrue(StaffClientVisibility::seesEveryMatter($staff));
+        $this->assertTrue(StaffClientVisibility::isExemptFromAllocation($staff));
+        $this->assertTrue($staff->canViewAllSyncedInboxMail());
+        $this->assertTrue(StaffClientVisibility::mayViewSuperAdminOnlyLockedClients($staff));
+        $this->assertFalse($staff->hasEffectiveSuperAdminPrivileges());
+
+        $filesOnly = new Staff([
+            'role' => 16,
+            'status' => 1,
+            'grant_super_admin_access' => false,
+            'has_full_crm_allocation_access' => true,
+        ]);
+        $this->assertTrue($filesOnly->hasFullCrmAllocationAccess());
+        $this->assertFalse(StaffClientVisibility::mayViewSuperAdminOnlyLockedClients($filesOnly));
+
+        $inactive = new Staff([
+            'role' => 16,
+            'status' => 0,
+            'grant_super_admin_access' => true,
+        ]);
+        $this->assertFalse(StaffClientVisibility::mayViewSuperAdminOnlyLockedClients($inactive));
     }
 
     public function test_full_crm_allocation_grant_inactive_staff_does_not_bypass(): void

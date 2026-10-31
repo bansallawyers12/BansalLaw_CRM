@@ -80,7 +80,6 @@ class UserroleController extends Controller
             $obj = new UserRole();
             $obj->name = @$requestData['name'];
             $obj->description = @$requestData['description'];
-            $obj->module_access = json_encode(@$requestData['module_access']);
 
             $saved = $obj->save();
 
@@ -169,7 +168,6 @@ class UserroleController extends Controller
 
             $role->name = @$requestData['name'];
             $role->description = @$requestData['description'];
-            $role->module_access = json_encode(@$requestData['module_access']);
 
             $saved = $role->save();
 
@@ -236,16 +234,10 @@ class UserroleController extends Controller
 
     protected function serializeRoleSummary(UserRole $role): array
     {
-        $moduleAccess = json_decode($role->module_access ?? '{}', true);
-        if (!is_array($moduleAccess)) {
-            $moduleAccess = (array) $moduleAccess;
-        }
-
         return [
             'id' => $role->id,
             'name' => $role->name,
             'description' => $role->description,
-            'permission_count' => count($moduleAccess),
         ];
     }
 

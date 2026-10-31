@@ -104,8 +104,8 @@ final class MatterScopedAccess
     }
 
     /**
-     * Super Admin, the Calling Team, and Ajay, Khushi, and Kabir skip the matter team.
-     * The full-CRM flag does not. Everyone else needs to be listed, or hold a grant.
+     * Super Admin, Admin access, the Calling Team, and Ajay, Khushi, and Kabir skip the matter team.
+     * Everyone else needs to be listed, or hold a grant.
      */
     public static function bypassesMatterTeamEnforcement(?Authenticatable $user = null): bool
     {

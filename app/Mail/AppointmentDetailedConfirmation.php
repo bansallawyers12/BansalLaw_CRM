@@ -102,7 +102,7 @@ class AppointmentDetailedConfirmation extends Mailable
      */
     protected function getLocationPhone(string $location): string
     {
-        return '+61 3 9602 1330';
+        return (string) config('app.brand.phone');
     }
 }
 

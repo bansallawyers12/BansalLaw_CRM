@@ -201,7 +201,7 @@ class SmsTemplate extends Model
             'timeslot_full'     => '10:00 AM – 10:30 AM',
             'location'          => 'Melbourne',
             'staff_name'        => 'Sarah',
-            'office_phone'      => '03 9602 1330',
+            'office_phone'      => (string) config('app.brand.phone'),
             'verification_code' => '123456',
             'expiry_minutes'    => '5',
             'invoice_number'    => 'INV-2024-001',

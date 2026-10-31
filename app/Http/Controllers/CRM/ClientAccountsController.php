@@ -5376,7 +5376,7 @@ class ClientAccountsController extends Controller
           ? DB::table('staff')->where('id', $receipt->agent_id)->first()
           : null;
       $admin = $receipt->user_id
-          ? DB::table('staff')->select('company_name','business_address as address','state','city','zip','email','business_phone as phone')->where('id', $receipt->user_id)->first()
+          ? DB::table('staff')->select('company_name','business_address as address','email','phone')->where('id', $receipt->user_id)->first()
           : null;
 
       $pdf = PDF::setOptions([

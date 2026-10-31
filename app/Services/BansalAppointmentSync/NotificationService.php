@@ -161,8 +161,7 @@ class NotificationService
                 return false;
             }
 
-            // Lawyers booking is Melbourne-only
-            $officePhone = '03 9602 1330';
+            $officePhone = (string) config('app.brand.phone');
 
             $meetingType = strtolower(trim($appointment->meeting_type ?? ''));
             $templateAlias = match ($meetingType) {
@@ -187,10 +186,10 @@ class NotificationService
 
             if (! $result['success'] && str_contains($result['message'] ?? '', 'Template not found')) {
                 $message = match ($meetingType) {
-                    'in_person' => "BANSAL IMMIGRATION: Reminder - You have a scheduled In-Person appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
-                    'phone' => "BANSAL IMMIGRATION: Reminder - You have a scheduled Phone appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
-                    'video' => "BANSAL IMMIGRATION: Reminder - You have a scheduled Video Call appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
-                    default => "BANSAL IMMIGRATION: Reminder - You have a scheduled appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                    'in_person' => "BANSAL LAWYERS: Reminder - You have a scheduled In-Person appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                    'phone' => "BANSAL LAWYERS: Reminder - You have a scheduled Phone appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                    'video' => "BANSAL LAWYERS: Reminder - You have a scheduled Video Call appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                    default => "BANSAL LAWYERS: Reminder - You have a scheduled appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
                 };
                 $result = $this->smsManager->sendSms($phone, $message, 'reminder', $context);
             }

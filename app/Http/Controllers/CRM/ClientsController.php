@@ -128,14 +128,16 @@ class ClientsController extends Controller
 
         $rendered = $this->smsManager->renderTemplateByAlias('not_picked_call', [
             'first_name' => $first,
-            'office_phone' => '0396021330',
+            'office_phone' => (string) config('app.brand.phone'),
         ]);
 
         if ($rendered !== null) {
             return $rendered;
         }
 
-        return "Hi {$first},\n\nWe tried reaching you but couldn't connect. Please call us at 0396021330 or let us know a suitable time.\n\nPlease do not reply via SMS.\n\n" . config('app.name');
+        $phone = (string) config('app.brand.phone');
+
+        return "Hi {$first},\n\nWe tried reaching you but couldn't connect. Please call us at {$phone} or let us know a suitable time.\n\nPlease do not reply via SMS.\n\n" . config('app.name');
     }
 
 	/**

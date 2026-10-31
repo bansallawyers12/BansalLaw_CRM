@@ -1448,26 +1448,17 @@ body.sidebar-mini .adminconsole-roles-spa .roles-view-dl dd {
   color: var(--text-dark);
 }
 
-body.sidebar-mini .adminconsole-roles-spa .roles-view-perm-group {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-body.sidebar-mini .adminconsole-roles-spa .roles-view-perm-group:last-child {
-  border-bottom: 0;
-}
-
 body.sidebar-mini .roles-form-modal .roles-form-modal-dialog {
-  max-width: 960px;
-  height: calc(100vh - 2rem);
-  margin: 1rem auto;
+  max-width: 720px;
+  height: auto;
+  margin: 1.75rem auto;
 }
 
 body.sidebar-mini .roles-form-modal .modal-content {
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 2rem);
-  height: 100%;
+  height: auto;
   overflow: hidden;
   border: 1px solid var(--border) !important;
   border-radius: 12px !important;
@@ -1522,57 +1513,12 @@ body.sidebar-mini .roles-form-modal .roles-modal-accordion > .accordion {
   background: var(--card-bg);
 }
 
-body.sidebar-mini .roles-form-modal .roles-module-accordion > .accordion {
-  margin-bottom: 8px !important;
-}
-
-body.sidebar-mini .roles-form-modal .roles-module-accordion .select_toggle {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-body.sidebar-mini .roles-form-modal .roles-perm-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-body.sidebar-mini .roles-form-modal .roles-perm-list li + li {
-  margin-top: 10px;
-}
-
-body.sidebar-mini .roles-form-modal .roles-perm-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 0;
-  font-weight: 500;
-  color: var(--text-dark);
-  cursor: pointer;
-}
-
-body.sidebar-mini .roles-form-modal .roles-perm-item input {
-  margin-top: 3px;
-  flex-shrink: 0;
-}
-
-body.sidebar-mini .roles-form-modal .roles-modal-scroll-hint {
-  text-align: center;
-  padding: 8px 0 0;
-}
-
 body.sidebar-mini .roles-form-modal .form-group label {
   color: var(--text-muted) !important;
   font-weight: 600 !important;
   font-size: 12px !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
-}
-
-body.sidebar-mini .roles-form-modal .roles-perm-item {
-  text-transform: none !important;
-  font-size: 14px !important;
 }
 
 /* Admin Console — Personal Document Type SPA (features/personal-document-type) */

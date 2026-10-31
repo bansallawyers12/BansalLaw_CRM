@@ -584,6 +584,9 @@ class StaffController extends Controller
         $isSuperAdminActor = $actor instanceof Staff && (int) ($actor->role ?? 0) === 1;
         if ($isSuperAdminActor && !$isCreate) {
             $obj->grant_super_admin_access = $request->boolean('grant_super_admin_access') ? 1 : null;
+            if (Schema::hasColumn('staff', 'has_full_crm_allocation_access')) {
+                $obj->has_full_crm_allocation_access = (bool) $obj->grant_super_admin_access;
+            }
         }
 
         if ($isSuperAdminActor && Schema::hasColumn('staff', 'can_access_admin_console')) {
@@ -660,13 +663,6 @@ class StaffController extends Controller
         );
         if ($canGrantMatterTeamAccess && Schema::hasColumn('staff', 'can_manage_matter_team_access')) {
             $obj->can_manage_matter_team_access = $request->boolean('can_manage_matter_team_access');
-        }
-
-        $canGrantFullCrmAllocationAccess = Staff::canGrantFullCrmAllocationAccessPermission(
-            $actor instanceof Staff ? $actor : null
-        );
-        if ($canGrantFullCrmAllocationAccess && Schema::hasColumn('staff', 'has_full_crm_allocation_access')) {
-            $obj->has_full_crm_allocation_access = $request->boolean('has_full_crm_allocation_access');
         }
 
     }

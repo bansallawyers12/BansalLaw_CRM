@@ -47,14 +47,10 @@ class Staff extends Authenticatable
         'office_id',
         'show_dashboard_per',
         'is_solicitor',
-        'legal_practitioner_number',
         'company_name',
         'company_website',
         'business_address',
-        'business_phone',
-        'business_mobile',
         'business_email',
-        'tax_number',
         'quick_access_enabled',
         'grant_super_admin_access',
         'can_access_admin_console',
@@ -707,12 +703,17 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Super Admin grant: bypass allocation, matter-team scoping, and assignment-only filters.
+     * Admin access opens every client, lead, matter, document, and synced mailbox.
+     * The older full-CRM column is kept so existing grants still open those records.
      */
     public function hasFullCrmAllocationAccess(): bool
     {
         if ((int) ($this->status ?? 0) !== 1) {
             return false;
+        }
+
+        if ((bool) ($this->grant_super_admin_access ?? false)) {
+            return true;
         }
 
         return (bool) ($this->has_full_crm_allocation_access ?? false);

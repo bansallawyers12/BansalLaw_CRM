@@ -272,17 +272,14 @@ return [
     |
     | Staff with role 1 (Super Admin) see these clients everywhere. Other staff
     | cannot list, search, or open them. Applies only to type=client, not leads.
-    | Override or extend via CRM_SUPER_ADMIN_ONLY_CLIENT_FILE_IDS e.g.
-    | "GURP2502080,OASH2505088".
+    | Default is none. Set CRM_SUPER_ADMIN_ONLY_CLIENT_FILE_IDS to lock files,
+    | e.g. "GURP2502080,OASH2505088".
     |
     */
     'super_admin_only_client_file_ids' => array_values(array_unique(array_filter(
         array_map(
             static fn (string $id) => trim($id),
-            explode(',', (string) env(
-                'CRM_SUPER_ADMIN_ONLY_CLIENT_FILE_IDS',
-                'GURP2502080,OASH2505088,PRAB2504834,PALW2502036'
-            ))
+            explode(',', (string) env('CRM_SUPER_ADMIN_ONLY_CLIENT_FILE_IDS', ''))
         ),
         static fn (string $id) => $id !== ''
     ))),

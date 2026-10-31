@@ -2752,7 +2752,7 @@ success: function(response) {
 
             var message = (window.ClientDetailConfig.notPickedCallSmsDefault || '').trim();
             if (!message) {
-                message = 'Hi ' + clientName + ',\n\nWe tried reaching you but couldn\'t connect. Please call us at 0396021330 or let us know a suitable time.\n\nPlease do not reply via SMS.\n\n' + (window.__CRM_APP_NAME__ || '');
+                message = 'Hi ' + clientName + ',\n\nWe tried reaching you but couldn\'t connect. Please call us at ' + (window.ClientDetailConfig.firmPhone || '') + ' or let us know a suitable time.\n\nPlease do not reply via SMS.\n\n' + (window.__CRM_APP_NAME__ || '');
             }
 
             $('#messageText').val(message); // Set dynamic message text

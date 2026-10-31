@@ -30,9 +30,6 @@
     $canGrantMatterTeamAccess = \App\Models\Staff::canGrantManageMatterTeamAccessPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
-    $canGrantFullCrmAllocationAccess = \App\Models\Staff::canGrantFullCrmAllocationAccessPermission(
-        $actor instanceof \App\Models\Staff ? $actor : null
-    );
     $permissionArr = [];
     if ($isEdit && $fetchedData && !empty($fetchedData->permission)) {
         $permissionArr = strpos($fetchedData->permission, ',') !== false
@@ -158,7 +155,7 @@
                             @disabled(!$isSuperAdminActor)>
                         <span>Admin access</span>
                     </label>
-                    <small class="text-muted d-block mt-1">They can approve access requests and switch to full CRM privileges from the header. This does not open Admin Console and does not show other people’s calendars.</small>
+                    <small class="text-muted d-block mt-1">They can approve access requests and open every client, lead, matter, document, and synced mailbox. This does not open Admin Console and does not show other people’s calendars.</small>
                 </div>
                 @endif
 
@@ -185,18 +182,6 @@
                 @if($canGrantMatterTeamAccess)
                 <div class="form-group">
                     <small class="text-muted d-block">Temporary matter access on a client file is limited to Super Admin, Ajay Bansal, and Khushi Sangroya.</small>
-                </div>
-                @endif
-
-                @if($canGrantFullCrmAllocationAccess && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'has_full_crm_allocation_access'))
-                <div class="form-group">
-                    <input type="hidden" name="has_full_crm_allocation_access" value="0">
-                    <label class="staff-checkbox-row">
-                        <input type="checkbox" name="has_full_crm_allocation_access" value="1"
-                            @checked(old('has_full_crm_allocation_access', $isEdit ? ($fetchedData->has_full_crm_allocation_access ?? false) : false))>
-                        <span>Full CRM access (all clients, leads, matters &amp; email)</span>
-                    </label>
-                    <small class="text-muted d-block mt-1">Bypasses allocation and matter-team restrictions so this staff member can open any client, lead, matter, documents, and synced mailbox mail. Only native Super Admin can enable this.</small>
                 </div>
                 @endif
 

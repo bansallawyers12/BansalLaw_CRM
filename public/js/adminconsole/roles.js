@@ -133,9 +133,6 @@
     function expandRoleSectionForField($form, field) {
         var prefix = $form.attr('id') === 'roles-create-form' ? 'create_role' : 'edit_role';
         var sectionId = prefix + '_details';
-        if (field !== 'name' && field !== 'description') {
-            sectionId = prefix + '_permissions_wrap';
-        }
         var $section = $('#' + sectionId);
         if ($section.length && !$section.hasClass('show')) {
             if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
@@ -187,22 +184,6 @@
         $btn.find('.submit-spinner').toggleClass('d-none', !isSubmitting);
     }
 
-    function initRolesFormBehaviors($container) {
-        $container.find('.roles-select-all').off('click.rolesForm').on('click.rolesForm', function () {
-            var groupClass = $(this).attr('data-class');
-            if (groupClass) {
-                $container.find('.' + groupClass).prop('checked', true);
-            }
-        });
-
-        $container.find('.roles-deselect-all').off('click.rolesForm').on('click.rolesForm', function () {
-            var groupClass = $(this).attr('data-class');
-            if (groupClass) {
-                $container.find('.' + groupClass).prop('checked', false);
-            }
-        });
-    }
-
     function openCreateModal() {
         var $modal = $('#rolesCreateModal');
         var $body = $('#roles-create-form-body');
@@ -222,7 +203,6 @@
                 return;
             }
             $body.html(response.html || '');
-            initRolesFormBehaviors($body);
         }).fail(function (xhr) {
             var message = (xhr.responseJSON && xhr.responseJSON.message) || 'Could not load create form.';
             $body.html('<div class="alert alert-danger mb-0">' + escapeHtml(message) + '</div>');
@@ -251,7 +231,6 @@
             }
             $('#rolesEditModalLabel').text('Edit ' + (response.role && response.role.name ? response.role.name : 'role'));
             $body.html(response.html || '');
-            initRolesFormBehaviors($body);
         }).fail(function (xhr) {
             var message = (xhr.responseJSON && xhr.responseJSON.message) || 'Could not load edit form.';
             $body.html('<div class="alert alert-danger mb-0">' + escapeHtml(message) + '</div>');

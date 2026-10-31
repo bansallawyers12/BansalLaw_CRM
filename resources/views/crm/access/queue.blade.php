@@ -4,9 +4,14 @@
     $crmAccessReasonLabels = config('crm_access.quick_reason_options', []);
 @endphp
 @section('content')
-<div class="main-content crm-access-queue-page">
+<div class="main-content adminconsole-features crm-access-queue-page">
     <section class="section">
         <div class="section-body">
+            <div class="row">
+                <div class="col-3 col-md-3 col-lg-3">
+                    @include('../Elements/CRM/setting')
+                </div>
+                <div class="col-9 col-md-9 col-lg-9">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Pending supervisor access requests</h4>
@@ -31,6 +36,8 @@
                             <tbody></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
                 </div>
             </div>
         </div>
