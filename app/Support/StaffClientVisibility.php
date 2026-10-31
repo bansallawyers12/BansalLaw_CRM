@@ -203,13 +203,7 @@ final class StaffClientVisibility
             return true;
         }
 
-        if (in_array((int) ($user->role ?? 0), config('crm_access.quick_access_only_role_ids', [14]), true)) {
-            return true;
-        }
-
-        $teamId = (int) ($user->team ?? 0);
-
-        return $teamId > 0 && $teamId === self::callingTeamId();
+        return in_array((int) ($user->role ?? 0), config('crm_access.quick_access_only_role_ids', [14]), true);
     }
 
     /**
@@ -238,21 +232,7 @@ final class StaffClientVisibility
             return true;
         }
 
-        $teamId = (int) ($user->team ?? 0);
-        if ($teamId > 0 && $teamId === self::callingTeamId()) {
-            return true;
-        }
-
         return self::isNamedMatterExempt($user);
-    }
-
-    private static function callingTeamId(): int
-    {
-        if (! Schema::hasTable('teams')) {
-            return 0;
-        }
-
-        return (int) DB::table('teams')->whereRaw('LOWER(TRIM(name)) = ?', ['calling team'])->value('id');
     }
 
     private static function isNamedMatterVisibilityException(Authenticatable $user): bool

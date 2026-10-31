@@ -1,14 +1,12 @@
 @php
     $tab = $tab ?? 'active';
-    $colspan = 6;
+    $colspan = 4;
 @endphp
 <div class="table-responsive common_table staff-list-table-wrap">
     <table class="table staff-list-table mb-0">
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Position</th>
-                <th>Office</th>
                 <th>Role</th>
                 <th>Status</th>
                 <th class="text-nowrap">Actions</th>

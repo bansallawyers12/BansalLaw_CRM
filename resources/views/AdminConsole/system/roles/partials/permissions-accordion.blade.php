@@ -8,7 +8,7 @@
     <div class="accordion">
         <div class="accordion-header" role="button" data-bs-toggle="collapse"
             data-bs-target="#{{ $fieldPrefix }}_panel_1" aria-expanded="true">
-            <h4>Office & teams</h4>
+            <h4>Offices & staff</h4>
         </div>
         <div class="accordion-body collapse show" id="{{ $fieldPrefix }}_panel_1" data-bs-parent="#{{ $accordionId }}">
             <div class="select_toggle">

@@ -673,7 +673,7 @@ class Area8SecurityTest extends TestCase
         $crmAccess = app(\App\Services\CrmAccess\CrmAccessService::class);
 
         // 1. Initial quick access grant succeeds
-        $grant = $crmAccess->requestQuickGrant($staff, 771, 'client', 771, null, 'urgent');
+        $grant = $crmAccess->requestQuickGrant($staff, 771, 'client', 771, 'urgent');
         $this->assertNotNull($grant);
         $this->assertEquals('active', $grant->status);
 
@@ -681,7 +681,7 @@ class Area8SecurityTest extends TestCase
         $this->expectException(\App\Services\CrmAccess\CrmAccessDeniedException::class);
         $this->expectExceptionMessage('An active quick access grant already exists for this record.');
 
-        $crmAccess->requestQuickGrant($staff, 771, 'client', 771, null, 'urgent');
+        $crmAccess->requestQuickGrant($staff, 771, 'client', 771, 'urgent');
     }
 
     #[Test]
@@ -1550,7 +1550,7 @@ class Area8SecurityTest extends TestCase
 
         $this->actingAs($manager, 'admin');
 
-        foreach (['branches', 'workflows', 'matters', 'teams'] as $table) {
+        foreach (['branches', 'workflows', 'matters'] as $table) {
             $response = $this->postJson('/delete_action', [
                 'table' => $table,
                 'id' => 1,

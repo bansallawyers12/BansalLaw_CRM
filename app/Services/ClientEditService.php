@@ -69,8 +69,14 @@ class ClientEditService
     /** CRM `staff.role` for “Person Responsible”. */
     public const PERSON_RESPONSIBLE_STAFF_ROLE = 12;
 
-    /** CRM `staff.role` for “Person Assisting”. */
+    /** CRM `staff.role` for legacy “Person Assisting”. Kept so existing staff still appear. */
     public const PERSON_ASSISTING_STAFF_ROLE = 13;
+
+    /** CRM `user_roles` id 18 = Paralegal (Australia). */
+    public const PARALEGAL_AUSTRALIA_STAFF_ROLE = 18;
+
+    /** CRM `user_roles` id 19 = Paralegal (India). */
+    public const PARALEGAL_INDIA_STAFF_ROLE = 19;
 
     /** CRM `user_roles` id 16 = Solicitor (legal practitioner). */
     public const SOLICITOR_STAFF_ROLE = 16;
@@ -130,12 +136,29 @@ class ClientEditService
     }
 
     /**
-     * Person Assisting dropdown: role {@see PERSON_ASSISTING_STAFF_ROLE}; if none, Khushi fallback email.
+     * Roles that can be chosen in the matter Paralegal field.
+     * Includes legacy Person Assisting so current staff still appear.
+     *
+     * @return list<int>
+     */
+    public static function paralegalMatterStaffRoleIds(): array
+    {
+        $ids = array_map('intval', (array) config('crm_roles.paralegal_role_ids', [
+            self::PARALEGAL_AUSTRALIA_STAFF_ROLE,
+            self::PARALEGAL_INDIA_STAFF_ROLE,
+        ]));
+        $ids[] = self::PERSON_ASSISTING_STAFF_ROLE;
+
+        return array_values(array_unique(array_filter($ids, static fn (int $id) => $id > 0)));
+    }
+
+    /**
+     * Paralegal dropdown on a matter.
      */
     public static function staffSelectableForPersonAssistingRole()
     {
         $staff = self::activeNamedStaffQuery()
-            ->where('role', self::PERSON_ASSISTING_STAFF_ROLE)
+            ->whereIn('role', self::paralegalMatterStaffRoleIds())
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'email']);

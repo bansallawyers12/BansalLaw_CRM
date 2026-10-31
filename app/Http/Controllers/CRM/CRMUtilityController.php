@@ -244,7 +244,7 @@ class CRMUtilityController extends Controller
 				'staff', 'branches', 'workflows', 'workflow_stages', 'matters',
 				'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
 				'templates', 'products', 'document_checklists', 'personal_document_types',
-				'matter_document_types', 'teams'
+				'matter_document_types'
 			];
 
 			$clientTables = [
@@ -368,7 +368,7 @@ class CRMUtilityController extends Controller
 				'matters', 'workflows', 'workflow_stages', 'branches',
 				'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
 				'templates', 'products', 'document_checklists', 'personal_document_types',
-				'matter_document_types', 'teams'
+				'matter_document_types'
 			];
 			$clientTables = [
 				'admins', 'client_matters', 'client_matter_tasks', 'quotations', 'email_labels'
@@ -468,7 +468,7 @@ class CRMUtilityController extends Controller
 			'branches', 'workflows', 'workflow_stages', 'matters',
 			'crm_email_templates', 'matter_email_templates', 'matter_other_email_templates',
 			'templates', 'products', 'document_checklists', 'personal_document_types',
-			'matter_document_types', 'teams'
+			'matter_document_types'
 		];
 
 		$clientTables = [
@@ -736,7 +736,7 @@ class CRMUtilityController extends Controller
 			$table = trim((string)($requestData['table'] ?? ''));
 
 			$coreStructuralTables = [
-				'branches', 'workflows', 'matters', 'teams'
+				'branches', 'workflows', 'matters'
 			];
 
 			$systemTables = [

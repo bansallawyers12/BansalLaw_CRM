@@ -160,7 +160,7 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
         $this->expectException(CrmAccessDeniedException::class);
         $this->expectExceptionMessage('Quick access is not enabled');
 
-        $svc->requestQuickGrant($staff, 1, 'client', 1, null, 'calling');
+        $svc->requestQuickGrant($staff, 1, 'client', 1, 'calling');
     }
 
     public function test_quick_grant_blocked_with_invalid_reason(): void
@@ -171,7 +171,7 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
         $this->expectException(CrmAccessDeniedException::class);
         $this->expectExceptionMessage('Invalid reason');
 
-        $svc->requestQuickGrant($staff, 1, 'client', 1, null, 'not_a_real_reason_code');
+        $svc->requestQuickGrant($staff, 1, 'client', 1, 'not_a_real_reason_code');
     }
 
     // -----------------------------------------------------------------------

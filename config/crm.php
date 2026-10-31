@@ -167,15 +167,17 @@ return [
     |--------------------------------------------------------------------------
     |
     | Staff with these roles only see clients/leads where they appear on a matter
-    | as Legal Practitioner, person responsible, or person assisting (client_matters
+    | as Legal Practitioner, person responsible, or paralegal (client_matters
     | sel_legal_practitioner / sel_person_responsible / sel_person_assisting), or
     | are assigned on the lead record (admins.user_id). Super admin (role 1) is
-    | never restricted. Override via CRM_PERSON_ASSISTING_ROLE_IDS e.g. "13,21".
+    | never restricted.
+    | 13 = legacy Person Assisting, 18 = Paralegal (Australia), 19 = Paralegal (India).
+    | Override via CRM_PERSON_ASSISTING_ROLE_IDS e.g. "13,18,19".
     |
     */
     'person_assisting_role_ids' => array_values(array_filter(array_map(
         'intval',
-        explode(',', (string) env('CRM_PERSON_ASSISTING_ROLE_IDS', '13'))
+        explode(',', (string) env('CRM_PERSON_ASSISTING_ROLE_IDS', '13,18,19'))
     ), static fn (int $id) => $id > 0)),
 
     /*
@@ -253,16 +255,17 @@ return [
     |
     | These roles may open /leads without client module keys 20–23. They only
     | see rows where admins.user_id = their staff id (via restrictLeadListQuery).
-    | Default: PA (13), Calling (14), Accountant (15), Solicitor (16; user_roles name).
-    | Set CRM_LEAD_LIST_ASSIGNED_ONLY_ROLE_IDS to override, e.g. "13,14,15,16".
+    | Default: legacy Person Assisting (13), Calling Team (14), Accountant (15),
+    | Solicitor (16), Paralegal Australia (18), Paralegal India (19).
+    | Set CRM_LEAD_LIST_ASSIGNED_ONLY_ROLE_IDS to override, e.g. "13,14,15,16,18,19".
     |
     */
     'lead_list_assigned_only_role_ids' => (($__leadAssignedRoles = array_values(array_filter(array_map(
         'intval',
-        explode(',', (string) env('CRM_LEAD_LIST_ASSIGNED_ONLY_ROLE_IDS', '13,14,15,16'))
+        explode(',', (string) env('CRM_LEAD_LIST_ASSIGNED_ONLY_ROLE_IDS', '13,14,15,16,18,19'))
     ), static fn (int $id) => $id > 0))) !== []
         ? $__leadAssignedRoles
-        : [13, 14, 15, 16]),
+        : [13, 14, 15, 16, 18, 19]),
 
     /*
     |--------------------------------------------------------------------------
@@ -331,17 +334,18 @@ return [
     |--------------------------------------------------------------------------
     |
     | staff.role values (user_roles.id) that may open the wizard. Default includes
-    | 1 = Super Admin, 12 = Person Responsible, 14 = Calling / Reception,
-    | 17 = Admin. Exempt roles from crm_access (CRM_ACCESS_EXEMPT_ROLE_IDS) are
-    | merged in at runtime. Override via CRM_FRONT_DESK_CHECKIN_ROLE_IDS e.g. "1,14,17".
+    | 1 = Super Admin, 12 = legacy Person Responsible, 14 = Calling Team,
+    | 17 = Admin, 20 = Reception. Exempt roles from crm_access
+    | (CRM_ACCESS_EXEMPT_ROLE_IDS) are merged in at runtime.
+    | Override via CRM_FRONT_DESK_CHECKIN_ROLE_IDS e.g. "1,14,17,20".
     |
     */
     'front_desk_checkin_role_ids' => (($__fdCheckinRoles = array_values(array_filter(array_map(
         'intval',
-        explode(',', (string) env('CRM_FRONT_DESK_CHECKIN_ROLE_IDS', '1,12,14,17'))
+        explode(',', (string) env('CRM_FRONT_DESK_CHECKIN_ROLE_IDS', '1,12,14,17,20'))
     ), static fn (int $id) => $id > 0))) !== []
         ? $__fdCheckinRoles
-        : [1, 12, 14, 17]),
+        : [1, 12, 14, 17, 20]),
 
     /*
     |--------------------------------------------------------------------------

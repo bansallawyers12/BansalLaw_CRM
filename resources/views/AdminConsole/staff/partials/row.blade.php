@@ -1,8 +1,8 @@
 @php
-    $office = $list->office;
     $roleName = optional($list->usertype)->name ?: config('constants.empty');
     $tab = $tab ?? 'active';
     $canEdit = Auth::id() != $list->id;
+    $staffLabel = trim($list->first_name . ' ' . $list->last_name);
 @endphp
 <tr id="id_{{ $list->id }}" data-staff-id="{{ $list->id }}">
     <td>
@@ -10,14 +10,6 @@
             <strong>{{ $list->first_name }} {{ $list->last_name }}</strong>
         </button>
         <div class="text-muted small">{{ $list->email }}</div>
-    </td>
-    <td>{{ $list->position ?: '—' }}</td>
-    <td>
-        @if($office && $office->id)
-            <a href="{{ route('adminconsole.system.offices.view', $office->id) }}" target="_blank" rel="noopener">{{ $office->office_name }}</a>
-        @else
-            <span class="text-muted">No Office Assigned</span>
-        @endif
     </td>
     <td>{{ $roleName }}</td>
     <td>
@@ -48,13 +40,15 @@
         @endif
     </td>
     <td class="text-nowrap">
-        <button type="button" class="btn btn-sm btn-outline-primary staff-view-btn" data-staff-id="{{ $list->id }}">
-            <i class="fa-regular fa-eye"></i> View
-        </button>
-        @if($canEdit)
-            <button type="button" class="btn btn-sm btn-primary staff-edit-btn" data-staff-id="{{ $list->id }}">
-                <i class="fa-solid fa-pen-to-square"></i> Edit
+        <div class="staff-row-actions">
+            <button type="button" class="staff-row-icon staff-view-btn" data-staff-id="{{ $list->id }}" title="View" aria-label="View {{ $staffLabel }}">
+                <i class="fa-regular fa-eye" aria-hidden="true"></i>
             </button>
-        @endif
+            @if($canEdit)
+                <button type="button" class="staff-row-icon staff-edit-btn" data-staff-id="{{ $list->id }}" title="Edit" aria-label="Edit {{ $staffLabel }}">
+                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                </button>
+            @endif
+        </div>
     </td>
 </tr>

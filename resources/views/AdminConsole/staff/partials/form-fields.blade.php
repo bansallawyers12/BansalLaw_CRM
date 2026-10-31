@@ -5,7 +5,6 @@
     $fetchedData = $fetchedData ?? null;
     $accordionId = $fieldPrefix . '_staff_accordion';
     $branchx = \App\Models\Branch::query()->orderBy('office_name')->get();
-    $teams = \App\Models\Team::query()->orderBy('name')->get();
     $actor = auth()->guard('admin')->user();
     $canQuick = $actor instanceof \App\Models\Staff
         && app(\App\Services\CrmAccess\CrmAccessService::class)->canManageStaffQuickAccess($actor);
@@ -54,6 +53,17 @@
     $mailboxPasswordConfigured = $isEdit && $fetchedData
         ? app(\App\Services\StaffMailboxService::class)->mailboxPasswordConfigured($fetchedData)
         : false;
+    $predefinedRoleIds = array_map('intval', array_keys(config('crm_roles.defaults', [])));
+    $currentRoleId = $isEdit ? (int) ($fetchedData->role ?? 0) : 0;
+    $roleOptions = collect($usertype ?? [])->filter(function ($ut) use ($predefinedRoleIds, $currentRoleId) {
+        $id = (int) $ut->id;
+
+        return in_array($id, $predefinedRoleIds, true) || ($currentRoleId > 0 && $id === $currentRoleId);
+    })->values();
+    $officeId = old('office', $isEdit ? ($fetchedData->office_id ?? '') : '');
+    if ($officeId === '' || $officeId === null) {
+        $officeId = optional($branchx->first())->id ?? '';
+    }
 @endphp
 
 <div class="staff-modal-accordion" id="{{ $accordionId }}">
@@ -111,77 +121,24 @@
                         <span class="field-error text-danger small" data-field="password_confirmation"></span>
                     </div>
                 </div>
-                @if($isEdit)
-                <div class="col-md-6">
-                    <div class="form-group mb-0">
-                        <label for="{{ $fieldPrefix }}_status">Account status</label>
-                        <select name="status" id="{{ $fieldPrefix }}_status" class="form-control">
-                            <option value="1" @selected(old('status', $fetchedData->status ?? 1) == 1)>Active</option>
-                            <option value="0" @selected(old('status', $fetchedData->status ?? 1) == 0)>Inactive</option>
-                        </select>
-                    </div>
-                </div>
-                @endif
-                <div class="col-12">
-                    <p class="text-muted small mb-0">Staff sign in at <a href="{{ url('/login') }}" target="_blank" rel="noopener">the CRM login page</a> using their email and password.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- 2. Office & role --}}
-    <div class="accordion">
-        <div class="accordion-header collapsed" role="button" data-bs-toggle="collapse" data-bs-target="#{{ $fieldPrefix }}_office" aria-expanded="false" aria-controls="{{ $fieldPrefix }}_office">
-            <h4>Office & role</h4>
-        </div>
-        <div class="accordion-body collapse" id="{{ $fieldPrefix }}_office" data-bs-parent="#{{ $accordionId }}">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="form-group mb-0">
-                        <label for="{{ $fieldPrefix }}_position">Position title</label>
-                        <input type="text" id="{{ $fieldPrefix }}_position" name="position" value="{{ old('position', $isEdit ? $fetchedData->position : '') }}" class="form-control" placeholder="Position title">
-                    </div>
-                </div>
                 <div class="col-md-6">
                     <div class="form-group mb-0">
                         <label for="{{ $fieldPrefix }}_role">User role</label>
                         <select name="role" id="{{ $fieldPrefix }}_role" class="form-control" required>
-                            <option value="">Choose one...</option>
-                            @foreach ($usertype as $ut)
+                            <option value="">Choose a role...</option>
+                            @foreach ($roleOptions as $ut)
                                 <option value="{{ $ut->id }}" @selected(old('role', $isEdit ? $fetchedData->role : '') == $ut->id)>{{ $ut->name }}</option>
                             @endforeach
                         </select>
                         <span class="field-error text-danger small" data-field="role"></span>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-0">
-                        <label for="{{ $fieldPrefix }}_office">Office</label>
-                        <select class="form-control" name="office" id="{{ $fieldPrefix }}_office" required>
-                            <option value="">Select office</option>
-                            @foreach($branchx as $branch)
-                                <option value="{{ $branch->id }}" @selected(old('office', $isEdit ? $fetchedData->office_id : '') == $branch->id)>{{ $branch->office_name }}</option>
-                            @endforeach
-                        </select>
-                        <span class="field-error text-danger small" data-field="office"></span>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-0">
-                        <label for="{{ $fieldPrefix }}_team">Department (team)</label>
-                        <select name="team" id="{{ $fieldPrefix }}_team" class="form-control">
-                            <option value="">Choose one...</option>
-                            @foreach ($teams as $tm)
-                                <option value="{{ $tm->id }}" @selected(old('team', $isEdit ? $fetchedData->team : '') == $tm->id)>{{ $tm->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+                <input type="hidden" name="office" value="{{ $officeId }}">
             </div>
         </div>
     </div>
 
-    {{-- 3. Permissions & access --}}
+    {{-- 2. Permissions & access --}}
     <div class="accordion">
         <div class="accordion-header collapsed" role="button" data-bs-toggle="collapse" data-bs-target="#{{ $fieldPrefix }}_access" aria-expanded="false" aria-controls="{{ $fieldPrefix }}_access">
             <h4>Permissions & access</h4>

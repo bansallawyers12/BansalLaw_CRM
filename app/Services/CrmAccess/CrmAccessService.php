@@ -7,7 +7,6 @@ use App\Models\ClientAccessGrant;
 use App\Models\ClientMatter;
 use App\Models\Notification;
 use App\Models\Staff;
-use App\Models\Team;
 use App\Support\MatterScopedAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -158,7 +157,7 @@ class CrmAccessService
             ->exists();
     }
 
-    public function requestQuickGrant(Staff $user, int $adminId, string $recordType, int $officeId, ?int $teamId, string $reasonCode): ClientAccessGrant
+    public function requestQuickGrant(Staff $user, int $adminId, string $recordType, int $officeId, string $reasonCode): ClientAccessGrant
     {
         if (! $user->quick_access_enabled) {
             throw new CrmAccessDeniedException('Quick access is not enabled for your account.');
@@ -168,7 +167,7 @@ class CrmAccessService
             throw new CrmAccessDeniedException('Invalid reason.');
         }
 
-        return DB::transaction(function () use ($user, $adminId, $recordType, $officeId, $teamId, $reasonCode) {
+        return DB::transaction(function () use ($user, $adminId, $recordType, $officeId, $reasonCode) {
             // Lock staff record to serialize concurrent quick access requests for the same user and prevent check-then-create race condition
             Staff::query()->where('id', (int) $user->id)->lockForUpdate()->first();
 
@@ -185,12 +184,6 @@ class CrmAccessService
                 throw new CrmAccessDeniedException('Invalid office.');
             }
 
-            $teamLabel = null;
-            if ($teamId !== null) {
-                $team = Team::query()->find($teamId);
-                $teamLabel = $team ? (string) $team->name : 'Team ' . $teamId;
-            }
-
             return ClientAccessGrant::query()->create([
                 'staff_id' => (int) $user->id,
                 'admin_id' => $adminId,
@@ -201,8 +194,6 @@ class CrmAccessService
                 'quick_reason_code' => $reasonCode,
                 'office_id' => $officeId,
                 'office_label_snapshot' => (string) $office->office_name,
-                'team_id' => $teamId,
-                'team_label_snapshot' => $teamLabel,
                 'requested_at' => $starts,
                 'starts_at' => $starts,
                 'ends_at' => $ends,
@@ -248,8 +239,6 @@ class CrmAccessService
             'requester_note' => $note !== '' ? $note : null,
             'office_id' => $officeId,
             'office_label_snapshot' => (string) $office->office_name,
-            'team_id' => null,
-            'team_label_snapshot' => null,
             'requested_at' => Carbon::now('UTC'),
         ]);
 

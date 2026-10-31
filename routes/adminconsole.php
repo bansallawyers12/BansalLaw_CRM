@@ -12,7 +12,6 @@ use App\Http\Controllers\AdminConsole\DocumentChecklistController;
 use App\Http\Controllers\AdminConsole\ClientController;
 use App\Http\Controllers\AdminConsole\StaffController;
 use App\Http\Controllers\AdminConsole\UserroleController;
-use App\Http\Controllers\AdminConsole\TeamController;
 use App\Http\Controllers\AdminConsole\BranchesController;
 use App\Http\Controllers\AdminConsole\Sms\SmsController;
 use App\Http\Controllers\AdminConsole\Sms\SmsSendController;
@@ -184,12 +183,6 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/roles/view/{id}', [UserroleController::class, 'view'])->name('roles.view');
         Route::get('/roles/edit/{id}', [UserroleController::class, 'edit'])->name('roles.edit');
         Route::put('/roles/{id}', [UserroleController::class, 'update'])->name('roles.update');
-        
-        // Teams routes
-        Route::get('/teams', [TeamController::class, 'index'])->name('teams.index');
-        Route::get('/teams/edit/{id}', [TeamController::class, 'edit'])->name('teams.edit');
-        Route::post('/teams/store', [TeamController::class, 'store'])->name('teams.store');
-        Route::put('/teams/{id}', [TeamController::class, 'update'])->name('teams.update');
         
         // Offices routes
         Route::get('/offices', [BranchesController::class, 'index'])->name('offices.index');

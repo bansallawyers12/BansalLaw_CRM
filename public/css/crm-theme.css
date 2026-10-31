@@ -1012,6 +1012,32 @@ body.sidebar-mini .adminconsole-staff-spa .staff-list-table .btn-link:hover {
   text-decoration: underline !important;
 }
 
+body.sidebar-mini .adminconsole-staff-spa .staff-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--navy);
+  cursor: pointer;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-row-icon:hover,
+body.sidebar-mini .adminconsole-staff-spa .staff-row-icon:focus {
+  background: var(--page-bg);
+  color: var(--sidebar-active);
+}
+
 body.sidebar-mini .adminconsole-staff-spa .staff-form-section,
 body.sidebar-mini .adminconsole-staff-spa .staff-view-section {
   background: var(--page-bg);
@@ -1127,6 +1153,16 @@ body.sidebar-mini .staff-form-modal .staff-modal-accordion > .accordion {
 
 body.sidebar-mini .staff-form-modal .staff-modal-accordion .accordion-body {
   padding: 16px;
+}
+
+body.sidebar-mini .staff-form-modal select.form-control {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.25rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23475569' d='M1.4.6 6 5.2 10.6.6 12 2 6 8 0 2z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px 8px;
 }
 
 body.sidebar-mini .staff-form-modal .staff-checkbox-row {

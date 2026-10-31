@@ -6,7 +6,7 @@
     }
 
     $permissionGroups = [
-        'Office & teams' => [1, 2, 3, 4, 5, 6],
+        'Offices & staff' => [1, 2, 3, 4, 5, 6],
         'Workflows' => [81],
         'Partners' => [7, 8, 9, 10, 11],
         'Products' => [12, 13, 14],

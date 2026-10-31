@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Staff;
 use App\Models\StaffLoginLog;
-use App\Models\Team;
 use App\Models\Branch;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -19,7 +18,6 @@ class ActiveStaffService
      * @param  int  $onlineThresholdMinutes
      * @param  string|null  $search
      * @param  int|null  $roleId
-     * @param  int|null  $teamId
      * @param  string|null  $sortBy
      * @param  string  $sortDir
      * @param  int  $perPage
@@ -30,15 +28,14 @@ class ActiveStaffService
         int $onlineThresholdMinutes = 5,
         ?string $search = null,
         ?int $roleId = null,
-        ?int $teamId = null,
         ?string $sortBy = 'name',
         string $sortDir = 'asc',
         int $perPage = 15,
         int $page = 1
     ): array {
-        $cacheKey = "active_staff_{$onlineThresholdMinutes}_" . md5(json_encode([$search, $roleId, $teamId, $sortBy, $sortDir]));
+        $cacheKey = "active_staff_{$onlineThresholdMinutes}_" . md5(json_encode([$search, $roleId, $sortBy, $sortDir]));
 
-        $result = Cache::remember($cacheKey, 30, function () use ($onlineThresholdMinutes, $search, $roleId, $teamId, $sortBy, $sortDir) {
+        $result = Cache::remember($cacheKey, 30, function () use ($onlineThresholdMinutes, $search, $roleId, $sortBy, $sortDir) {
             $threshold = Carbon::now()->subMinutes($onlineThresholdMinutes)->timestamp;
 
             $sessions = DB::table('sessions')
@@ -99,7 +96,7 @@ class ActiveStaffService
             }
 
             $query = Staff::query()
-                ->select(['id', 'first_name', 'last_name', 'email', 'role', 'team', 'office_id', 'updated_at'])
+                ->select(['id', 'first_name', 'last_name', 'email', 'role', 'office_id', 'updated_at'])
                 ->whereIn('id', $staffIds)
                 ->with(['usertype']);
 
@@ -118,13 +115,8 @@ class ActiveStaffService
                 $query->where('role', $roleId);
             }
 
-            // Apply team filter
-            if ($teamId) {
-                $query->where('team', $teamId);
-            }
-
             // Apply sorting
-            $allowedSorts = ['name', 'role', 'team', 'last_activity'];
+            $allowedSorts = ['name', 'role', 'last_activity'];
             if (in_array($sortBy, $allowedSorts)) {
                 if ($sortBy === 'name') {
                     $query->orderBy('first_name', $sortDir)->orderBy('last_name', $sortDir);
@@ -137,17 +129,12 @@ class ActiveStaffService
 
             $staffList = $query->get();
 
-            // Get team and office data
-            $teamIds = $staffList->pluck('team')->filter()->unique();
             $officeIds = $staffList->pluck('office_id')->filter()->unique();
-
-            $teams = Team::whereIn('id', $teamIds)->get()->keyBy('id');
             $offices = Branch::whereIn('id', $officeIds)->get()->keyBy('id');
 
-            $mapped = $staffList->map(function (Staff $staff) use ($sessions, $teams, $offices) {
+            $mapped = $staffList->map(function (Staff $staff) use ($sessions, $offices) {
                 $session = $sessions->get($staff->id);
                 $lastLogin = $this->resolveLastLogin($staff->id, $staff->updated_at);
-                $team = $staff->team ? $teams->get($staff->team) : null;
                 $office = $staff->office_id ? $offices->get($staff->office_id) : null;
                 $roleName = $staff->usertype ? $staff->usertype->name : null;
 
@@ -160,9 +147,6 @@ class ActiveStaffService
                     'profile_img' => $staff->profile_img,
                     'role_id' => $staff->role,
                     'role_name' => $roleName,
-                    'team_id' => $staff->team,
-                    'team_name' => $team ? $team->name : null,
-                    'team_color' => $team ? $team->color : null,
                     'office_id' => $staff->office_id,
                     'office_name' => $office ? $office->office_name : null,
                     'status' => 'online',

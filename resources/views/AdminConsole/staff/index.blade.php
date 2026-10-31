@@ -98,7 +98,7 @@
             <div class="modal-header">
                 <div>
                     <h5 class="modal-title mb-1" id="staffCreateModalLabel">Add staff member</h5>
-                    <p class="text-muted small mb-0">Complete each section below. Required fields are in Personal details and Office & role.</p>
+                    <p class="text-muted small mb-0">Complete each section below. Required fields are in Personal details.</p>
                 </div>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>

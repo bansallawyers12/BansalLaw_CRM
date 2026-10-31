@@ -30,7 +30,6 @@ class ActiveStaffController extends Controller
         $threshold = (int) $request->query('threshold', 5);
         $search = $request->query('search');
         $roleId = $request->query('role_id') ? (int) $request->query('role_id') : null;
-        $teamId = $request->query('team_id') ? (int) $request->query('team_id') : null;
         $sortBy = $request->query('sort_by', 'name');
         $sortDir = $request->query('sort_dir', 'asc');
         $perPage = (int) $request->query('per_page', 15);
@@ -40,7 +39,6 @@ class ActiveStaffController extends Controller
             max(1, $threshold),
             $search,
             $roleId,
-            $teamId,
             $sortBy,
             $sortDir,
             max(1, min(100, $perPage)), // Limit between 1 and 100

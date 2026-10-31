@@ -73,14 +73,6 @@ class AdminConsoleRoutesTest extends TestCase
     }
 
     #[Test]
-    public function admin_can_access_adminconsole_system_teams_index()
-    {
-        $this->actingAs($this->admin, 'admin')
-             ->get('/adminconsole/system/teams')
-             ->assertStatus(200);
-    }
-
-    #[Test]
     public function admin_can_access_adminconsole_system_offices_index()
     {
         $this->actingAs($this->admin, 'admin')

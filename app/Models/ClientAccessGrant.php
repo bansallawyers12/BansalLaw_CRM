@@ -20,8 +20,6 @@ class ClientAccessGrant extends Model
         'requester_note',
         'office_id',
         'office_label_snapshot',
-        'team_id',
-        'team_label_snapshot',
         'requested_at',
         'approved_at',
         'approved_by_staff_id',

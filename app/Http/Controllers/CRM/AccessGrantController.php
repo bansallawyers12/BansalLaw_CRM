@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Branch;
 use App\Models\ClientAccessGrant;
-use App\Models\Team;
 use App\Services\CrmAccess\CrmAccessDeniedException;
 use App\Services\CrmAccess\CrmAccessService;
 use App\Support\MatterScopedAccess;
@@ -169,7 +168,6 @@ class AccessGrantController extends Controller
                 (int) $data['admin_id'],
                 $data['record_type'],
                 (int) $data['office_id'],
-                null,
                 $data['reason_code']
             );
         } catch (CrmAccessDeniedException $e) {
@@ -361,7 +359,6 @@ class AccessGrantController extends Controller
             'approveUrlTpl' => str_replace((string) $grantPlaceholder, '__ID__', route('crm.access.approve', ['grant' => $grantPlaceholder])),
             'rejectUrlTpl' => str_replace((string) $grantPlaceholder, '__ID__', route('crm.access.reject', ['grant' => $grantPlaceholder])),
             'branches' => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
-            'teams' => Team::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -453,7 +450,7 @@ class AccessGrantController extends Controller
             $out = fopen('php://output', 'w');
             fputcsv($out, [
                 'id', 'staff_id', 'admin_id', 'record_type', 'grant_type', 'access_type', 'status',
-                'approved_by_staff_id', 'quick_reason_code', 'office_id', 'team_id', 'requested_at', 'approved_at', 'starts_at', 'ends_at',
+                'approved_by_staff_id', 'quick_reason_code', 'office_id', 'requested_at', 'approved_at', 'starts_at', 'ends_at',
                 'revoked_at', 'revoke_reason', 'requester_note',
             ]);
 
@@ -471,7 +468,6 @@ class AccessGrantController extends Controller
                         $g->approved_by_staff_id,
                         $g->quick_reason_code,
                         $g->office_id,
-                        $g->team_id,
                         optional($g->requested_at)?->toIso8601String(),
                         optional($g->approved_at)?->toIso8601String(),
                         optional($g->starts_at)?->toIso8601String(),
@@ -515,7 +511,6 @@ class AccessGrantController extends Controller
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'office_id' => ['nullable', 'integer', 'min:1'],
-            'team_id' => ['nullable', 'integer', 'min:1'],
             'grant_type' => ['nullable', 'string', 'max:64'],
             'status' => ['nullable', 'string', 'max:32'],
         ]);
@@ -526,12 +521,11 @@ class AccessGrantController extends Controller
         $hasDateRange = $request->filled('date_from') && $request->filled('date_to');
         $hasNarrowingId = $request->filled('staff_id')
             || $request->filled('office_id')
-            || $request->filled('team_id')
             || $request->filled('admin_id');
 
         if (! $hasDateRange && ! $hasNarrowingId) {
             throw ValidationException::withMessages([
-                'filters' => ['Set a date range (from and to) or choose staff, office, team, or record ID.'],
+                'filters' => ['Set a date range (from and to) or choose staff, office, or record ID.'],
             ]);
         }
 
@@ -563,9 +557,6 @@ class AccessGrantController extends Controller
         }
         if ($request->filled('office_id')) {
             $q->where('office_id', (int) $request->office_id);
-        }
-        if ($request->filled('team_id')) {
-            $q->where('team_id', (int) $request->team_id);
         }
         if ($request->filled('grant_type')) {
             $q->where('grant_type', $request->grant_type);

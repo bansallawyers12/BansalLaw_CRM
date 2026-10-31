@@ -43,7 +43,6 @@ class Staff extends Authenticatable
         'status',
         'role',
         'position',
-        'team',
         'permission',
         'office_id',
         'show_dashboard_per',

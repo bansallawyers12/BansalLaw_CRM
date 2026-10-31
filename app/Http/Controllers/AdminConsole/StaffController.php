@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\AdminConsole;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\Staff;
 use App\Models\StaffCalendarViewGrant;
 use App\Models\UserRole;
@@ -119,8 +120,8 @@ class StaffController extends Controller
                 'email' => 'required|email|max:255|unique:staff',
                 'password' => 'required|string|min:8|max:255|confirmed',
                 'phone' => 'required',
-                'role' => 'required',
-                'office' => 'required',
+                'role' => 'required|integer',
+                'office' => 'nullable|integer',
             ]);
 
             $storeActor = Auth::user();
@@ -129,6 +130,8 @@ class StaffController extends Controller
             if (! $isSuperAdminActor && (int) $request->input('role') === 1) {
                 return $this->respondStaffMessage($request, 'Only Superadmin role user can assign the Super Admin role.', 422);
             }
+
+            $this->assertPredefinedRole($request);
 
             if (! $isSuperAdminActor && $request->has('grant_super_admin_access')) {
                 return $this->respondStaffMessage($request, 'Only Superadmin role user can provide this access.', 422);
@@ -301,6 +304,8 @@ class StaffController extends Controller
                 'email' => 'required|email|max:255|unique:staff,email,' . $staff->id,
                 'phone' => 'required|max:255',
                 'password' => 'nullable|string|min:8|max:255|confirmed',
+                'role' => 'required|integer',
+                'office' => 'nullable|integer',
             ]);
 
             $crmAccess = app(CrmAccessService::class);
@@ -354,6 +359,8 @@ class StaffController extends Controller
             if (! $isSuperAdminActor && (int) $request->input('role') === 1) {
                 return $this->respondStaffMessage($request, 'Only Superadmin role user can assign the Super Admin role.', 422);
             }
+
+            $this->assertPredefinedRole($request, $staff);
 
             if (! $isSuperAdminActor && $request->has('grant_super_admin_access')) {
                 return $this->respondStaffMessage($request, 'Only Superadmin role user can provide this access.', 422);
@@ -503,6 +510,40 @@ class StaffController extends Controller
         return $staff;
     }
 
+    /**
+     * Staff roles are the canonical set in config/crm_roles.php.
+     * An existing assignment outside that set stays selectable so a save does not wipe it.
+     */
+    protected function assertPredefinedRole(Request $request, ?Staff $existing = null): void
+    {
+        $roleId = (int) $request->input('role');
+        $allowed = array_map('intval', array_keys(config('crm_roles.defaults', [])));
+        if ($existing && (int) ($existing->role ?? 0) > 0) {
+            $allowed[] = (int) $existing->role;
+        }
+
+        if ($roleId < 1 || ! in_array($roleId, array_values(array_unique($allowed)), true)) {
+            throw ValidationException::withMessages([
+                'role' => ['Choose one of the predefined roles.'],
+            ]);
+        }
+    }
+
+    protected function resolveStaffOfficeId(array $requestData, Staff $obj): ?int
+    {
+        $posted = isset($requestData['office']) ? (int) $requestData['office'] : 0;
+        if ($posted > 0) {
+            return $posted;
+        }
+        if ($obj->exists && (int) ($obj->office_id ?? 0) > 0) {
+            return (int) $obj->office_id;
+        }
+
+        $onlyId = Branch::query()->orderBy('id')->value('id');
+
+        return $onlyId ? (int) $onlyId : null;
+    }
+
     protected function fillStaffFromRequest(Staff $obj, array $requestData, Request $request, bool $isCreate): void
     {
         $obj->first_name = @$requestData['first_name'];
@@ -512,7 +553,6 @@ class StaffController extends Controller
             $obj->email_signature = $requestData['email_signature'] ?? null;
         }
         $obj->country_code = @$requestData['country_code'];
-        $obj->position = @$requestData['position'];
         $obj->phone = @$requestData['phone'];
 
         $actor = Auth::user();
@@ -535,8 +575,7 @@ class StaffController extends Controller
         } else {
             $obj->role = @$requestData['role'];
         }
-        $obj->office_id = @$requestData['office'];
-        $obj->team = @$requestData['team'];
+        $obj->office_id = $this->resolveStaffOfficeId($requestData, $obj);
         $obj->show_dashboard_per = isset($requestData['show_dashboard_per']) ? 1 : 0;
         $obj->permission = (isset($requestData['permission']) && is_array($requestData['permission']))
             ? implode(',', $requestData['permission'])
@@ -570,7 +609,6 @@ class StaffController extends Controller
             if (!empty($requestData['password'] ?? '')) {
                 $obj->password = Hash::make($requestData['password']);
             }
-            $obj->status = isset($requestData['status']) ? (int) $requestData['status'] : 1;
         }
 
         $actor = Auth::user();

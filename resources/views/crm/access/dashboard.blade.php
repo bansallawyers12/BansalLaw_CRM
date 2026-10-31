@@ -81,15 +81,6 @@
                             </select>
                         </div>
                         <div class="form-group col-md-2 col-sm-6">
-                            <label class="small" for="crm-access-filter-team">Team</label>
-                            <select name="team_id" id="crm-access-filter-team" class="form-control form-control-sm">
-                                <option value="">Any</option>
-                                @foreach($teams as $t)
-                                    <option value="{{ $t->id }}">{{ $t->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group col-md-2 col-sm-6">
                             <label class="small" for="crm-access-filter-grant-type">Grant type</label>
                             <select name="grant_type" id="crm-access-filter-grant-type" class="form-control form-control-sm">
                                 <option value="">Any</option>
@@ -206,7 +197,7 @@
 
     var grantsLoaded = false;
     var currentPage = 1;
-    var narrowMsg = 'Set a date range (from and to) or choose staff, office, team, or record ID.';
+    var narrowMsg = 'Set a date range (from and to) or choose staff, office, or record ID.';
 
     /* ── helpers ────────────────────────────────────────────────────────────── */
     function showMsg(el, text, isErr) {
@@ -226,8 +217,7 @@
         var staff = document.getElementById('crm-access-filter-staff').value.trim();
         var admin = document.getElementById('crm-access-filter-admin').value.trim();
         var office = document.getElementById('crm-access-filter-office').value.trim();
-        var team = document.getElementById('crm-access-filter-team').value.trim();
-        return !!(staff || admin || office || team);
+        return !!(staff || admin || office);
     }
 
     function firstErrorMessage(j) {
@@ -369,8 +359,6 @@
             var ot   = '';
             if (g.office_label_snapshot) ot = g.office_label_snapshot;
             else if (g.office_id) ot = 'O' + g.office_id;
-            if (g.team_label_snapshot) ot += (ot ? ' · ' : '') + g.team_label_snapshot;
-            else if (g.team_id) ot += (ot ? ' · ' : '') + 'T' + g.team_id;
             var note = (g.requester_note || g.quick_reason_code || '').toString().replace(/</g, '&lt;');
             var tr = document.createElement('tr');
             tr.innerHTML =
@@ -491,8 +479,6 @@
                     var ot   = '';
                     if (g.office_label_snapshot) ot = g.office_label_snapshot;
                     else if (g.office_id) ot = 'Office #' + g.office_id;
-                    if (g.team_label_snapshot) ot += (ot ? ' · ' : '') + g.team_label_snapshot;
-                    else if (g.team_id) ot += (ot ? ' · ' : '') + 'Team #' + g.team_id;
                     var note = (g.requester_note || '').toString().replace(/</g, '&lt;').slice(0, 200);
                     var tr = document.createElement('tr');
                     tr.setAttribute('data-pending-id', g.id);

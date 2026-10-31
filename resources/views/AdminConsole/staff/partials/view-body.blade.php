@@ -1,9 +1,4 @@
 @php
-    $teamName = 'N/A';
-    if (!empty($fetchedData->team)) {
-        $teamData = \App\Models\Team::select('name')->where('id', $fetchedData->team)->first();
-        $teamName = $teamData ? $teamData->name : 'N/A';
-    }
     $permissionArr = [];
     if (!empty($fetchedData->permission)) {
         $permissionArr = strpos($fetchedData->permission, ',') !== false
@@ -31,6 +26,8 @@
                 </dd>
                 <dt>Phone</dt>
                 <dd>{{ trim(($fetchedData->country_code ?? '') . ' ' . ($fetchedData->phone ?? '')) ?: 'N/A' }}</dd>
+                <dt>Role</dt>
+                <dd>{{ optional($fetchedData->usertype)->name ?? 'N/A' }}</dd>
                 <dt>Zoho mailbox</dt>
                 <dd>
                     @if(app(\App\Services\StaffMailboxService::class)->mailboxPasswordConfigured($fetchedData))
@@ -94,16 +91,8 @@
     </div>
     <div class="col-md-6">
         <div class="staff-view-section">
-            <h5 class="staff-view-section__title">Office details</h5>
+            <h5 class="staff-view-section__title">Access</h5>
             <dl class="staff-view-dl">
-                <dt>Position</dt>
-                <dd>{{ $fetchedData->position ?: 'N/A' }}</dd>
-                <dt>Role</dt>
-                <dd>{{ optional($fetchedData->usertype)->name ?? 'N/A' }}</dd>
-                <dt>Office</dt>
-                <dd>{{ optional($fetchedData->office)->office_name ?? 'N/A' }}</dd>
-                <dt>Team</dt>
-                <dd>{{ $teamName }}</dd>
                 <dt>Dashboard</dt>
                 <dd>{{ (int) ($fetchedData->show_dashboard_per ?? 0) === 1 ? 'Can view dashboard' : 'Cannot view dashboard' }}</dd>
             </dl>
