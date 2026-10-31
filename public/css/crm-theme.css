@@ -1418,6 +1418,54 @@ body.sidebar-mini .adminconsole-roles-spa .roles-list-table .btn-link:hover {
   text-decoration: underline;
 }
 
+body.sidebar-mini .adminconsole-roles-spa .roles-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--navy);
+  cursor: pointer;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-row-icon:hover,
+body.sidebar-mini .adminconsole-roles-spa .roles-row-icon:focus {
+  background: var(--page-bg);
+  color: var(--sidebar-active);
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-status-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-status-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+body.sidebar-mini .adminconsole-roles-spa .custom-switch-indicator {
+  background: rgba(94, 122, 144, 0.35);
+  border: 1px solid var(--border);
+}
+
+body.sidebar-mini .adminconsole-roles-spa .custom-switch-input:checked ~ .custom-switch-indicator {
+  background: var(--success);
+  border-color: var(--success);
+}
+
 body.sidebar-mini .adminconsole-roles-spa .roles-view-section {
   background: var(--card-bg);
   border: 1px solid var(--border);

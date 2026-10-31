@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 use App\Traits\SortableTrait;
 
 class UserRole extends Authenticatable
@@ -13,8 +14,12 @@ class UserRole extends Authenticatable
 	use SortableTrait;
 
 	protected $fillable = [
-        'id', 'name', 'description', 'module_access', 'created_at', 'updated_at'
+        'id', 'name', 'description', 'module_access', 'is_active', 'created_at', 'updated_at'
     ];
+
+	protected $casts = [
+		'is_active' => 'boolean',
+	];
 	
 	public $sortable = ['id', 'name'];
 
@@ -24,9 +29,18 @@ class UserRole extends Authenticatable
 	 */
 	public static function orderedForSelect(?int $alwaysIncludeRoleId = null): Collection
 	{
+		$hasActiveFlag = Schema::hasColumn('user_roles', 'is_active');
+
 		return static::query()
-			->where(function (Builder $q) use ($alwaysIncludeRoleId) {
-				$q->whereRaw("TRIM(COALESCE(name, '')) <> ''");
+			->where(function (Builder $q) use ($alwaysIncludeRoleId, $hasActiveFlag) {
+				$q->where(function (Builder $visible) use ($hasActiveFlag) {
+					$visible->whereRaw("TRIM(COALESCE(name, '')) <> ''");
+					if ($hasActiveFlag) {
+						$visible->where(function (Builder $active) {
+							$active->where('is_active', true)->orWhereNull('is_active');
+						});
+					}
+				});
 				if ($alwaysIncludeRoleId !== null && $alwaysIncludeRoleId > 0) {
 					$q->orWhere('id', $alwaysIncludeRoleId);
 				}

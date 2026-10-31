@@ -1,10 +1,11 @@
-@php $colspan = 3; @endphp
+@php $colspan = 4; @endphp
 <div class="table-responsive common_table roles-list-table-wrap">
     <table class="table roles-list-table mb-0">
         <thead>
             <tr>
                 <th>Name</th>
                 <th>Description</th>
+                <th>Status</th>
                 <th class="text-nowrap">Actions</th>
             </tr>
         </thead>

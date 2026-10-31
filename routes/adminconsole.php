@@ -183,6 +183,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/roles/view/{id}', [UserroleController::class, 'view'])->name('roles.view');
         Route::get('/roles/edit/{id}', [UserroleController::class, 'edit'])->name('roles.edit');
         Route::put('/roles/{id}', [UserroleController::class, 'update'])->name('roles.update');
+        Route::patch('/roles/{id}/status', [UserroleController::class, 'toggleStatus'])->name('roles.status');
         
         // Offices routes
         Route::get('/offices', [BranchesController::class, 'index'])->name('offices.index');

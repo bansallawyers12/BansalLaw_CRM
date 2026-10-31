@@ -493,8 +493,20 @@ class StaffController extends Controller
     {
         $roleId = (int) $request->input('role');
         $allowed = array_map('intval', array_keys(config('crm_roles.defaults', [])));
-        if ($existing && (int) ($existing->role ?? 0) > 0) {
-            $allowed[] = (int) $existing->role;
+        $currentRoleId = $existing ? (int) ($existing->role ?? 0) : 0;
+        if ($currentRoleId > 0) {
+            $allowed[] = $currentRoleId;
+        }
+
+        if (Schema::hasColumn('user_roles', 'is_active')) {
+            $inactiveIds = UserRole::query()
+                ->where('is_active', false)
+                ->pluck('id')
+                ->map(static fn ($id) => (int) $id)
+                ->all();
+            $allowed = array_values(array_filter($allowed, static function (int $id) use ($inactiveIds, $currentRoleId) {
+                return ! in_array($id, $inactiveIds, true) || $id === $currentRoleId;
+            }));
         }
 
         if ($roleId < 1 || ! in_array($roleId, array_values(array_unique($allowed)), true)) {

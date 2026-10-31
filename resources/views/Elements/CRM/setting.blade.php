@@ -1,8 +1,11 @@
 <?php
 		if(Auth::check()) {
 			$roles = \App\Models\UserRole::find(Auth::user()->role);
-			$newarray = json_decode($roles->module_access);
-			$module_access = (array) $newarray;
+			$moduleAccessRaw = ($roles && is_string($roles->module_access) && $roles->module_access !== '')
+				? $roles->module_access
+				: '';
+			$decodedAccess = json_decode($moduleAccessRaw, true);
+			$module_access = is_array($decodedAccess) ? $decodedAccess : [];
 
 			// CRM access approvers get full admin console menu access (same as Super Admin)
 			$_settingUser = Auth::user();

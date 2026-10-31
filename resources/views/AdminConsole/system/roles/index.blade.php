@@ -10,6 +10,7 @@
     data-edit-url-template="{{ route('adminconsole.system.roles.edit', ['id' => '__ID__']) }}"
     data-update-url-template="{{ route('adminconsole.system.roles.update', ['id' => '__ID__']) }}"
     data-view-url-template="{{ route('adminconsole.system.roles.view', ['id' => '__ID__']) }}"
+    data-status-url-template="{{ route('adminconsole.system.roles.status', ['id' => '__ID__']) }}"
     data-initial-search="{{ $searchBy ?? '' }}">
     <section class="section">
         <div class="section-body">
@@ -74,7 +75,7 @@
 
 {{-- Create role modal --}}
 <div class="modal fade roles-form-modal" id="rolesCreateModal" tabindex="-1" aria-labelledby="rolesCreateModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable roles-form-modal-dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable roles-form-modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <div>
@@ -103,7 +104,7 @@
 
 {{-- Edit role modal --}}
 <div class="modal fade roles-form-modal" id="rolesEditModal" tabindex="-1" aria-labelledby="rolesEditModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable roles-form-modal-dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable roles-form-modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <div>

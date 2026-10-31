@@ -8,6 +8,7 @@ use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class UserroleController extends Controller
@@ -80,6 +81,9 @@ class UserroleController extends Controller
             $obj = new UserRole();
             $obj->name = @$requestData['name'];
             $obj->description = @$requestData['description'];
+            if (Schema::hasColumn('user_roles', 'is_active')) {
+                $obj->is_active = true;
+            }
 
             $saved = $obj->save();
 
@@ -183,6 +187,42 @@ class UserroleController extends Controller
         }
     }
 
+    public function toggleStatus(Request $request, $id)
+    {
+        $check = $this->checkAuthorizationAction('user_role', 'update', Auth::user()->role);
+        if ($check) {
+            return $this->respondUnauthorized($request);
+        }
+
+        if (! Schema::hasColumn('user_roles', 'is_active')) {
+            return response()->json(['success' => false, 'message' => 'Role status is not available.'], 500);
+        }
+
+        try {
+            $role = $this->findRoleOrFail($id);
+            if ($role instanceof \Symfony\Component\HttpFoundation\Response) {
+                return $role;
+            }
+
+            $request->validate([
+                'is_active' => 'required|boolean',
+            ]);
+
+            $role->is_active = $request->boolean('is_active');
+            $role->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => $role->is_active ? 'Role marked active.' : 'Role marked inactive.',
+                'role' => $this->serializeRoleSummary($role->fresh()),
+            ]);
+        } catch (ValidationException $e) {
+            return $this->respondRoleValidationError($request, $e);
+        } catch (\Exception $e) {
+            return $this->respondRoleError($request, $e, 'An error occurred while updating the role status.', is_numeric($id) ? (int) $id : null);
+        }
+    }
+
     protected function buildRolesListPayload(Request $request): array
     {
         $searchBy = trim((string) $request->query('search_by', ''));
@@ -238,6 +278,7 @@ class UserroleController extends Controller
             'id' => $role->id,
             'name' => $role->name,
             'description' => $role->description,
+            'is_active' => (bool) ($role->is_active ?? true),
         ];
     }
 

@@ -5,6 +5,10 @@
             <dt>Name</dt>
             <dd>{{ $fetchedData->name ?: '—' }}</dd>
         </div>
+        <div class="col-md-6">
+            <dt>Status</dt>
+            <dd>{{ ($fetchedData->is_active ?? true) !== false ? 'Active' : 'Inactive' }}</dd>
+        </div>
         <div class="col-12">
             <dt>Description</dt>
             <dd class="mb-0">{{ $fetchedData->description ?: '—' }}</dd>

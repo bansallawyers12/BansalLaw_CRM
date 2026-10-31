@@ -20,7 +20,8 @@
         store: $app.data('store-url'),
         editTemplate: $app.data('edit-url-template'),
         updateTemplate: $app.data('update-url-template'),
-        viewTemplate: $app.data('view-url-template')
+        viewTemplate: $app.data('view-url-template'),
+        statusTemplate: $app.data('status-url-template')
     };
 
     var $listContent = $('#roles-list-content');
@@ -130,28 +131,10 @@
         $form.find('.is-invalid').removeClass('is-invalid');
     }
 
-    function expandRoleSectionForField($form, field) {
-        var prefix = $form.attr('id') === 'roles-create-form' ? 'create_role' : 'edit_role';
-        var sectionId = prefix + '_details';
-        var $section = $('#' + sectionId);
-        if ($section.length && !$section.hasClass('show')) {
-            if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
-                bootstrap.Collapse.getOrCreateInstance($section[0], { toggle: false }).show();
-            } else {
-                $section.addClass('show');
-            }
-            var $header = $('[data-bs-target="#' + sectionId + '"]');
-            if ($header.length) {
-                $header.removeClass('collapsed').attr('aria-expanded', 'true');
-            }
-        }
-    }
-
     function showFieldErrors($form, $alert, errors) {
         clearFormErrors($form, $alert);
         var messages = [];
         var firstSelector = null;
-        var firstField = null;
         $.each(errors || {}, function (field, msgs) {
             var msg = Array.isArray(msgs) ? msgs[0] : msgs;
             messages.push(msg);
@@ -161,20 +144,14 @@
                 $input.addClass('is-invalid');
                 if (!firstSelector) {
                     firstSelector = $input.first();
-                    firstField = field;
                 }
             }
         });
         if (messages.length) {
             $alert.removeClass('d-none').text(messages[0]);
         }
-        if (firstField) {
-            expandRoleSectionForField($form, firstField);
-        }
         if (firstSelector && firstSelector.length) {
-            setTimeout(function () {
-                firstSelector.trigger('focus');
-            }, 200);
+            firstSelector.trigger('focus');
         }
     }
 
@@ -347,6 +324,44 @@
 
     $(document).on('click', '.roles-view-btn', function () {
         openViewModal($(this).data('role-id'));
+    });
+
+    $(document).on('change', '.roles-status-toggle', function () {
+        var $input = $(this);
+        var roleId = $input.data('role-id');
+        var active = $input.is(':checked');
+        var $label = $input.closest('td').find('.roles-status-label');
+        var previous = !active;
+
+        if (!roleId || !urls.statusTemplate) {
+            $input.prop('checked', previous);
+            return;
+        }
+
+        $input.prop('disabled', true);
+        $.ajax({
+            url: buildUrl(urls.statusTemplate, roleId),
+            method: 'PATCH',
+            headers: ajaxHeaders(),
+            data: { is_active: active ? 1 : 0 }
+        }).done(function (response) {
+            if (!response || !response.success) {
+                $input.prop('checked', previous);
+                showFlashMessage((response && response.message) || 'Could not update role status.', 'error');
+                return;
+            }
+            var isActive = !!(response.role && response.role.is_active);
+            $input.prop('checked', isActive);
+            $input.attr('aria-label', isActive ? 'Active' : 'Inactive');
+            $label.text(isActive ? 'Active' : 'Inactive');
+            showFlashMessage(response.message, 'success');
+        }).fail(function (xhr) {
+            $input.prop('checked', previous);
+            var message = (xhr.responseJSON && xhr.responseJSON.message) || 'Could not update role status.';
+            showFlashMessage(message, 'error');
+        }).always(function () {
+            $input.prop('disabled', false);
+        });
     });
 
     $('#roles-edit-from-view').on('click', function () {
