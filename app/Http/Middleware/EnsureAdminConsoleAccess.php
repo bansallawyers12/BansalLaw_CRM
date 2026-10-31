@@ -11,8 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureAdminConsoleAccess
 {
     /**
-     * Admin Console: roles in config('crm.admin_console_role_ids') (default 1, 12, 17)
-     * plus staff with effective super-admin elevation.
+     * Admin Console: Super Admin role, or staff with Access to Admin Console ticked.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */

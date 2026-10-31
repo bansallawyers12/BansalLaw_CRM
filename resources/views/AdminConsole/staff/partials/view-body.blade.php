@@ -95,6 +95,14 @@
             <dl class="staff-view-dl">
                 <dt>Dashboard</dt>
                 <dd>{{ (int) ($fetchedData->show_dashboard_per ?? 0) === 1 ? 'Can view dashboard' : 'Cannot view dashboard' }}</dd>
+                <dt>Admin access</dt>
+                <dd>{{ !empty($fetchedData->grant_super_admin_access) ? 'Yes' : 'No' }}</dd>
+                <dt>Admin Console</dt>
+                <dd>{{ $fetchedData->canAccessAdminConsole() ? 'Yes' : 'No' }}</dd>
+                <dt>Calendars</dt>
+                <dd>{{ ($fetchedData->staffCalendarVisibility() ?? 'own') === 'all' ? 'All calendars' : 'Own personal calendar only' }}</dd>
+                <dt>15-minute requests</dt>
+                <dd>{{ !empty($fetchedData->quick_access_enabled) ? 'Enabled' : 'Off' }}</dd>
             </dl>
         </div>
     </div>
@@ -110,20 +118,6 @@
                     @endif
                 @endforeach
             </div>
-        </div>
-    </div>
-    @endif
-
-    @if((int) ($fetchedData->is_solicitor ?? 0) === 1)
-    <div class="col-12">
-        <div class="staff-view-section">
-            <h5 class="staff-view-section__title">Legal practitioner details</h5>
-            <dl class="staff-view-dl row">
-                <div class="col-md-6"><dt>Practising certificate / legal practitioner number</dt><dd>{{ $fetchedData->legal_practitioner_number ?: 'N/A' }}</dd></div>
-                <div class="col-md-6"><dt>Business name</dt><dd>{{ $fetchedData->company_name ?: 'N/A' }}</dd></div>
-                <div class="col-md-6"><dt>Tax number</dt><dd>{{ $fetchedData->tax_number ?: 'N/A' }}</dd></div>
-                <div class="col-12"><dt>Business address</dt><dd>{{ $fetchedData->business_address ?: 'N/A' }}</dd></div>
-            </dl>
         </div>
     </div>
     @endif

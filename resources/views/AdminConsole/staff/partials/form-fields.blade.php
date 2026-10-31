@@ -24,16 +24,7 @@
     $canGrantAssignEmailsBySubject = \App\Models\Staff::canGrantAssignEmailsBySubjectPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
-    $canGrantTimelineBilling = \App\Models\Staff::canGrantTimelineBillingPermission(
-        $actor instanceof \App\Models\Staff ? $actor : null
-    );
     $canGrantPersonalCalendar = \App\Models\Staff::canGrantPersonalCalendarPermission(
-        $actor instanceof \App\Models\Staff ? $actor : null
-    );
-    $canGrantCloseDiscontinue = \App\Models\Staff::canGrantCloseDiscontinueMatterPermission(
-        $actor instanceof \App\Models\Staff ? $actor : null
-    );
-    $canGrantFinalInvoiceEdit = \App\Models\Staff::canGrantFinalInvoiceEditPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
     $canGrantMatterTeamAccess = \App\Models\Staff::canGrantManageMatterTeamAccessPermission(
@@ -49,7 +40,6 @@
             : [$fetchedData->permission];
     }
     $permValues = array_map('strval', (array) old('permission', $permissionArr));
-    $isSolicitorChecked = old('is_solicitor', $isEdit ? ($fetchedData->is_solicitor ?? 0) : 0);
     $mailboxPasswordConfigured = $isEdit && $fetchedData
         ? app(\App\Services\StaffMailboxService::class)->mailboxPasswordConfigured($fetchedData)
         : false;
@@ -153,6 +143,7 @@
                             @checked(old('quick_access_enabled', $isEdit ? ($fetchedData->quick_access_enabled ?? false) : false))>
                         <span>Quick access enabled ({{ config('crm_access.quick_grant_minutes', 15) }}-minute cross-access requests)</span>
                     </label>
+                    <small class="text-muted d-block mt-1">When this is on, a locked client or lead shows a {{ config('crm_access.quick_grant_minutes', 15) }}-minute Quick access button. The button stays hidden for people who already open every file (Super Admin role, Calling Team, and named partners). Turning this off revokes active quick grants immediately.</small>
                 </div>
                 @endif
 
@@ -165,11 +156,85 @@
                         <input type="checkbox" name="grant_super_admin_access" value="1" class="staff-grant-super-admin"
                             @checked(old('grant_super_admin_access', $fetchedData->grant_super_admin_access ?? false))
                             @disabled(!$isSuperAdminActor)>
-                        <span>Grant Super Admin access level</span>
+                        <span>Admin access</span>
                     </label>
+                    <small class="text-muted d-block mt-1">They can approve access requests and switch to full CRM privileges from the header. This does not open Admin Console and does not show other people’s calendars.</small>
                 </div>
                 @endif
 
+                @if(\Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_access_admin_console'))
+                @php
+                    $targetIsNativeSuperAdmin = $isEdit && (int) ($fetchedData->role ?? 0) === 1;
+                    $consoleChecked = $targetIsNativeSuperAdmin
+                        || (bool) old('can_access_admin_console', $isEdit ? ($fetchedData->can_access_admin_console ?? false) : false);
+                @endphp
+                <div class="form-group">
+                    @if($isSuperAdminActor && ! $targetIsNativeSuperAdmin)
+                        <input type="hidden" name="can_access_admin_console" value="0">
+                    @endif
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="can_access_admin_console" value="1"
+                            @checked($consoleChecked)
+                            @disabled(! $isSuperAdminActor || $targetIsNativeSuperAdmin)>
+                        <span>Access to Admin Console</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Opens the Admin Console menu. Admin access above does not include this. The Super Admin role always has it.</small>
+                </div>
+                @endif
+
+                @if($canGrantMatterTeamAccess)
+                <div class="form-group">
+                    <small class="text-muted d-block">Temporary matter access on a client file is limited to Super Admin, Ajay Bansal, and Khushi Sangroya.</small>
+                </div>
+                @endif
+
+                @if($canGrantFullCrmAllocationAccess && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'has_full_crm_allocation_access'))
+                <div class="form-group">
+                    <input type="hidden" name="has_full_crm_allocation_access" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="has_full_crm_allocation_access" value="1"
+                            @checked(old('has_full_crm_allocation_access', $isEdit ? ($fetchedData->has_full_crm_allocation_access ?? false) : false))>
+                        <span>Full CRM access (all clients, leads, matters &amp; email)</span>
+                    </label>
+                    <small class="text-muted d-block mt-1">Bypasses allocation and matter-team restrictions so this staff member can open any client, lead, matter, documents, and synced mailbox mail. Only native Super Admin can enable this.</small>
+                </div>
+                @endif
+
+                <div class="form-group">
+                    <label class="d-block mb-2">Module permissions</label>
+                    <div class="staff-permission-grid">
+                        <div class="staff-perm-group">
+                            <strong>Notes</strong>
+                            <label class="staff-perm-item"><input value="1" type="checkbox" name="permission[]" @checked(in_array('1', $permValues, true))> View</label>
+                            <label class="staff-perm-item"><input value="2" type="checkbox" name="permission[]" @checked(in_array('2', $permValues, true))> Add/Edit</label>
+                            <label class="staff-perm-item"><input value="3" type="checkbox" name="permission[]" @checked(in_array('3', $permValues, true))> Delete</label>
+                        </div>
+                        <div class="staff-perm-group">
+                            <strong>Documents</strong>
+                            <label class="staff-perm-item"><input value="4" type="checkbox" name="permission[]" @checked(in_array('4', $permValues, true))> View</label>
+                            <label class="staff-perm-item"><input value="5" type="checkbox" name="permission[]" @checked(in_array('5', $permValues, true))> Add/Edit</label>
+                            <label class="staff-perm-item"><input value="6" type="checkbox" name="permission[]" @checked(in_array('6', $permValues, true))> Delete</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group mb-0">
+                    <label class="staff-checkbox-row">
+                        <input value="1" type="checkbox" name="show_dashboard_per" @checked(old('show_dashboard_per', $isEdit ? ($fetchedData->show_dashboard_per ?? 0) : 0))>
+                        <span>Can view on dashboard</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Email access (mailbox permissions — leave the rules as they are for now) --}}
+    <div class="accordion">
+        <div class="accordion-header collapsed" role="button" data-bs-toggle="collapse" data-bs-target="#{{ $fieldPrefix }}_email_access" aria-expanded="false" aria-controls="{{ $fieldPrefix }}_email_access">
+            <h4>Email access</h4>
+        </div>
+        <div class="accordion-body collapse" id="{{ $fieldPrefix }}_email_access" data-bs-parent="#{{ $accordionId }}">
+            <div class="staff-permission-options">
+                <p class="text-muted small mb-3">Mailbox permissions. These stay as they are for now.</p>
                 @if($canGrantEmailDelete && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_delete_email_with_attachments'))
                 <div class="form-group">
                     <input type="hidden" name="can_delete_email_with_attachments" value="0">
@@ -217,7 +282,7 @@
                 @endif
 
                 @if($canGrantAssignEmailsBySubject && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_assign_emails_by_subject'))
-                <div class="form-group">
+                <div class="form-group mb-0">
                     <input type="hidden" name="can_assign_emails_by_subject" value="0">
                     <label class="staff-checkbox-row">
                         <input type="checkbox" name="can_assign_emails_by_subject" value="1"
@@ -227,163 +292,39 @@
                     <small class="text-muted d-block mt-1">Shows the Assign by subject button on Unassigned Mail so this staff member can match and assign emails from client ID / matter in the subject.</small>
                 </div>
                 @endif
-
-                @if($canGrantTimelineBilling && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_use_timeline_billing'))
-                <div class="form-group">
-                    <input type="hidden" name="can_use_timeline_billing" value="0">
-                    <label class="staff-checkbox-row">
-                        <input type="checkbox" name="can_use_timeline_billing" value="1"
-                            @checked(old('can_use_timeline_billing', $isEdit ? ($fetchedData->can_use_timeline_billing ?? false) : false))>
-                        <span>Can use Timeline Billing</span>
-                    </label>
-                    <small class="text-muted d-block mt-1">Shows Billing on the client Timeline tab so this staff member can calculate fees, print/share/email invoices, and manage the billing structure. Super Admin always has access.</small>
-                </div>
-                @endif
-
-                @if($canGrantPersonalCalendar && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_access_personal_calendar'))
-                <div class="form-group">
-                    <input type="hidden" name="can_access_personal_calendar" value="1">
-                    <label class="staff-checkbox-row">
-                        <input type="checkbox" value="1" checked disabled>
-                        <span>Personal calendar enabled</span>
-                    </label>
-                    <small class="text-muted d-block mt-1">All active staff get the same My Calendar on the dashboard (bookings, reminders, follow-ups, hearings and deadlines). Access follows active status.</small>
-                </div>
-                @endif
-
-                @include('AdminConsole.staff.partials.default-calendar-type')
-
-                @include('AdminConsole.staff.partials.calendar-visibility-grants')
-
-                @if($canGrantMatterTeamAccess)
-                <div class="form-group">
-                    <small class="text-muted d-block">Temporary matter access on a client file is limited to Super Admin, Ajay Bansal, and Khushi Sangroya.</small>
-                </div>
-                @endif
-
-                @if($canGrantFullCrmAllocationAccess && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'has_full_crm_allocation_access'))
-                <div class="form-group">
-                    <input type="hidden" name="has_full_crm_allocation_access" value="0">
-                    <label class="staff-checkbox-row">
-                        <input type="checkbox" name="has_full_crm_allocation_access" value="1"
-                            @checked(old('has_full_crm_allocation_access', $isEdit ? ($fetchedData->has_full_crm_allocation_access ?? false) : false))>
-                        <span>Full CRM access (all clients, leads, matters &amp; email)</span>
-                    </label>
-                    <small class="text-muted d-block mt-1">Bypasses allocation and matter-team restrictions so this staff member can open any client, lead, matter, documents, and synced mailbox mail. Only native Super Admin can enable this.</small>
-                </div>
-                @endif
-
-                @if($canGrantCloseDiscontinue && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_close_discontinue_matter'))
-                <div class="form-group">
-                    <input type="hidden" name="can_close_discontinue_matter" value="0">
-                    <label class="staff-checkbox-row">
-                        <input type="checkbox" name="can_close_discontinue_matter" value="1"
-                            @checked(old('can_close_discontinue_matter', $isEdit ? ($fetchedData->can_close_discontinue_matter ?? false) : false))>
-                        <span>Can close/discontinue matters</span>
-                    </label>
-                </div>
-                @endif
-
-                @if($canGrantFinalInvoiceEdit && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_edit_final_invoice'))
-                <div class="form-group">
-                    <input type="hidden" name="can_edit_final_invoice" value="0">
-                    <label class="staff-checkbox-row">
-                        <input type="checkbox" name="can_edit_final_invoice" value="1"
-                            @checked(old('can_edit_final_invoice', $isEdit ? ($fetchedData->can_edit_final_invoice ?? false) : false))>
-                        <span>Can edit unpaid final invoices</span>
-                    </label>
-                    <small class="text-muted d-block mt-1">Allows this staff member to amend a saved invoice before any payment is applied. All edits are recorded in the client timeline.</small>
-                </div>
-                @endif
-
-                <div class="form-group">
-                    <label class="d-block mb-2">Module permissions</label>
-                    <div class="staff-permission-grid">
-                        <div class="staff-perm-group">
-                            <strong>Notes</strong>
-                            <label class="staff-perm-item"><input value="1" type="checkbox" name="permission[]" @checked(in_array('1', $permValues, true))> View</label>
-                            <label class="staff-perm-item"><input value="2" type="checkbox" name="permission[]" @checked(in_array('2', $permValues, true))> Add/Edit</label>
-                            <label class="staff-perm-item"><input value="3" type="checkbox" name="permission[]" @checked(in_array('3', $permValues, true))> Delete</label>
-                        </div>
-                        <div class="staff-perm-group">
-                            <strong>Documents</strong>
-                            <label class="staff-perm-item"><input value="4" type="checkbox" name="permission[]" @checked(in_array('4', $permValues, true))> View</label>
-                            <label class="staff-perm-item"><input value="5" type="checkbox" name="permission[]" @checked(in_array('5', $permValues, true))> Add/Edit</label>
-                            <label class="staff-perm-item"><input value="6" type="checkbox" name="permission[]" @checked(in_array('6', $permValues, true))> Delete</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group mb-0">
-                    <label class="staff-checkbox-row">
-                        <input value="1" type="checkbox" name="show_dashboard_per" @checked(old('show_dashboard_per', $isEdit ? ($fetchedData->show_dashboard_per ?? 0) : 0))>
-                        <span>Can view on dashboard</span>
-                    </label>
-                </div>
             </div>
         </div>
     </div>
 
-    {{-- 4. Legal practitioner --}}
+    {{-- Calendar --}}
     <div class="accordion">
-        <div class="accordion-header collapsed" role="button" data-bs-toggle="collapse" data-bs-target="#{{ $fieldPrefix }}_solicitor" aria-expanded="false" aria-controls="{{ $fieldPrefix }}_solicitor">
-            <h4>Legal practitioner <span class="text-muted fw-normal">(optional)</span></h4>
+        <div class="accordion-header collapsed" role="button" data-bs-toggle="collapse" data-bs-target="#{{ $fieldPrefix }}_calendar" aria-expanded="false" aria-controls="{{ $fieldPrefix }}_calendar">
+            <h4>Calendar</h4>
         </div>
-        <div class="accordion-body collapse" id="{{ $fieldPrefix }}_solicitor" data-bs-parent="#{{ $accordionId }}">
-            <label class="staff-checkbox-row mb-3">
-                <input type="checkbox" id="{{ $fieldPrefix }}_is_solicitor" name="is_solicitor" value="1" class="staff-is-solicitor-toggle"
-                    @checked($isSolicitorChecked)>
-                <span>This staff member is a legal practitioner</span>
-            </label>
-            <div id="{{ $fieldPrefix }}_agent_details_section" class="staff-agent-details" style="display: {{ $isSolicitorChecked ? 'block' : 'none' }};">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="form-group mb-0">
-                            <label for="{{ $fieldPrefix }}_legal_practitioner_number">Practising certificate / legal practitioner number</label>
-                            <input type="text" name="legal_practitioner_number" id="{{ $fieldPrefix }}_legal_practitioner_number" value="{{ old('legal_practitioner_number', $isEdit ? $fetchedData->legal_practitioner_number : '') }}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group mb-0">
-                            <label for="{{ $fieldPrefix }}_company_name">Business name</label>
-                            <input type="text" name="company_name" value="{{ old('company_name', $isEdit ? $fetchedData->company_name : '') }}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group mb-0">
-                            <label for="{{ $fieldPrefix }}_tax_number">Tax number (ABN/ACN)</label>
-                            <input type="text" name="tax_number" value="{{ old('tax_number', $isEdit ? $fetchedData->tax_number : '') }}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="form-group mb-0">
-                            <label for="{{ $fieldPrefix }}_business_address">Business address</label>
-                            <textarea name="business_address" id="{{ $fieldPrefix }}_business_address" class="form-control" rows="2">{{ old('business_address', $isEdit ? $fetchedData->business_address : '') }}</textarea>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group mb-0">
-                            <label for="{{ $fieldPrefix }}_business_phone">Business phone</label>
-                            <input type="text" name="business_phone" value="{{ old('business_phone', $isEdit ? $fetchedData->business_phone : '') }}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group mb-0">
-                            <label for="{{ $fieldPrefix }}_business_mobile">Business mobile</label>
-                            <input type="text" name="business_mobile" value="{{ old('business_mobile', $isEdit ? $fetchedData->business_mobile : '') }}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group mb-0">
-                            <label for="{{ $fieldPrefix }}_business_email">Business email</label>
-                            <input type="email" name="business_email" value="{{ old('business_email', $isEdit ? $fetchedData->business_email : '') }}" class="form-control">
-                        </div>
-                    </div>
-                </div>
+        <div class="accordion-body collapse" id="{{ $fieldPrefix }}_calendar" data-bs-parent="#{{ $accordionId }}">
+            @if($canGrantPersonalCalendar && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_access_personal_calendar'))
+                <input type="hidden" name="can_access_personal_calendar" value="1">
+            @endif
+            <p class="text-muted small">They always see their own personal calendar: bookings, reminders, follow-ups, hearings and deadlines.</p>
+            @if($canGrantPersonalCalendar && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'staff_calendar_visibility'))
+            @php
+                $seeAllCalendars = old('see_all_calendars', $isEdit && ($fetchedData->staffCalendarVisibility() ?? 'own') === 'all');
+            @endphp
+            <div class="form-group">
+                <input type="hidden" name="see_all_calendars" value="0">
+                <label class="staff-checkbox-row">
+                    <input type="checkbox" name="see_all_calendars" value="1"
+                        @checked($seeAllCalendars)>
+                    <span>Can see all calendars</span>
+                </label>
+                <small class="text-muted d-block mt-1">Leave this off so they only see their own personal calendar. Tick it for calling team and reception so they can open every staff calendar and the website booking calendars.</small>
             </div>
+            @endif
+            @include('AdminConsole.staff.partials.default-calendar-type')
         </div>
     </div>
 
-    {{-- 5. Email & mailbox --}}
+    {{-- Email & mailbox --}}
     <div class="accordion mb-0">
         <div class="accordion-header collapsed" role="button" data-bs-toggle="collapse" data-bs-target="#{{ $fieldPrefix }}_signature" aria-expanded="false" aria-controls="{{ $fieldPrefix }}_signature">
             <h4>Email & mailbox</h4>

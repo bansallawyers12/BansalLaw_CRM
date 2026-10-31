@@ -5,7 +5,7 @@
         $_canTimelineBilling = $_billingViewer instanceof \App\Models\Staff
             && $_billingViewer->canUseTimelineBilling();
         $_isTimelineBillingSuperAdmin = $_billingViewer instanceof \App\Models\Staff
-            && $_billingViewer->hasEffectiveSuperAdminPrivileges();
+            && app(\App\Services\CrmAccess\CrmAccessService::class)->hasPermanentSuperAdminCapability($_billingViewer);
     @endphp
 
     @if(!empty($_canTimelineBilling))
@@ -63,7 +63,9 @@
                                 <button type="button" class="btn btn-sm btn-outline-secondary" id="activity-feed-billing-email-structure" title="Email complete billing invoice">
                                     <i class="fa-solid fa-envelope" aria-hidden="true"></i> Email
                                 </button>
+                                @if(!empty($_isTimelineBillingSuperAdmin))
                                 <button type="button" class="btn btn-sm btn-primary" id="activity-feed-billing-save-rates">Save amounts</button>
+                                @endif
                             </div>
                         </div>
                         <p class="activity-feed-billing-structure-help">Set how much (incl. GST) is charged for each activity type. Only Super Admin can change these amounts. Timeline lines use this schedule automatically.</p>

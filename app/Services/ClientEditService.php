@@ -83,7 +83,7 @@ class ClientEditService
 
     /**
      * Legal practitioner dropdown: active Solicitor role (16), plus any active staff
-     * flagged as a legal practitioner (is_solicitor), even when their CRM role is Admin.
+     * still flagged as a legal practitioner (is_solicitor) until their role is changed.
      * If none, single fallback row for {@see DEFAULT_PERSON_RESPONSIBLE_EMAIL}.
      */
     public static function staffSelectableForSolicitorRole()
@@ -109,8 +109,9 @@ class ClientEditService
     }
 
     /**
-     * Person Responsible dropdown: active legal practitioners (Solicitor role 16 or
-     * is_solicitor), plus any staff still on the legacy Person Responsible role (12).
+     * Person Responsible dropdown: active legal practitioners (Solicitor role 16, or
+     * a stored is_solicitor flag until that person's role is changed), plus any staff
+     * still on the legacy Person Responsible role (12).
      * If none, Ajay fallback email.
      */
     public static function staffSelectableForPersonResponsibleRole()

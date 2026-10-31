@@ -57,6 +57,7 @@ class Staff extends Authenticatable
         'tax_number',
         'quick_access_enabled',
         'grant_super_admin_access',
+        'can_access_admin_console',
         'can_delete_email_with_attachments',
         'can_sync_inbox_emails',
         'can_view_all_synced_inbox_mail',
@@ -89,6 +90,7 @@ class Staff extends Authenticatable
         'is_solicitor' => 'integer',
         'quick_access_enabled' => 'boolean',
         'grant_super_admin_access' => 'boolean',
+        'can_access_admin_console' => 'boolean',
         'can_delete_email_with_attachments' => 'boolean',
         'can_sync_inbox_emails' => 'boolean',
         'can_view_all_synced_inbox_mail' => 'boolean',
@@ -332,9 +334,19 @@ class Staff extends Authenticatable
 
     /**
      * Whether this staff member may access Admin Console (/adminconsole).
+     * The Super Admin role always can. Everyone else needs the Admin Console tick.
+     * Admin access (grant_super_admin_access) does not open Admin Console.
      */
     public function canAccessAdminConsole(): bool
     {
+        if ((int) ($this->role ?? 0) === 1) {
+            return true;
+        }
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_access_admin_console')) {
+            return (bool) ($this->can_access_admin_console ?? false);
+        }
+
         return $this->canAccessAdminConsoleByRole();
     }
 
@@ -588,20 +600,12 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Super Admin (including elevated), or staff with the per-user grant, may use
-     * Timeline Billing on the client activity feed.
+     * Any staff member who can open a matter may use Timeline Billing on it.
+     * Firm-wide rate amounts are a separate check.
      */
     public function canUseTimelineBilling(): bool
     {
-        if ($this->hasEffectiveSuperAdminPrivileges()) {
-            return true;
-        }
-
-        if ((int) ($this->role ?? 0) === 1) {
-            return true;
-        }
-
-        return (bool) ($this->can_use_timeline_billing ?? false);
+        return ! $this->isInactiveStaff();
     }
 
     /**
@@ -807,19 +811,12 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Whether this staff member may close/discontinue client matters.
+     * Any staff member who can open a matter may close or discontinue it.
+     * The matter-access check is enforced at the action.
      */
     public function canCloseDiscontinueMatter(): bool
     {
-        if (in_array((int) ($this->role ?? 0), self::closeDiscontinueRoleIds(), true)) {
-            return true;
-        }
-
-        if ($this->hasEffectiveSuperAdminPrivileges()) {
-            return true;
-        }
-
-        return (bool) ($this->can_close_discontinue_matter ?? false);
+        return ! $this->isInactiveStaff();
     }
 
     /**
@@ -846,19 +843,16 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Whether this staff member may amend an unpaid final invoice.
+     * Any staff member who can open a matter may amend an unpaid final invoice on it.
      */
     public function canEditFinalInvoice(): bool
     {
-        if (in_array((int) ($this->role ?? 0), self::finalInvoiceEditGrantRoleIds(), true)) {
-            return true;
-        }
+        return ! $this->isInactiveStaff();
+    }
 
-        if ($this->hasEffectiveSuperAdminPrivileges()) {
-            return true;
-        }
-
-        return (bool) ($this->can_edit_final_invoice ?? false);
+    private function isInactiveStaff(): bool
+    {
+        return array_key_exists('status', $this->attributes) && (int) $this->status !== 1;
     }
 
 }

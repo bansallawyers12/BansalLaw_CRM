@@ -228,7 +228,8 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
     {
         $staff = new Staff(['role' => 14, 'quick_access_enabled' => true]);
         $flags = \App\Support\StaffClientVisibility::crossAccessUiFlags($staff);
-        $this->assertTrue($flags['show_quick']);
+        // Calling team already opens every file, so the 15-minute button is not offered.
+        $this->assertFalse($flags['show_quick']);
         $this->assertFalse($flags['show_supervisor']);
     }
 

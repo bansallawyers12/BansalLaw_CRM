@@ -27,18 +27,23 @@ class StaffEditFinalInvoicePermissionTest extends TestCase
     }
 
     #[Test]
-    public function regular_staff_without_flag_cannot_edit_final_invoice(): void
+    public function any_active_staff_can_edit_an_unpaid_final_invoice_on_a_matter_they_can_open(): void
     {
         $staff = new Staff(['role' => 16, 'status' => 1, 'can_edit_final_invoice' => false]);
 
-        $this->assertFalse($staff->canEditFinalInvoice());
+        $this->assertTrue($staff->canEditFinalInvoice());
         $this->assertFalse(Staff::canGrantFinalInvoiceEditPermission($staff));
     }
 
     #[Test]
-    public function regular_staff_with_flag_can_edit_final_invoice_but_cannot_grant(): void
+    public function admin_access_can_edit_final_invoice_without_a_separate_flag(): void
     {
-        $staff = new Staff(['role' => 16, 'status' => 1, 'can_edit_final_invoice' => true]);
+        $staff = new Staff([
+            'role' => 16,
+            'status' => 1,
+            'grant_super_admin_access' => true,
+            'can_edit_final_invoice' => false,
+        ]);
 
         $this->assertTrue($staff->canEditFinalInvoice());
         $this->assertFalse(Staff::canGrantFinalInvoiceEditPermission($staff));

@@ -188,14 +188,10 @@ class StaffPersonalCalendarFeedService
     }
 
     /**
-     * Super Admin or staff granted "all calendars" in Admin Console.
+     * Super Admin role, or staff with "Can see all calendars" ticked.
      */
     public function canViewAllStaffCalendars(Staff $viewer): bool
     {
-        if ($viewer->hasEffectiveSuperAdminPrivileges()) {
-            return true;
-        }
-
         if ((int) ($viewer->role ?? 0) === 1) {
             return true;
         }
@@ -282,11 +278,6 @@ class StaffPersonalCalendarFeedService
             }
         }
 
-        $owned = $this->ownedWebsiteCalendarType($viewer);
-        if (self::isValidCalendarType($owned)) {
-            $allowed[(string) $owned] = self::CALENDAR_TYPES[(string) $owned];
-        }
-
         return $allowed;
     }
 
@@ -304,10 +295,6 @@ class StaffPersonalCalendarFeedService
             return false;
         }
         if ($this->canViewAllStaffCalendars($viewer)) {
-            return true;
-        }
-
-        if ($this->ownedWebsiteCalendarType($viewer) === $type) {
             return true;
         }
 

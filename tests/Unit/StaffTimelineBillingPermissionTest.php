@@ -18,21 +18,22 @@ class StaffTimelineBillingPermissionTest extends TestCase
     }
 
     #[Test]
-    public function admin_cannot_use_or_grant_without_flag(): void
+    public function any_active_staff_can_use_timeline_billing_on_a_matter_they_can_open(): void
     {
         $staff = new Staff(['role' => 17, 'status' => 1, 'can_use_timeline_billing' => false]);
 
-        $this->assertFalse($staff->canUseTimelineBilling());
+        $this->assertTrue($staff->canUseTimelineBilling());
         $this->assertFalse(Staff::canGrantTimelineBillingPermission($staff));
     }
 
     #[Test]
-    public function regular_staff_with_flag_can_use_but_cannot_grant(): void
+    public function admin_access_can_use_timeline_billing_without_a_separate_flag(): void
     {
         $staff = new Staff([
             'role' => 16,
             'status' => 1,
-            'can_use_timeline_billing' => true,
+            'grant_super_admin_access' => true,
+            'can_use_timeline_billing' => false,
         ]);
 
         $this->assertTrue($staff->canUseTimelineBilling());
@@ -40,15 +41,14 @@ class StaffTimelineBillingPermissionTest extends TestCase
     }
 
     #[Test]
-    public function regular_staff_without_flag_cannot_use(): void
+    public function inactive_staff_cannot_use_timeline_billing(): void
     {
         $staff = new Staff([
             'role' => 16,
-            'status' => 1,
-            'can_use_timeline_billing' => false,
+            'status' => 0,
+            'can_use_timeline_billing' => true,
         ]);
 
         $this->assertFalse($staff->canUseTimelineBilling());
-        $this->assertFalse(Staff::canGrantTimelineBillingPermission($staff));
     }
 }

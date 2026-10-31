@@ -159,15 +159,12 @@
             permission: '_access',
             show_dashboard_per: '_access',
             quick_access_enabled: '_access',
-            can_delete_email_with_attachments: '_access',
-            can_sync_inbox_emails: '_access',
-            can_view_all_synced_inbox_mail: '_access',
-            can_close_discontinue_matter: '_access',
-            can_edit_final_invoice: '_access',
+            can_delete_email_with_attachments: '_email_access',
+            can_sync_inbox_emails: '_email_access',
+            can_view_all_synced_inbox_mail: '_email_access',
+            can_access_admin_console: '_access',
+            see_all_calendars: '_calendar',
             grant_super_admin_access: '_access',
-            is_solicitor: '_solicitor',
-            legal_practitioner_number: '_solicitor',
-            company_name: '_solicitor',
             email_signature: '_signature'
         };
 
@@ -226,19 +223,7 @@
         $btn.find('.submit-spinner').toggleClass('d-none', !isSubmitting);
     }
 
-    function initStaffFormBehaviors($container, fieldPrefix) {
-        var prefix = fieldPrefix || 'create_staff';
-        var $toggle = $container.find('#' + prefix + '_is_solicitor, .staff-is-solicitor-toggle').first();
-        var $section = $container.find('#' + prefix + '_agent_details_section, .staff-agent-details').first();
-
-        $toggle.off('change.staffForm').on('change.staffForm', function () {
-            if ($(this).is(':checked')) {
-                $section.slideDown(150);
-            } else {
-                $section.slideUp(150);
-            }
-        });
-
+    function initStaffFormBehaviors($container) {
         $container.find('.staff-grant-super-admin').off('change.staffForm').on('change.staffForm', function () {
             var $checkbox = $(this);
             if ($checkbox.is(':disabled')) {
@@ -246,8 +231,8 @@
             }
             var isChecked = $checkbox.is(':checked');
             var message = isChecked
-                ? 'Are you sure you want to grant Super admin access level to this user?'
-                : 'Are you sure you want to remove Super admin access level from this user?';
+                ? 'Are you sure you want to grant Admin access to this user?'
+                : 'Are you sure you want to remove Admin access from this user?';
             if (!window.confirm(message)) {
                 $checkbox.prop('checked', !isChecked);
             }
@@ -315,7 +300,7 @@
         showModal($modal);
 
         if ($body.children().length > 0 && !$body.find('.spinner-border').length) {
-            initStaffFormBehaviors($body, 'create_staff');
+            initStaffFormBehaviors($body);
             return;
         }
 
@@ -331,7 +316,7 @@
                 return;
             }
             $body.html(response.html || '');
-            initStaffFormBehaviors($body, 'create_staff');
+            initStaffFormBehaviors($body);
         }).fail(function (xhr) {
             var message = (xhr.responseJSON && xhr.responseJSON.message) || 'Could not load create form.';
             $body.html('<div class="alert alert-danger mb-0">' + escapeHtml(message) + '</div>');
@@ -360,7 +345,7 @@
             }
             $('#staffEditModalLabel').text('Edit ' + (response.staff && response.staff.name ? response.staff.name : 'staff member'));
             $body.html(response.html || '');
-            initStaffFormBehaviors($body, 'edit_staff');
+            initStaffFormBehaviors($body);
         }).fail(function (xhr) {
             var message = (xhr.responseJSON && xhr.responseJSON.message) || 'Could not load edit form.';
             $body.html('<div class="alert alert-danger mb-0">' + escapeHtml(message) + '</div>');

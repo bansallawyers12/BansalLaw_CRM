@@ -178,9 +178,9 @@
             <form action="{{ route('crm.session.super-admin-mode') }}" method="post" class="d-inline align-middle me-1" style="vertical-align: middle;">
                 @csrf
                 <input type="hidden" name="elevated" value="{{ $_saElevated ? '0' : '1' }}">
-                <button type="submit" class="icon-btn {{ $_saElevated ? 'text-primary' : '' }}" title="{{ $_saElevated ? 'Using Super Admin access — click to return to normal role' : 'Switch to Super Admin access (full privileges)' }}" style="white-space: nowrap;">
+                <button type="submit" class="icon-btn {{ $_saElevated ? 'text-primary' : '' }}" title="{{ $_saElevated ? 'Using Admin access — click to return to normal role' : 'Switch to Admin access (full privileges)' }}" style="white-space: nowrap;">
                     <i class="fa-solid fa-user-shield"></i>
-                    <span class="d-none d-xl-inline ms-1" style="font-size: 12px; font-weight: 600;">{{ $_saElevated ? 'Super Admin' : 'Normal' }}</span>
+                    <span class="d-none d-xl-inline ms-1" style="font-size: 12px; font-weight: 600;">{{ $_saElevated ? 'Admin' : 'Normal' }}</span>
                 </button>
             </form>
         @endif

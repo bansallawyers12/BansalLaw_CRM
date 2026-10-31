@@ -79,9 +79,8 @@ return [
     | Timeline Billing grant (native Super Admin only)
     |--------------------------------------------------------------------------
     |
-    | Only role 1 may toggle {@see Staff::can_use_timeline_billing}. That flag
-    | shows Timeline Billing on the client activity feed. Super Admin (including
-    | elevated) always has access.
+    | Timeline Billing is available to any staff member who can open the matter.
+    | Changing the firm-wide amounts still requires Admin access.
     |
     */
     'timeline_billing_grant_role_ids' => array_values(array_filter(array_map(
@@ -110,7 +109,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Canonical ids: 1 = Super Admin, 16 = Solicitor, 17 = Admin (config/crm_roles.php).
-    | Other staff need {@see Staff::can_close_discontinue_matter} on their profile.
+    | Any staff member who can open the matter may close or discontinue it.
     | Override via CRM_CLOSE_DISCONTINUE_ROLE_IDS e.g. "1,16,17".
     |
     */
@@ -137,8 +136,7 @@ return [
     | Staff roles that may edit/grant final invoice editing
     |--------------------------------------------------------------------------
     |
-    | Super Admin (1) and Admin (17) may edit unpaid final invoices and grant
-    | the same capability to individual staff members.
+    | Any staff member who can open the matter may edit an unpaid final invoice.
     |
     */
     'invoice_edit_grant_role_ids' => array_values(array_filter(array_map(
@@ -318,8 +316,8 @@ return [
     | Admin Console (/adminconsole) — staff.role (user_roles.id)
     |--------------------------------------------------------------------------
     |
-    | Default: 1 = Super Admin, 12 = Person Responsible, 17 = Admin.
-    | Staff with grant_super_admin_access + session elevation also qualify.
+    | Used when the per-staff Admin Console column is missing.
+    | With that column, only role 1 and staff.can_access_admin_console may enter.
     | Override via CRM_ADMIN_CONSOLE_ROLE_IDS e.g. "1,12,17".
     |
     */

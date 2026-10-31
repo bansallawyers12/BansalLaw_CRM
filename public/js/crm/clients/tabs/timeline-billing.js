@@ -262,7 +262,7 @@
                 '<td class="text-right">' +
                 '<div class="activity-feed-billing-amount-input">' +
                 '<span class="activity-feed-billing-amount-prefix">$</span>' +
-                '<input type="number" min="0" step="0.01" class="form-control form-control-sm billing-rate-amount" value="' + round2(row.amount_incl_gst).toFixed(2) + '" aria-label="Amount for ' + escapeHtml(row.label) + '">' +
+                '<input type="number" min="0" step="0.01" class="form-control form-control-sm billing-rate-amount" value="' + round2(row.amount_incl_gst).toFixed(2) + '" aria-label="Amount for ' + escapeHtml(row.label) + '"' + (canEditStructure() ? '' : ' readonly') + '>' +
                 '</div></td></tr>';
         }).join('');
         $body.html(html);
@@ -648,7 +648,15 @@
         }
     }
 
+    function canEditStructure() {
+        var billing = (window.ClientDetailConfig && window.ClientDetailConfig.timelineBilling) || {};
+        return !!billing.canEditStructure;
+    }
+
     function saveRates() {
+        if (!canEditStructure()) {
+            return;
+        }
         var amounts = readStructureAmountsFromDom();
         var url = cfg().saveRatesUrl || '/clients/timeline-billing-rates';
         var $status = $('#activity-feed-billing-save-status');

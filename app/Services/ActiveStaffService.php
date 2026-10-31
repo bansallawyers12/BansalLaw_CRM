@@ -115,16 +115,12 @@ class ActiveStaffService
                 $query->where('role', $roleId);
             }
 
-            // Apply sorting
-            $allowedSorts = ['name', 'role', 'last_activity'];
-            if (in_array($sortBy, $allowedSorts)) {
-                if ($sortBy === 'name') {
-                    $query->orderBy('first_name', $sortDir)->orderBy('last_name', $sortDir);
-                } else {
-                    $query->orderBy($sortBy, $sortDir);
-                }
+            // last_activity is computed from sessions, not a staff column.
+            $sortDir = strtolower((string) $sortDir) === 'desc' ? 'desc' : 'asc';
+            if ($sortBy === 'role') {
+                $query->orderBy('role', $sortDir);
             } else {
-                $query->orderBy('first_name', 'asc');
+                $query->orderBy('first_name', $sortDir)->orderBy('last_name', $sortDir);
             }
 
             $staffList = $query->get();

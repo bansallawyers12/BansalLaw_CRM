@@ -32,7 +32,7 @@
                                         <th>Requested</th>
                                         <th>Requester</th>
                                         <th>Record</th>
-                                        <th>Office / team</th>
+                                        <th>Office</th>
                                         <th>Note</th>
                                         <th></th>
                                     </tr>
@@ -150,7 +150,7 @@
                                     <th>Type</th>
                                     <th>Status</th>
                                     <th>Granted by</th>
-                                    <th>Office / team</th>
+                                    <th>Office</th>
                                     <th>Note / reason</th>
                                 </tr>
                             </thead>

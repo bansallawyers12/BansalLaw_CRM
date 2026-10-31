@@ -1029,7 +1029,7 @@ class ClientMatterHubController extends Controller
         $this->ensureClientMatterAccess($clientMatter);
 
 			$actor = Auth::user();
-			if (! ($actor instanceof Staff && ($actor->hasEffectiveSuperAdminPrivileges() || $actor->canCloseDiscontinueMatter()))) {
+			if (! ($actor instanceof Staff && app(\App\Services\CrmAccess\CrmAccessService::class)->hasPermanentSuperAdminCapability($actor))) {
 				return response()->json(['status' => false, 'message' => 'Unauthorized to delete matter.'], 403);
 			}
 

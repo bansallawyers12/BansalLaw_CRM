@@ -1786,6 +1786,10 @@ $(document).ready(function() {
         },
         timelineBilling: {
             enabled: @json(!empty($cdnCanTimelineBilling)),
+            canEditStructure: @json(
+                $_cdnTimelineBillingViewer instanceof \App\Models\Staff
+                && app(\App\Services\CrmAccess\CrmAccessService::class)->hasPermanentSuperAdminCapability($_cdnTimelineBillingViewer)
+            ),
             gstRate: {{ (float) config('crm.timeline_billing.gst_rate', 0.10) }},
             structure: @json($cdnTimelineBillingStructure ?? []),
             ratesUrl: '{{ route("clients.timeline-billing-rates") }}',

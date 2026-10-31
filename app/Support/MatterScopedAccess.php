@@ -287,6 +287,26 @@ final class MatterScopedAccess
             ->exists();
     }
 
+    /**
+     * A 15-minute quick grant or an approved supervisor grant opens every matter
+     * on that client until ends_at.
+     */
+    public static function hasActiveClientWideGrant(int $staffId, int $clientAdminId): bool
+    {
+        if ($staffId <= 0 || $clientAdminId <= 0) {
+            return false;
+        }
+
+        return ClientAccessGrant::query()
+            ->where('staff_id', $staffId)
+            ->where('admin_id', $clientAdminId)
+            ->whereIn('grant_type', ['quick', 'supervisor_approved'])
+            ->where('status', 'active')
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '>', Carbon::now('UTC'))
+            ->exists();
+    }
+
     public static function staffIsAssignedToMatterRow(object $matter, int $staffId): bool
     {
         if ($staffId <= 0) {
@@ -473,6 +493,10 @@ final class MatterScopedAccess
             return true;
         }
 
+        if (self::hasActiveClientWideGrant($staffId, $clientAdminId)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -567,6 +591,16 @@ final class MatterScopedAccess
                             $note->whereRaw("client_access_grants.requester_note = CONCAT('matter_id:', {$table}.id)")
                                 ->orWhereRaw("client_access_grants.requester_note LIKE CONCAT('matter_id:', {$table}.id, ';role:%')");
                         });
+                })
+                ->orWhereExists(function ($sub) use ($staffId, $table) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_access_grants')
+                        ->whereColumn('client_access_grants.admin_id', $table.'.client_id')
+                        ->where('client_access_grants.staff_id', $staffId)
+                        ->whereIn('client_access_grants.grant_type', ['quick', 'supervisor_approved'])
+                        ->where('client_access_grants.status', 'active')
+                        ->whereNotNull('client_access_grants.ends_at')
+                        ->whereRaw('client_access_grants.ends_at > NOW()');
                 });
         });
     }
@@ -592,6 +626,14 @@ final class MatterScopedAccess
         }
 
         $staffId = (int) $user->id;
+        if (self::hasActiveClientWideGrant($staffId, $clientAdminId)) {
+            return ClientMatter::query()
+                ->where('client_id', $clientAdminId)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
         $assigned = ClientMatter::query()
             ->where('client_id', $clientAdminId)
             ->where(function ($q) use ($staffId) {

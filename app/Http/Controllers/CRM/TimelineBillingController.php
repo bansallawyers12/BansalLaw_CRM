@@ -28,8 +28,9 @@ class TimelineBillingController extends Controller
 
     public function saveRates(Request $request): JsonResponse
     {
-        if (! $this->actorCanUseTimelineBilling()) {
-            return response()->json(['status' => false, 'message' => config('constants.unauthorized')], 403);
+        $actor = Auth::guard('admin')->user() ?? Auth::user();
+        if (! $actor instanceof Staff || ! app(\App\Services\CrmAccess\CrmAccessService::class)->hasPermanentSuperAdminCapability($actor)) {
+            return response()->json(['status' => false, 'message' => 'Only Admin access can change the billing amounts.'], 403);
         }
 
         $ratesInput = $request->input('rates', $request->input('amounts', []));
@@ -64,7 +65,7 @@ class TimelineBillingController extends Controller
 
     private function actorCanUseTimelineBilling(): bool
     {
-        $actor = Auth::user();
+        $actor = Auth::guard('admin')->user() ?? Auth::user();
 
         return $actor instanceof Staff && $actor->canUseTimelineBilling();
     }

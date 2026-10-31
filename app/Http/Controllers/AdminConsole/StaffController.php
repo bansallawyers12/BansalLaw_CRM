@@ -137,6 +137,10 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Superadmin role user can provide this access.', 422);
             }
 
+            if (! $isSuperAdminActor && $request->has('can_access_admin_console')) {
+                return $this->respondStaffMessage($request, 'Only Superadmin role user can grant Admin Console access.', 422);
+            }
+
             $canGrantEmailDelete = Staff::canGrantEmailDeleteWithAttachmentsPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
@@ -172,25 +176,11 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant Assign by subject permission.', 422);
             }
 
-            $canGrantTimelineBilling = Staff::canGrantTimelineBillingPermission(
-                $storeActor instanceof Staff ? $storeActor : null
-            );
-            if (! $canGrantTimelineBilling && $request->has('can_use_timeline_billing')) {
-                return $this->respondStaffMessage($request, 'Only Super Admin can grant Timeline Billing permission.', 422);
-            }
-
             $canGrantPersonalCalendar = Staff::canGrantPersonalCalendarPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
             if (! $canGrantPersonalCalendar && $request->has('can_access_personal_calendar')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant personal calendar permission.', 422);
-            }
-
-            $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
-                $storeActor instanceof Staff ? $storeActor : null
-            );
-            if (! $canGrantCloseDiscontinue && $request->has('can_close_discontinue_matter')) {
-                return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant close/discontinue matter permission.', 422);
             }
 
             $canGrantMatterTeamAccess = Staff::canGrantManageMatterTeamAccessPermission(
@@ -202,13 +192,6 @@ class StaffController extends Controller
 
             if (! Staff::canGrantFullCrmAllocationAccessPermission($storeActor instanceof Staff ? $storeActor : null) && $request->has('has_full_crm_allocation_access')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant full CRM access.', 422);
-            }
-
-            $canGrantFinalInvoiceEdit = Staff::canGrantFinalInvoiceEditPermission(
-                $storeActor instanceof Staff ? $storeActor : null
-            );
-            if (! $canGrantFinalInvoiceEdit && $request->has('can_edit_final_invoice')) {
-                return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant final invoice edit permission.', 422);
             }
 
             $obj = new Staff();
@@ -332,16 +315,8 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant Assign by subject permission.', 422);
             }
 
-            if (! Staff::canGrantTimelineBillingPermission($actor instanceof Staff ? $actor : null) && $request->has('can_use_timeline_billing')) {
-                return $this->respondStaffMessage($request, 'Only Super Admin can grant Timeline Billing permission.', 422);
-            }
-
             if (! Staff::canGrantPersonalCalendarPermission($actor instanceof Staff ? $actor : null) && $request->has('can_access_personal_calendar')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant personal calendar permission.', 422);
-            }
-
-            if (! Staff::canGrantCloseDiscontinueMatterPermission($actor instanceof Staff ? $actor : null) && $request->has('can_close_discontinue_matter')) {
-                return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant close/discontinue matter permission.', 422);
             }
 
             if (! Staff::canGrantManageMatterTeamAccessPermission($actor instanceof Staff ? $actor : null) && $request->has('can_manage_matter_team_access')) {
@@ -352,10 +327,6 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin can grant full CRM access.', 422);
             }
 
-            if (! Staff::canGrantFinalInvoiceEditPermission($actor instanceof Staff ? $actor : null) && $request->has('can_edit_final_invoice')) {
-                return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant final invoice edit permission.', 422);
-            }
-
             if (! $isSuperAdminActor && (int) $request->input('role') === 1) {
                 return $this->respondStaffMessage($request, 'Only Superadmin role user can assign the Super Admin role.', 422);
             }
@@ -364,6 +335,10 @@ class StaffController extends Controller
 
             if (! $isSuperAdminActor && $request->has('grant_super_admin_access')) {
                 return $this->respondStaffMessage($request, 'Only Superadmin role user can provide this access.', 422);
+            }
+
+            if (! $isSuperAdminActor && $request->has('can_access_admin_console')) {
+                return $this->respondStaffMessage($request, 'Only Superadmin role user can grant Admin Console access.', 422);
             }
 
             $prevQuickEnabled = (bool) ($staff->quick_access_enabled ?? false);
@@ -558,6 +533,7 @@ class StaffController extends Controller
         $actor = Auth::user();
         $isSuperAdminActor = $actor instanceof Staff && (int) ($actor->role ?? 0) === 1;
         $requestedRole = (int) (@$requestData['role'] ?? 0);
+        $previousRole = $obj->exists ? (int) ($obj->role ?? 0) : null;
 
         if ($requestedRole === 1 && !$isSuperAdminActor) {
             throw ValidationException::withMessages([
@@ -581,25 +557,12 @@ class StaffController extends Controller
             ? implode(',', $requestData['permission'])
             : '';
 
-        $isSolicitor = $this->requestIndicatesSolicitor($requestData);
-        $obj->is_solicitor = $isSolicitor ? 1 : 0;
-
-        if ($isSolicitor) {
-            $obj->legal_practitioner_number = @$requestData['legal_practitioner_number'];
-            $obj->company_name = @$requestData['company_name'];
-            $obj->business_address = @$requestData['business_address'];
-            $obj->business_phone = @$requestData['business_phone'];
-            $obj->business_mobile = @$requestData['business_mobile'];
-            $obj->business_email = @$requestData['business_email'];
-            $obj->tax_number = @$requestData['tax_number'];
-        } elseif (!$isCreate) {
-            $obj->legal_practitioner_number = null;
-            $obj->company_name = null;
-            $obj->business_address = null;
-            $obj->business_phone = null;
-            $obj->business_mobile = null;
-            $obj->business_email = null;
-            $obj->tax_number = null;
+        // Practitioner details are no longer edited here. Leave stored practising
+        // certificate, business, and tax values as they are. A stored legal-practitioner
+        // tick stays until the role changes; after that, only the Solicitor role
+        // keeps the person on matter lists.
+        if ($obj->exists && $previousRole !== (int) $obj->role) {
+            $obj->is_solicitor = 0;
         }
 
         if ($isCreate) {
@@ -621,6 +584,14 @@ class StaffController extends Controller
         $isSuperAdminActor = $actor instanceof Staff && (int) ($actor->role ?? 0) === 1;
         if ($isSuperAdminActor && !$isCreate) {
             $obj->grant_super_admin_access = $request->boolean('grant_super_admin_access') ? 1 : null;
+        }
+
+        if ($isSuperAdminActor && Schema::hasColumn('staff', 'can_access_admin_console')) {
+            if ((int) ($obj->role ?? 0) === 1) {
+                $obj->can_access_admin_console = true;
+            } elseif ($request->exists('can_access_admin_console')) {
+                $obj->can_access_admin_console = $request->boolean('can_access_admin_console');
+            }
         }
 
         $canGrantEmailDelete = Staff::canGrantEmailDeleteWithAttachmentsPermission(
@@ -658,13 +629,6 @@ class StaffController extends Controller
             $obj->can_assign_emails_by_subject = $request->boolean('can_assign_emails_by_subject');
         }
 
-        $canGrantTimelineBilling = Staff::canGrantTimelineBillingPermission(
-            $actor instanceof Staff ? $actor : null
-        );
-        if ($canGrantTimelineBilling && Schema::hasColumn('staff', 'can_use_timeline_billing')) {
-            $obj->can_use_timeline_billing = $request->boolean('can_use_timeline_billing');
-        }
-
         $canGrantPersonalCalendar = Staff::canGrantPersonalCalendarPermission(
             $actor instanceof Staff ? $actor : null
         );
@@ -683,15 +647,12 @@ class StaffController extends Controller
         }
 
         if ($canGrantPersonalCalendar && Schema::hasColumn('staff', 'staff_calendar_visibility')) {
-            $mode = strtolower(trim((string) $request->input('staff_calendar_visibility', 'own')));
-            $obj->staff_calendar_visibility = in_array($mode, ['all', 'assigned'], true) ? $mode : 'own';
-        }
-
-        $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
-            $actor instanceof Staff ? $actor : null
-        );
-        if ($canGrantCloseDiscontinue && Schema::hasColumn('staff', 'can_close_discontinue_matter')) {
-            $obj->can_close_discontinue_matter = $request->boolean('can_close_discontinue_matter');
+            if ($request->exists('see_all_calendars')) {
+                $obj->staff_calendar_visibility = $request->boolean('see_all_calendars') ? 'all' : 'own';
+            } elseif ($request->exists('staff_calendar_visibility')) {
+                $mode = strtolower(trim((string) $request->input('staff_calendar_visibility', 'own')));
+                $obj->staff_calendar_visibility = in_array($mode, ['all', 'assigned'], true) ? $mode : 'own';
+            }
         }
 
         $canGrantMatterTeamAccess = Staff::canGrantManageMatterTeamAccessPermission(
@@ -708,12 +669,6 @@ class StaffController extends Controller
             $obj->has_full_crm_allocation_access = $request->boolean('has_full_crm_allocation_access');
         }
 
-        $canGrantFinalInvoiceEdit = Staff::canGrantFinalInvoiceEditPermission(
-            $actor instanceof Staff ? $actor : null
-        );
-        if ($canGrantFinalInvoiceEdit && Schema::hasColumn('staff', 'can_edit_final_invoice')) {
-            $obj->can_edit_final_invoice = $request->boolean('can_edit_final_invoice');
-        }
     }
 
     protected function serializeStaffSummary(Staff $staff): array
@@ -844,10 +799,5 @@ class StaffController extends Controller
         }
 
         return redirect()->route('adminconsole.staff.index', ['tab' => $tab])->with('success', $message);
-    }
-
-    private function requestIndicatesSolicitor(array $requestData): bool
-    {
-        return isset($requestData['is_solicitor']);
     }
 }
