@@ -187,9 +187,68 @@ class EmailLog extends Authenticatable
     }
 
     /**
+     * Staff-filed .msg/.eml on a client/lead (not IMAP/synced queue mail).
+     * Used so calendar-linked manual uploads can stay visible in Incoming.
+     *
+     * @param  Builder|\Illuminate\Database\Query\Builder  $query
+     */
+    public static function constrainManualClientUploadOnMailLists($query): void
+    {
+        $query->where('email_logs.mail_type', 1)
+            ->where('email_logs.client_id', '>', 0)
+            ->where(function ($q) {
+                $q->whereNull('email_logs.synced_email_id')
+                    ->orWhere('email_logs.synced_email_id', 0);
+            })
+            ->where(function ($q) {
+                // imap_uid is numeric — never compare to ''.
+                $q->whereNull('email_logs.imap_uid')
+                    ->orWhere('email_logs.imap_uid', 0);
+            })
+            ->where(function ($q) {
+                $q->whereNull('email_logs.sync_assignment_status')
+                    ->orWhere('email_logs.sync_assignment_status', '')
+                    ->orWhereNotIn('email_logs.sync_assignment_status', [
+                        'auto_assigned',
+                        'manual_assigned',
+                        'unassigned',
+                        'unlinked',
+                    ]);
+            })
+            ->where(function ($q) {
+                if (Schema::hasColumn('email_logs', 'sync_source')) {
+                    $q->where('email_logs.sync_source', self::SYNC_SOURCE_UPLOAD)
+                        ->orWhere(function ($legacy) {
+                            $legacy->where(function ($mailbox) {
+                                $mailbox->whereNull('email_logs.mailbox_email')
+                                    ->orWhere('email_logs.mailbox_email', '');
+                            })->where(function ($origin) {
+                                $origin->where('email_logs.conversion_type', 'conversion_email_fetch')
+                                    ->orWhereNotNull('email_logs.uploaded_doc_id');
+                            });
+                        });
+
+                    return;
+                }
+
+                $q->where(function ($mailbox) {
+                    $mailbox->whereNull('email_logs.mailbox_email')
+                        ->orWhere('email_logs.mailbox_email', '');
+                })->where(function ($origin) {
+                    $origin->where('email_logs.conversion_type', 'conversion_email_fetch')
+                        ->orWhereNotNull('email_logs.uploaded_doc_id');
+                });
+            });
+    }
+
+    /**
      * Exclude calendar invites / ICS meeting events from mail lists only.
      * Hearing notices from HEARING_MAIL_LIST_AVAILABLE_FROM onward stay visible
      * (tagged as Hearing). Does not delete email_logs or calendar/hearing records.
+     *
+     * Manual client/lead .msg/.eml uploads that also gained a calendar link
+     * (e.g. "Appointment" in the subject) stay visible in Incoming with a calendar badge.
+     * Classic invite subjects / VCALENDAR bodies remain excluded.
      *
      * @param  Builder|\Illuminate\Database\Query\Builder  $query
      */
@@ -241,6 +300,7 @@ class EmailLog extends Authenticatable
 
         // Any existing calendar link means this row already has a calendar/hearing event.
         // Keep excluding non-hearing calendar links; allow hearing-subject rows from the floor date.
+        // Manual uploads stay visible (calendar badge in UI) so staff can open the filed email.
         if (Schema::hasTable('email_calendar_links')) {
             $query->where(function ($keep) use ($hearingFloorSql, $effectiveDateSql) {
                 $keep->whereNotExists(function ($sub) {
@@ -258,6 +318,11 @@ class EmailLog extends Authenticatable
                             });
                     });
                 }
+                $keep->orWhere(function ($manual) {
+                    self::constrainManualClientUploadOnMailLists($manual);
+                    // Do not resurface classic Outlook invite subjects via the manual carve-out.
+                    self::constrainExcludeClassicCalendarInviteSubject($manual);
+                });
             });
         }
 
@@ -282,12 +347,16 @@ class EmailLog extends Authenticatable
                     if ($hearingFloorSql !== null) {
                         $keep->orWhereRaw($effectiveDateSql . ' >= ?', [$hearingFloorSql]);
                     }
+                    $keep->orWhere(function ($manual) {
+                        self::constrainManualClientUploadOnMailLists($manual);
+                        self::constrainExcludeClassicCalendarInviteSubject($manual);
+                    });
                 });
             }
         }
 
         // ICS attachments without a link yet still belong on the calendar, not mail lists,
-        // unless they are hearing notices from the floor date.
+        // unless they are hearing notices from the floor date or staff manual uploads.
         if (Schema::hasTable('email_log_attachments')) {
             $icsEmailIds = \Illuminate\Support\Facades\Cache::remember('email_ics_attachment_ids', 120, function () {
                 return \Illuminate\Support\Facades\DB::table('email_log_attachments')
@@ -316,9 +385,26 @@ class EmailLog extends Authenticatable
                                 });
                         });
                     }
+                    $keep->orWhere(function ($manual) {
+                        self::constrainManualClientUploadOnMailLists($manual);
+                        self::constrainExcludeClassicCalendarInviteSubject($manual);
+                    });
                 });
             }
         }
+    }
+
+    /**
+     * Postgres-safe classic invite subject guard (avoid relying on \\b word boundaries).
+     *
+     * @param  Builder|\Illuminate\Database\Query\Builder  $query
+     */
+    public static function constrainExcludeClassicCalendarInviteSubject($query): void
+    {
+        $query->whereRaw(
+            "LOWER(COALESCE(email_logs.subject, '')) !~ ?",
+            ['^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)([[:space:]]|:|$)']
+        );
     }
 
     public static function icsPropertyValue(string $ics, string $field): string

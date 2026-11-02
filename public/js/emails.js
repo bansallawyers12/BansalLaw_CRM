@@ -644,11 +644,45 @@
         });
     }
 
+    function emailIsManualClientUpload(email) {
+        if (!email) {
+            return false;
+        }
+        if (parseInt(email.mail_type, 10) !== 1) {
+            return false;
+        }
+        if (parseInt(email.client_id, 10) < 1) {
+            return false;
+        }
+        if (email.synced_email_id || email.imap_uid) {
+            return false;
+        }
+        const status = String(email.sync_assignment_status || '');
+        if (['auto_assigned', 'manual_assigned', 'unassigned', 'unlinked'].indexOf(status) !== -1) {
+            return false;
+        }
+        if (String(email.sync_source || '') === 'upload') {
+            return true;
+        }
+        if (String(email.mailbox_email || '').trim() !== '') {
+            return false;
+        }
+        if (String(email.conversion_type || '') === 'conversion_email_fetch') {
+            return true;
+        }
+        return !!(email.uploaded_doc_id);
+    }
+
     function emailLooksLikeCalendarListItem(email) {
         if (!email) {
             return false;
         }
         if (email.is_hearing) {
+            return false;
+        }
+        const subject = String(email.subject || '').trim();
+        const isClassicInviteSubject = /^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)\b/i.test(subject);
+        if (emailIsManualClientUpload(email) && !email.is_calendar_invite && !isClassicInviteSubject) {
             return false;
         }
         if (email.is_calendar_invite || email.has_calendar_invite || email.has_calendar) {
@@ -657,8 +691,7 @@
         if (email.calendar && (email.calendar.has_calendar || (email.calendar.count || 0) > 0)) {
             return true;
         }
-        const subject = String(email.subject || '').trim();
-        if (/^(invitation|accepted|declined|tentative|canceled|cancelled|updated invitation|meeting request|meeting invitation|meeting forward notification)\b/i.test(subject)) {
+        if (isClassicInviteSubject) {
             return true;
         }
         if (/\b(hearing|tribunal|court listing|directions hearing|case management hearing|in[- ]?person hearing)\b/i.test(subject)) {
