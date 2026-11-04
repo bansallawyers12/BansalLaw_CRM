@@ -1749,12 +1749,34 @@ class ClientsController extends Controller
                         $displayName = (string) ($targetRecord->client_id ?? ('#' . (int) $id));
                     }
 
+                    $matterRow = ClientMatter::query()
+                        ->where('client_id', (int) $id)
+                        ->where('client_unique_matter_no', (string) $id1)
+                        ->first(['id', 'client_unique_matter_no']);
+
+                    $matterDayPending = false;
+                    if ($matterRow && Auth::user() instanceof Staff) {
+                        $pendingQuery = \App\Models\ClientAccessGrant::query()
+                            ->where('staff_id', (int) Auth::id())
+                            ->where('grant_type', \App\Support\MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                            ->where('status', 'pending');
+                        \App\Support\MatterScopedAccess::applyMatterGrantNoteFilter($pendingQuery, (int) $matterRow->id);
+                        $matterDayPending = $pendingQuery->exists();
+                    }
+
                     return view('crm.access.detail-gate', [
                         'displayName' => $displayName . ' — ' . $id1,
                         'recordType' => (string) ($targetRecord->type ?? 'client'),
                         'canRequestAccess' => false,
                         'accessModalPayload' => null,
                         'gateMessage' => 'You are not on the matter team for this file. Ask a Super Admin to grant you access to this matter.',
+                        'canRequestMatterDay' => $matterRow !== null,
+                        'matterDayPending' => $matterDayPending,
+                        'matterDayRequest' => $matterRow ? [
+                            'client_matter_id' => (int) $matterRow->id,
+                            'reasons' => config('crm_access.quick_reason_options', []),
+                            'url' => route('crm.access.matter-day'),
+                        ] : null,
                     ]);
                 }
             }

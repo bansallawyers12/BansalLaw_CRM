@@ -108,12 +108,20 @@
 
 			<?php
 			$grantsDashUser = Auth::user();
+			$grantsDashService = app(\App\Services\CrmAccess\CrmAccessService::class);
 			$showGrantsDashboard = $grantsDashUser instanceof \App\Models\Staff
-				&& app(\App\Services\CrmAccess\CrmAccessService::class)->isApprover($grantsDashUser);
+				&& $grantsDashService->isApprover($grantsDashUser);
+			$showMatterAccessQueue = $grantsDashUser instanceof \App\Models\Staff
+				&& ! $showGrantsDashboard
+				&& \App\Support\MatterScopedAccess::canManageTemporaryGrants($grantsDashUser);
 			if ($showGrantsDashboard) {
 				$grantsDashActive = in_array(Route::currentRouteName(), ['crm.access.dashboard', 'crm.access.queue'], true) ? 'active' : '';
 			?>
 			<li class="{{ $grantsDashActive }}"><a class="nav-link" href="{{ route('crm.access.dashboard') }}">Grants dashboard</a></li>
+			<?php } elseif ($showMatterAccessQueue) {
+				$matterQueueActive = Route::currentRouteName() === 'crm.access.queue' ? 'active' : '';
+			?>
+			<li class="{{ $matterQueueActive }}"><a class="nav-link" href="{{ route('crm.access.queue') }}">Matter access requests</a></li>
 			<?php } ?>
 			
 		</ul>

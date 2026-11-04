@@ -1,13 +1,10 @@
 @php
     $dashStaff = Auth::user();
+    $dashCrmAccessService = app(\App\Services\CrmAccess\CrmAccessService::class);
     $dashCrmAccessIsApprover = $dashStaff instanceof \App\Models\Staff
-        && app(\App\Services\CrmAccess\CrmAccessService::class)->isApprover($dashStaff);
+        && $dashCrmAccessService->canReviewAccessQueue($dashStaff);
     $dashCrmAccessPending = $dashCrmAccessIsApprover
-        ? \App\Models\ClientAccessGrant::query()
-            ->where('status', 'pending')
-            ->where('grant_type', 'supervisor_approved')
-            ->where('staff_id', '!=', (int) $dashStaff->id)
-            ->count()
+        ? $dashCrmAccessService->pendingQueueFor($dashStaff)->count()
         : 0;
 @endphp
 @if($dashCrmAccessIsApprover)
@@ -76,7 +73,7 @@
                 }
                 var items = data.items || [];
                 if (items.length === 0) {
-                    box.innerHTML = '<span class="access-approvals-empty">No pending supervisor requests.</span>';
+                    box.innerHTML = '<span class="access-approvals-empty">No pending access requests.</span>';
                     return;
                 }
                 var html = '';

@@ -2,11 +2,13 @@
 
 namespace App\Services\CrmAccess;
 
+use App\Models\Admin;
 use App\Models\Branch;
 use App\Models\ClientAccessGrant;
 use App\Models\ClientMatter;
 use App\Models\Notification;
 use App\Models\Staff;
+use Illuminate\Database\Eloquent\Builder;
 use App\Support\MatterScopedAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -118,6 +120,46 @@ class CrmAccessService
     public function isApprover(Staff $user): bool
     {
         return $this->hasPermanentSuperAdminCapability($user);
+    }
+
+    /**
+     * Super Admin approves client-wide requests. Super Admin, Ajay Bansal, and Khushi Sangroya
+     * approve one-day matter requests.
+     */
+    public function canReviewAccessQueue(Staff $user): bool
+    {
+        return $this->isApprover($user) || MatterScopedAccess::canManageTemporaryGrants($user);
+    }
+
+    /**
+     * Pending requests this person is allowed to approve. Excludes their own requests.
+     *
+     * @return Builder<ClientAccessGrant>
+     */
+    public function pendingQueueFor(Staff $user): Builder
+    {
+        $seeSupervisor = $this->isApprover($user);
+        $seeMatter = MatterScopedAccess::canManageTemporaryGrants($user);
+
+        $query = ClientAccessGrant::query()
+            ->where('status', 'pending')
+            ->where('staff_id', '!=', (int) $user->id);
+
+        $query->where(function ($inner) use ($seeSupervisor, $seeMatter) {
+            if ($seeSupervisor) {
+                $inner->where('grant_type', 'supervisor_approved');
+            }
+            if ($seeMatter) {
+                $seeSupervisor
+                    ? $inner->orWhere('grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                    : $inner->where('grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP);
+            }
+            if (! $seeSupervisor && ! $seeMatter) {
+                $inner->whereRaw('1 = 0');
+            }
+        });
+
+        return $query;
     }
 
     /** @return list<int> */
@@ -247,13 +289,87 @@ class CrmAccessService
         return $grant;
     }
 
+    /**
+     * Ask Khushi, Ajay, or a Super Admin for one day on a single matter.
+     * Does not change the matter team.
+     *
+     * @throws CrmAccessDeniedException
+     */
+    public function requestMatterDayAccess(Staff $user, int $clientMatterId, string $reasonCode): ClientAccessGrant
+    {
+        if ((int) ($user->status ?? 0) !== 1) {
+            throw new CrmAccessDeniedException('Your account is not active.');
+        }
+
+        $reasons = config('crm_access.quick_reason_options', []);
+        if ($reasonCode === '' || ! array_key_exists($reasonCode, $reasons)) {
+            throw new CrmAccessDeniedException('Invalid reason.');
+        }
+
+        $matter = ClientMatter::query()->where('id', $clientMatterId)->first(['id', 'client_id', 'client_unique_matter_no']);
+        if (! $matter || (int) $matter->client_id <= 0) {
+            throw new CrmAccessDeniedException('Matter not found.');
+        }
+
+        if (MatterScopedAccess::canAccessClientMatter($clientMatterId, $user)) {
+            throw new CrmAccessDeniedException('You already have access to this matter.');
+        }
+
+        $recordType = (string) (Admin::query()->where('id', (int) $matter->client_id)->value('type') ?? 'client');
+        if (! in_array($recordType, ['client', 'lead'], true)) {
+            $recordType = 'client';
+        }
+
+        $grant = DB::transaction(function () use ($user, $matter, $clientMatterId, $reasonCode, $recordType) {
+            Staff::query()->where('id', (int) $user->id)->lockForUpdate()->first();
+
+            $maxPending = max(1, (int) config('crm_access.max_pending_supervisor_requests', 5));
+            $pendingCount = ClientAccessGrant::query()
+                ->where('staff_id', (int) $user->id)
+                ->where('grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                ->where('status', 'pending')
+                ->count();
+            if ($pendingCount >= $maxPending) {
+                throw new CrmAccessDeniedException("You already have {$maxPending} pending access requests. Wait for them to be resolved before submitting more.");
+            }
+
+            $pending = ClientAccessGrant::query()
+                ->where('staff_id', (int) $user->id)
+                ->where('grant_type', MatterScopedAccess::GRANT_TYPE_MATTER_TEMP)
+                ->where('status', 'pending');
+            MatterScopedAccess::applyMatterGrantNoteFilter($pending, $clientMatterId);
+            if ($pending->lockForUpdate()->exists()) {
+                throw new CrmAccessDeniedException('You already have a pending request for this matter.');
+            }
+
+            return ClientAccessGrant::query()->create([
+                'staff_id' => (int) $user->id,
+                'admin_id' => (int) $matter->client_id,
+                'record_type' => $recordType,
+                'grant_type' => MatterScopedAccess::GRANT_TYPE_MATTER_TEMP,
+                'access_type' => MatterScopedAccess::ACCESS_TYPE_MATTER,
+                'status' => 'pending',
+                'quick_reason_code' => $reasonCode,
+                'requester_note' => MatterScopedAccess::matterGrantNote($clientMatterId),
+                'requested_at' => Carbon::now('UTC'),
+            ]);
+        });
+
+        $this->notifyMatterDayApprovers($grant, $user, $matter, (string) $reasons[$reasonCode]);
+
+        return $grant;
+    }
+
     public function approveGrant(Staff $approver, int $grantId): ClientAccessGrant
     {
+        $grant = ClientAccessGrant::query()->findOrFail($grantId);
+        if ($grant->grant_type === MatterScopedAccess::GRANT_TYPE_MATTER_TEMP) {
+            return $this->approveMatterDayRequest($approver, $grant);
+        }
+
         if (! $this->isApprover($approver)) {
             throw new CrmAccessDeniedException('Not authorized to approve.');
         }
-
-        $grant = ClientAccessGrant::query()->findOrFail($grantId);
         if ($grant->status !== 'pending') {
             throw new CrmAccessDeniedException('Grant is not pending.');
         }
@@ -280,11 +396,14 @@ class CrmAccessService
 
     public function rejectGrant(Staff $approver, int $grantId, string $reason = ''): ClientAccessGrant
     {
+        $grant = ClientAccessGrant::query()->findOrFail($grantId);
+        if ($grant->grant_type === MatterScopedAccess::GRANT_TYPE_MATTER_TEMP) {
+            return $this->rejectMatterDayRequest($approver, $grant, $reason);
+        }
+
         if (! $this->isApprover($approver)) {
             throw new CrmAccessDeniedException('Not authorized to reject.');
         }
-
-        $grant = ClientAccessGrant::query()->findOrFail($grantId);
         if ($grant->status !== 'pending') {
             throw new CrmAccessDeniedException('Grant is not pending.');
         }
@@ -605,16 +724,184 @@ class CrmAccessService
         );
     }
 
+    /**
+     * @throws CrmAccessDeniedException
+     */
+    protected function approveMatterDayRequest(Staff $approver, ClientAccessGrant $grant): ClientAccessGrant
+    {
+        $approved = DB::transaction(function () use ($approver, $grant) {
+            $locked = ClientAccessGrant::query()->where('id', (int) $grant->id)->lockForUpdate()->first();
+            if (! $locked) {
+                throw new CrmAccessDeniedException('Grant is not pending.');
+            }
+
+            $this->assertCanDecideMatterDayRequest($approver, $locked, 'approve');
+
+            $matterId = MatterScopedAccess::parseMatterIdFromGrantNote($locked->requester_note);
+            $matter = $matterId ? ClientMatter::query()->where('id', $matterId)->first() : null;
+            if (! $matter) {
+                throw new CrmAccessDeniedException('Matter not found.');
+            }
+
+            $minutes = max(1, (int) (config('crm_access.matter_temp_duration_minutes.1_day') ?? (24 * 60)));
+            $starts = Carbon::now('UTC');
+            $ends = $starts->copy()->addMinutes($minutes);
+
+            $locked->update([
+                'status' => 'active',
+                'quick_reason_code' => '1_day',
+                'approved_by_staff_id' => (int) $approver->id,
+                'approved_at' => $starts,
+                'starts_at' => $starts,
+                'ends_at' => $ends,
+            ]);
+
+            return $locked->fresh();
+        });
+
+        $this->notifyRequesterGrantProcessed($approved, 'approved');
+
+        return $approved;
+    }
+
+    /**
+     * @throws CrmAccessDeniedException
+     */
+    protected function rejectMatterDayRequest(Staff $approver, ClientAccessGrant $grant, string $reason = ''): ClientAccessGrant
+    {
+        $rejected = DB::transaction(function () use ($approver, $grant, $reason) {
+            $locked = ClientAccessGrant::query()->where('id', (int) $grant->id)->lockForUpdate()->first();
+            if (! $locked) {
+                throw new CrmAccessDeniedException('Grant is not pending.');
+            }
+
+            $this->assertCanDecideMatterDayRequest($approver, $locked, 'decline');
+
+            $locked->update([
+                'status' => 'rejected',
+                'approved_by_staff_id' => (int) $approver->id,
+                'revoke_reason' => $reason !== '' ? $reason : null,
+            ]);
+
+            return $locked->fresh();
+        });
+
+        $this->notifyRequesterGrantProcessed($rejected, 'rejected');
+
+        return $rejected;
+    }
+
+    /**
+     * @throws CrmAccessDeniedException
+     */
+    protected function assertCanDecideMatterDayRequest(Staff $approver, ClientAccessGrant $grant, string $action): void
+    {
+        if (! MatterScopedAccess::canManageTemporaryGrants($approver)) {
+            throw new CrmAccessDeniedException('Only Super Admin, Ajay Bansal, or Khushi Sangroya may ' . $action . ' this request.');
+        }
+        if ($grant->status !== 'pending') {
+            throw new CrmAccessDeniedException('Grant is not pending.');
+        }
+        if ((int) $grant->staff_id === (int) $approver->id) {
+            throw new CrmAccessDeniedException('You cannot ' . $action . ' your own request.');
+        }
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function matterDayApproverStaffIds(): array
+    {
+        return Staff::query()
+            ->where('status', 1)
+            ->get(['id', 'first_name', 'last_name', 'role', 'status'])
+            ->filter(fn (Staff $staff) => $staff->canManageMatterTeamAccess())
+            ->map(fn (Staff $staff) => (int) $staff->id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    protected function notifyMatterDayApprovers(ClientAccessGrant $grant, Staff $requester, ClientMatter $matter, string $reasonLabel): void
+    {
+        $senderName = trim(($requester->first_name ?? '') . ' ' . ($requester->last_name ?? ''));
+        if ($senderName === '') {
+            $senderName = $requester->email ?? 'Staff';
+        }
+
+        $client = Admin::query()->where('id', (int) $matter->client_id)->first(['id', 'first_name', 'last_name', 'client_id']);
+        $clientName = trim((string) (($client->first_name ?? '') . ' ' . ($client->last_name ?? '')));
+        if ($clientName === '') {
+            $clientName = (string) ($client->client_id ?? ('#' . (int) $matter->client_id));
+        }
+        $matterRef = trim((string) ($matter->client_unique_matter_no ?? ''));
+        $matterLabel = $matterRef !== '' ? $matterRef : ('matter #' . (int) $matter->id);
+        $msg = $senderName . ' requested one day of access to ' . $clientName . ' — ' . $matterLabel . ' (' . $reasonLabel . ').';
+        $url = url('/crm/access/queue');
+
+        $approverIds = array_values(array_filter(
+            $this->matterDayApproverStaffIds(),
+            fn ($id) => (int) $id !== (int) $requester->id
+        ));
+
+        foreach ($approverIds as $receiverId) {
+            try {
+                Notification::query()->create([
+                    'sender_id' => (int) $requester->id,
+                    'receiver_id' => (int) $receiverId,
+                    'module_id' => (int) $grant->id,
+                    'url' => $url,
+                    'notification_type' => 'access_request',
+                    'message' => $msg,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('matter day access_request notification failed', ['e' => $e->getMessage()]);
+            }
+        }
+    }
+
+    protected function matterDetailUrlFromGrant(ClientAccessGrant $grant): ?string
+    {
+        $matterId = MatterScopedAccess::parseMatterIdFromGrantNote($grant->requester_note);
+        if ($matterId === null) {
+            return null;
+        }
+
+        $matter = ClientMatter::query()->where('id', $matterId)->first(['id', 'client_id', 'client_unique_matter_no']);
+        if (! $matter || (int) $matter->client_id <= 0) {
+            return null;
+        }
+
+        $ref = trim((string) ($matter->client_unique_matter_no ?? ''));
+        $path = '/clients/detail/' . base64_encode(convert_uuencode((string) $matter->client_id));
+        if ($ref !== '') {
+            $path .= '/' . $ref;
+        }
+
+        return url($path);
+    }
+
     protected function notifyRequesterGrantProcessed(ClientAccessGrant $grant, string $verb): void
     {
         $receiverId = (int) $grant->staff_id;
-        $hours = max(1, (int) config('crm_access.supervisor_grant_hours', 24));
-        $msg = $verb === 'approved'
-            ? "Your supervisor access request was approved ({$hours}h from approval)."
-            : 'Your supervisor access request was rejected.';
+        $isMatterDay = $grant->grant_type === MatterScopedAccess::GRANT_TYPE_MATTER_TEMP;
+        if ($isMatterDay) {
+            $msg = $verb === 'approved'
+                ? 'Your request for one day of access to this matter was approved. Access starts now and lasts one day.'
+                : 'Your request for one day of access to this matter was declined.';
+            $matterUrl = $verb === 'approved' ? $this->matterDetailUrlFromGrant($grant) : null;
+            $notifUrl = $matterUrl ?: url('/crm/access/my-grants');
+        } else {
+            $hours = max(1, (int) config('crm_access.supervisor_grant_hours', 24));
+            $msg = $verb === 'approved'
+                ? "Your supervisor access request was approved ({$hours}h from approval)."
+                : 'Your supervisor access request was rejected.';
+            $notifUrl = url('/crm/access/my-grants');
+        }
 
         $senderId = (int) ($grant->approved_by_staff_id ?? 0);
-        $notifUrl = url('/crm/access/my-grants');
 
         try {
             Notification::query()->create([

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Branch;
 use App\Models\ClientAccessGrant;
+use App\Models\ClientMatter;
 use App\Services\CrmAccess\CrmAccessDeniedException;
 use App\Services\CrmAccess\CrmAccessService;
 use App\Support\MatterScopedAccess;
@@ -215,10 +216,35 @@ class AccessGrantController extends Controller
         ]);
     }
 
+    public function matterDay(Request $request): JsonResponse
+    {
+        $user = $this->requireStaff();
+
+        $data = $request->validate([
+            'client_matter_id' => ['required', 'integer', 'min:1'],
+            'reason_code' => ['required', 'string', Rule::in(array_keys(config('crm_access.quick_reason_options', [])))],
+        ]);
+
+        try {
+            $grant = $this->crmAccess->requestMatterDayAccess(
+                $user,
+                (int) $data['client_matter_id'],
+                (string) $data['reason_code']
+            );
+        } catch (CrmAccessDeniedException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'message' => 'Request sent. You will be notified when it is approved.',
+            'grant_id' => (int) $grant->id,
+        ]);
+    }
+
     public function queuePage()
     {
         $user = $this->requireStaff();
-        if (! $this->crmAccess->isApprover($user)) {
+        if (! $this->crmAccess->canReviewAccessQueue($user)) {
             abort(403, 'Not authorized.');
         }
 
@@ -234,20 +260,17 @@ class AccessGrantController extends Controller
     public function queueData(): JsonResponse
     {
         $user = $this->requireStaff();
-        if (! $this->crmAccess->isApprover($user)) {
+        if (! $this->crmAccess->canReviewAccessQueue($user)) {
             abort(403, 'Not authorized.');
         }
 
-        $items = ClientAccessGrant::query()
+        $items = $this->crmAccess->pendingQueueFor($user)
             ->with(['staff:id,first_name,last_name,email', 'admin:id,first_name,last_name,client_id,type'])
-            ->where('status', 'pending')
-            ->where('grant_type', 'supervisor_approved')
-            // Approvers should not see (or act on) their own requests in the approvals queue.
-            // Requesters can still track these in "My grants".
-            ->where('staff_id', '!=', (int) $user->id)
             ->orderByDesc('requested_at')
             ->limit(200)
-            ->get();
+            ->get()
+            ->map(fn (ClientAccessGrant $grant) => $this->presentQueueGrant($grant))
+            ->values();
 
         return response()->json(['items' => $items]);
     }
@@ -258,19 +281,18 @@ class AccessGrantController extends Controller
     public function queueMini(): JsonResponse
     {
         $user = $this->requireStaff();
-        if (! $this->crmAccess->isApprover($user)) {
+        if (! $this->crmAccess->canReviewAccessQueue($user)) {
             abort(403, 'Not authorized.');
         }
 
-        $base = ClientAccessGrant::query()
+        $base = $this->crmAccess->pendingQueueFor($user)
             ->with(['staff:id,first_name,last_name,email', 'admin:id,first_name,last_name,client_id,type'])
-            ->where('status', 'pending')
-            ->where('grant_type', 'supervisor_approved')
-            ->where('staff_id', '!=', (int) $user->id)
             ->orderByDesc('requested_at');
 
         $pendingCount = (clone $base)->count();
-        $items = (clone $base)->limit(15)->get();
+        $items = (clone $base)->limit(15)->get()
+            ->map(fn (ClientAccessGrant $grant) => $this->presentQueueGrant($grant))
+            ->values();
 
         return response()->json([
             'pending_count' => (int) $pendingCount,
@@ -566,6 +588,26 @@ class AccessGrantController extends Controller
         }
 
         return $q;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function presentQueueGrant(ClientAccessGrant $grant): array
+    {
+        $data = $grant->toArray();
+        if ($grant->grant_type !== MatterScopedAccess::GRANT_TYPE_MATTER_TEMP) {
+            return $data;
+        }
+
+        $matterId = MatterScopedAccess::parseMatterIdFromGrantNote($grant->requester_note);
+        $ref = $matterId
+            ? ClientMatter::query()->where('id', $matterId)->value('client_unique_matter_no')
+            : null;
+        $label = trim((string) $ref);
+        $data['requester_note'] = 'One day on ' . ($label !== '' ? $label : ('matter #' . (int) $matterId));
+
+        return $data;
     }
 
     protected function requireStaff(): \App\Models\Staff

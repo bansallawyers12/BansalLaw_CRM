@@ -362,6 +362,7 @@ Route::prefix('crm/access')->name('crm.access.')->group(function () {
     Route::post('/matter-temporary', [AccessGrantController::class, 'matterTemporary'])->middleware('throttle:30,1')->name('matter-temporary');
     Route::post('/matter-temporary/revoke', [AccessGrantController::class, 'matterTemporaryRevoke'])->middleware('throttle:30,1')->name('matter-temporary.revoke');
     Route::post('/matter-temporary/revoke-staff', [AccessGrantController::class, 'matterTemporaryRevokeByStaff'])->middleware('throttle:30,1')->name('matter-temporary.revoke-staff');
+    Route::post('/matter-day', [AccessGrantController::class, 'matterDay'])->middleware('throttle:10,1')->name('matter-day');
     Route::get('/queue', [AccessGrantController::class, 'queuePage'])->name('queue');
     Route::get('/queue/data', [AccessGrantController::class, 'queueData'])->name('queue.data');
     Route::post('/{grant}/approve', [AccessGrantController::class, 'approve'])->whereNumber('grant')->name('approve');

@@ -14,7 +14,7 @@
                 <div class="col-9 col-md-9 col-lg-9">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Pending supervisor access requests</h4>
+                    <h4 class="mb-0">Pending access requests</h4>
                     <div class="d-flex gap-2">
                         <a href="{{ route('crm.access.dashboard') }}" class="btn btn-sm btn-outline-primary">Grants dashboard</a>
                         <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary">Main dashboard</a>
