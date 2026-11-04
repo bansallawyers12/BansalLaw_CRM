@@ -302,9 +302,10 @@ class CrmAccessService
         }
 
         $reasons = config('crm_access.quick_reason_options', []);
-        if ($reasonCode === '' || ! array_key_exists($reasonCode, $reasons)) {
+        if ($reasonCode !== '' && ! array_key_exists($reasonCode, $reasons)) {
             throw new CrmAccessDeniedException('Invalid reason.');
         }
+        $reasonLabel = $reasonCode !== '' ? (string) $reasons[$reasonCode] : '';
 
         $matter = ClientMatter::query()->where('id', $clientMatterId)->first(['id', 'client_id', 'client_unique_matter_no']);
         if (! $matter || (int) $matter->client_id <= 0) {
@@ -349,13 +350,13 @@ class CrmAccessService
                 'grant_type' => MatterScopedAccess::GRANT_TYPE_MATTER_TEMP,
                 'access_type' => MatterScopedAccess::ACCESS_TYPE_MATTER,
                 'status' => 'pending',
-                'quick_reason_code' => $reasonCode,
+                'quick_reason_code' => $reasonCode !== '' ? $reasonCode : null,
                 'requester_note' => MatterScopedAccess::matterGrantNote($clientMatterId),
                 'requested_at' => Carbon::now('UTC'),
             ]);
         });
 
-        $this->notifyMatterDayApprovers($grant, $user, $matter, (string) $reasons[$reasonCode]);
+        $this->notifyMatterDayApprovers($grant, $user, $matter, $reasonLabel);
 
         return $grant;
     }
@@ -836,7 +837,11 @@ class CrmAccessService
         }
         $matterRef = trim((string) ($matter->client_unique_matter_no ?? ''));
         $matterLabel = $matterRef !== '' ? $matterRef : ('matter #' . (int) $matter->id);
-        $msg = $senderName . ' requested one day of access to ' . $clientName . ' — ' . $matterLabel . ' (' . $reasonLabel . ').';
+        $msg = $senderName . ' requested one day of access to ' . $clientName . ' — ' . $matterLabel;
+        if ($reasonLabel !== '') {
+            $msg .= ' (' . $reasonLabel . ')';
+        }
+        $msg .= '.';
         $url = url('/crm/access/queue');
 
         $approverIds = array_values(array_filter(

@@ -220,23 +220,27 @@ class AccessGrantController extends Controller
     {
         $user = $this->requireStaff();
 
+        if ($request->input('reason_code') === '') {
+            $request->merge(['reason_code' => null]);
+        }
+
         $data = $request->validate([
             'client_matter_id' => ['required', 'integer', 'min:1'],
-            'reason_code' => ['required', 'string', Rule::in(array_keys(config('crm_access.quick_reason_options', [])))],
+            'reason_code' => ['nullable', 'string', Rule::in(array_keys(config('crm_access.quick_reason_options', [])))],
         ]);
 
         try {
             $grant = $this->crmAccess->requestMatterDayAccess(
                 $user,
                 (int) $data['client_matter_id'],
-                (string) $data['reason_code']
+                (string) ($data['reason_code'] ?? '')
             );
         } catch (CrmAccessDeniedException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
         return response()->json([
-            'message' => 'Request sent. You will be notified when it is approved.',
+            'message' => 'Request sent. You will be granted one day access.',
             'grant_id' => (int) $grant->id,
         ]);
     }

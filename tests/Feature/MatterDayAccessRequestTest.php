@@ -45,9 +45,15 @@ class MatterDayAccessRequestTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Access to this matter is restricted', false);
-        $response->assertSee('Khushi, Ajay, or a Super Admin can approve one day of access to this matter.', false);
-        $response->assertSee('Request access', false);
-        $response->assertDontSee('Ask a Super Admin to grant you access', false);
+        $response->assertSee('Request Access and you will be granted one day access.', false);
+        $response->assertSee('Leave blank', false);
+        $response->assertDontSee('Khushi', false);
+        $response->assertDontSee('Super Admin', false);
+
+        $this->postJson(route('crm.access.matter-day'), [
+            'client_matter_id' => $blocked->id,
+            'reason_code' => '',
+        ])->assertOk();
     }
 
     #[Test]
@@ -90,7 +96,7 @@ class MatterDayAccessRequestTest extends TestCase
         $encodeId = base64_encode(convert_uuencode((string) $client->id));
         $this->get('/clients/detail/' . $encodeId . '/' . $blocked->client_unique_matter_no)
             ->assertOk()
-            ->assertSee('Request sent. Khushi, Ajay, or a Super Admin can approve one day of access to this matter.', false);
+            ->assertSee('Request sent. You will be granted one day access.', false);
 
         $grant = ClientAccessGrant::query()->findOrFail($grantId);
         $this->assertSame('pending', $grant->status);

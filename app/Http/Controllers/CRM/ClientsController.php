@@ -1769,7 +1769,7 @@ class ClientsController extends Controller
                         'recordType' => (string) ($targetRecord->type ?? 'client'),
                         'canRequestAccess' => false,
                         'accessModalPayload' => null,
-                        'gateMessage' => 'You are not on the matter team for this file. Ask a Super Admin to grant you access to this matter.',
+                        'gateMessage' => 'Request Access and you will be granted one day access.',
                         'canRequestMatterDay' => $matterRow !== null,
                         'matterDayPending' => $matterDayPending,
                         'matterDayRequest' => $matterRow ? [

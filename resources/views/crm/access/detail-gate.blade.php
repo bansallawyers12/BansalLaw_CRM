@@ -22,9 +22,9 @@
                     @endif
                     <p class="text-muted mb-4" id="matterDayRequestIntro">
                         @if($showMatterDayRequest && !empty($matterDayPending))
-                            Request sent. Khushi, Ajay, or a Super Admin can approve one day of access to this matter. You will be notified when it is approved.
+                            Request sent. You will be granted one day access.
                         @elseif($showMatterDayRequest)
-                            You are not on the matter team for this file. Request access and Khushi, Ajay, or a Super Admin can approve one day of access to this matter.
+                            Request Access and you will be granted one day access.
                         @elseif(!empty($gateMessage))
                             {{ $gateMessage }}
                         @else
@@ -40,11 +40,12 @@
                         <div id="matterDayRequestPanel" class="mx-auto mb-4 text-start" style="max-width: 320px;" @if(!empty($matterDayPending)) hidden @endif>
                             <label class="form-label small text-muted" for="matterDayReason">Reason</label>
                             <select id="matterDayReason" class="form-select form-select-sm mb-3">
+                                <option value="">Leave blank</option>
                                 @foreach(($matterDayRequest['reasons'] ?? []) as $reasonCode => $reasonLabel)
                                     <option value="{{ $reasonCode }}">{{ $reasonLabel }}</option>
                                 @endforeach
                             </select>
-                            <button type="button" class="btn btn-primary w-100" id="matterDayRequestBtn">Request access</button>
+                            <button type="button" class="btn btn-primary w-100" id="matterDayRequestBtn">Request Access</button>
                         </div>
                         <p class="text-muted mb-4 d-none" id="matterDayRequestStatus" role="status"></p>
                     @endif
@@ -116,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             var intro = document.getElementById('matterDayRequestIntro');
             if (intro) {
-                intro.textContent = 'Request sent. Khushi, Ajay, or a Super Admin can approve one day of access to this matter. You will be notified when it is approved.';
+                intro.textContent = 'Request sent. You will be granted one day access.';
             }
             if (status) {
                 status.textContent = '';
