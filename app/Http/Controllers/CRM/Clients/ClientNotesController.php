@@ -405,8 +405,8 @@ class ClientNotesController extends Controller
                 'size' => NoteAttachmentHtml::humanSize((int) $a->file_size),
                 'is_image' => $a->isImage(),
                 'extension' => $a->extension,
-                'download_url' => url('/note-attachments/' . $a->id . '/download'),
-                'preview_url' => url('/note-attachments/' . $a->id . '/preview'),
+                'download_url' => NoteAttachmentHtml::downloadUrl($a),
+                'preview_url' => NoteAttachmentHtml::previewUrl($a),
             ];
         })->values();
 		

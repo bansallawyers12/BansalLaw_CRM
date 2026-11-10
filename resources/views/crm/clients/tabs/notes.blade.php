@@ -69,10 +69,17 @@
                             overflow: visible;
                         }
                         .note-card-redesign .dropdown-menu {
-                            z-index: 1000;
+                            z-index: 1060;
                             position: absolute;
                             right: 0;
                             left: auto;
+                            min-width: 10rem;
+                        }
+                        .note-card-actions-toggle {
+                            width: auto;
+                            min-width: 0;
+                            padding: 4px 8px;
+                            line-height: 1;
                         }
                         .note-type-label {
                             display: inline-block;
@@ -182,8 +189,8 @@
                             vertical-align: baseline;
                         }
                         .note-toggle-btn-div-type {
-                            display:inline-grid;
-                            width: 133px;
+                            display: inline-block;
+                            max-width: 133px;
                         }
                         .pined_note {
                             position: absolute;
@@ -221,7 +228,7 @@
                         .note-attachment-thumb img {
                             width: 110px;
                             height: 80px;
-                            object-fit: cover;
+                            object-fit: contain;
                             border-radius: 10px;
                             border: 1px solid #e2e8f0;
                             background: #f8fafc;
@@ -402,20 +409,17 @@
                 
                 // SAFE FIX: Ensure dropdown menus close properly to prevent overlay issues
                 $(document).on('click', function(e) {
-                    // Close dropdown if clicking outside
-                    if (!$(e.target).closest('.note-toggle-btn-div').length && 
+                    if (!$(e.target).closest('.note-toggle-btn-div').length &&
                         !$(e.target).closest('.dropdown-menu').length) {
-                        $('.note-card-redesign .dropdown-menu').removeClass('show').css('display', 'none');
+                        $('.note-card-redesign .dropdown-menu').removeClass('show');
                         $('.note-card-redesign .dropdown-toggle').attr('aria-expanded', 'false');
                     }
                 });
-                
-                // Close dropdowns when clicking on dropdown items
+
                 $(document).on('click', '.note-card-redesign .dropdown-item', function() {
-                    setTimeout(function() {
-                        $('.note-card-redesign .dropdown-menu').removeClass('show').css('display', 'none');
-                        $('.note-card-redesign .dropdown-toggle').attr('aria-expanded', 'false');
-                    }, 100);
+                    var $menu = $(this).closest('.dropdown-menu');
+                    $menu.removeClass('show');
+                    $menu.siblings('.dropdown-toggle').attr('aria-expanded', 'false');
                 });
             }
 

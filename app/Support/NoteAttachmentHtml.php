@@ -7,6 +7,27 @@ use Illuminate\Support\Collection;
 
 class NoteAttachmentHtml
 {
+    public static function previewUrl(NoteAttachment $attachment): string
+    {
+        $id = (int) $attachment->getKey();
+        if ($id <= 0) {
+            return '';
+        }
+        $version = $attachment->updated_at ? strtotime((string) $attachment->updated_at) : $id;
+
+        return '/note-attachments/' . $id . '/preview?v=' . $version;
+    }
+
+    public static function downloadUrl(NoteAttachment $attachment): string
+    {
+        $id = (int) $attachment->getKey();
+        if ($id <= 0) {
+            return '';
+        }
+
+        return '/note-attachments/' . $id . '/download';
+    }
+
     /**
      * @param  Collection<int, NoteAttachment>|iterable  $attachments
      */
@@ -22,9 +43,14 @@ class NoteAttachmentHtml
             if (! $attachment instanceof NoteAttachment) {
                 continue;
             }
+            $previewPath = self::previewUrl($attachment);
+            $downloadPath = self::downloadUrl($attachment);
+            if ($previewPath === '' && $downloadPath === '') {
+                continue;
+            }
             $name = htmlspecialchars((string) $attachment->original_name, ENT_QUOTES, 'UTF-8');
-            $download = htmlspecialchars(url('/note-attachments/' . $attachment->id . '/download'), ENT_QUOTES, 'UTF-8');
-            $preview = htmlspecialchars(url('/note-attachments/' . $attachment->id . '/preview'), ENT_QUOTES, 'UTF-8');
+            $download = htmlspecialchars($downloadPath, ENT_QUOTES, 'UTF-8');
+            $preview = htmlspecialchars($previewPath, ENT_QUOTES, 'UTF-8');
             $size = self::humanSize((int) $attachment->file_size);
 
             if ($attachment->isImage()) {

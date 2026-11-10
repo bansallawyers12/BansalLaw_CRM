@@ -329,23 +329,6 @@
         syncNoteFileInput($field);
     }
 
-    function dataUriToNoteFile(dataUri, index) {
-        var match = /^data:image\/([\w.+-]+);base64,([\s\S]+)$/i.exec(String(dataUri || '').trim());
-        if (!match) {
-            throw new Error('invalid data uri');
-        }
-        var subtype = String(match[1] || 'png').toLowerCase().replace('jpeg', 'jpg');
-        var b64 = String(match[2] || '').replace(/\s+/g, '');
-        var bin = atob(b64);
-        var len = bin.length;
-        var arr = new Uint8Array(len);
-        for (var i = 0; i < len; i++) {
-            arr[i] = bin.charCodeAt(i);
-        }
-        var mime = 'image/' + (subtype === 'jpg' ? 'jpeg' : subtype);
-        return new File([arr], 'Pasted image ' + index + '.' + subtype, { type: mime, lastModified: Date.now() });
-    }
-
     function blobUrlToNoteFile(blobUrl, index) {
         return fetch(blobUrl).then(function(res) {
             if (!res.ok) {
@@ -373,11 +356,8 @@
         root.querySelectorAll('img').forEach(function(img) {
             var src = img.getAttribute('src') || '';
             if (/^data:image\//i.test(src)) {
-                seq += 1;
-                try {
-                    files.push(dataUriToNoteFile(src, seq));
-                } catch (err) { /* skip */ }
-                img.parentNode && img.parentNode.removeChild(img);
+                // Server promotes data URIs; client atob() fails on large pastes and would strip the image with no file.
+                return;
             } else if (/^blob:/i.test(src)) {
                 seq += 1;
                 var place = seq;
@@ -426,11 +406,20 @@
         $wrap.empty();
         (attachments || []).forEach(function(att) {
             var $chip = $('<div class="note-existing-chip"></div>');
-            $chip.append($('<i class="fa-solid fa-paperclip"></i>'));
-            var $link = $('<a target="_blank" rel="noopener noreferrer"></a>')
-                .attr('href', att.download_url)
-                .text(att.name + (att.size ? ' (' + att.size + ')' : ''));
-            $chip.append($link);
+            if (att.is_image && att.preview_url) {
+                var $thumbLink = $('<a class="note-existing-thumb" target="_blank" rel="noopener noreferrer"></a>')
+                    .attr('href', att.preview_url)
+                    .attr('title', att.name || 'Attachment');
+                $thumbLink.append($('<img>').attr('src', att.preview_url).attr('alt', att.name || ''));
+                $chip.append($thumbLink);
+                $chip.append($('<span class="note-existing-thumb-name"></span>').text(att.name + (att.size ? ' (' + att.size + ')' : '')));
+            } else {
+                $chip.append($('<i class="fa-solid fa-paperclip"></i>'));
+                var $link = $('<a target="_blank" rel="noopener noreferrer"></a>')
+                    .attr('href', att.download_url)
+                    .text(att.name + (att.size ? ' (' + att.size + ')' : ''));
+                $chip.append($link);
+            }
             var $rm = $('<button type="button" aria-label="Remove attachment"><i class="fa-solid fa-xmark"></i></button>');
             $rm.on('click', function() {
                 $form.append($('<input type="hidden" name="remove_attachment_ids[]">').val(att.id));

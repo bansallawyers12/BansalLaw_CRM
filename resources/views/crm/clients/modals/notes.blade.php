@@ -634,10 +634,38 @@
 .note-attachment-thumb img {
     width: 110px;
     height: 80px;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 10px;
     border: 1px solid #e2e8f0;
     background: #f8fafc;
+}
+.note-existing-thumb {
+    display: flex;
+    flex-direction: column;
+    width: 88px;
+    text-decoration: none;
+    color: #334155;
+}
+.note-existing-thumb img {
+    width: 88px;
+    height: 64px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+.note-existing-thumb-name {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.note-existing-chip {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    max-width: 120px;
 }
 .note-attachment-thumb span,
 .note-attachment-name {

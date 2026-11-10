@@ -63,7 +63,9 @@ class ClientNotesListService
             if (NoteDescriptionEmbeddedImages::countDataUriImages((string) $note->description) > 0) {
                 NoteDescriptionEmbeddedImages::repairNoteIfNeeded($note);
                 $note->unsetRelation('attachments');
-                $note->load('attachments');
+                $note->load(['attachments' => static function ($query) {
+                    $query->orderBy('id');
+                }]);
             }
         }
         $this->normalizeSpendMinutes($notes);

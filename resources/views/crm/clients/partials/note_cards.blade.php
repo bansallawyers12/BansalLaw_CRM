@@ -31,10 +31,10 @@
             <span class="author-updated-date-time">{{ date('d/m/Y h:i A', strtotime((string) $list->updated_at)) }}</span>
             <div class="note-toggle-btn-div">
                 <div class="dropdown">
-                    <button class="btn btn-link dropdown-toggle note-toggle-btn-div-type" type="button" data-bs-toggle="dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn btn-link dropdown-toggle note-card-actions-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
-                    <div class="dropdown-menu">
+                    <div class="dropdown-menu dropdown-menu-end">
                         <a class="dropdown-item opennoteform" data-id="{{ $list->id }}" href="javascript:;">Edit</a>
                         @if ($canEditDatetime)
                             <a class="dropdown-item editdatetime" data-id="{{ $list->id }}" href="javascript:;">Edit Date Time</a>
