@@ -109,6 +109,44 @@ final class OfficeDocumentFormat
             || str_contains($message, 'not a zip');
     }
 
+    public static function isValidDocxFile(string $path): bool
+    {
+        if (! is_file($path)) {
+            return false;
+        }
+
+        $size = filesize($path);
+        if ($size === false || $size < 100) {
+            return false;
+        }
+
+        $head = @file_get_contents($path, false, null, 0, 4);
+        if (! is_string($head) || ! self::isOoxmlZip($head)) {
+            return false;
+        }
+
+        $zip = new \ZipArchive;
+        if ($zip->open($path) !== true) {
+            return false;
+        }
+
+        $ok = $zip->locateName('word/document.xml') !== false;
+        $zip->close();
+
+        return $ok;
+    }
+
+    public static function sanitizeXmlText(string $value): string
+    {
+        if ($value === '') {
+            return '';
+        }
+
+        $cleaned = @preg_replace('/[^\x09\x0A\x0D\x20-\x{D7FF}\x{E000}-\x{FFFD}]/u', '', $value);
+
+        return $cleaned ?? $value;
+    }
+
     private static function normalizeWordExtensionAlias(string $extension): string
     {
         return match ($extension) {

@@ -22,8 +22,18 @@ class LegalFormPreviewService
         $updatedAt = $legalForm->updated_at?->getTimestamp() ?? 0;
         if ($legalForm->pdf_path) {
             $fullPath = public_path($legalForm->pdf_path);
-            if (is_file($fullPath) && (@filemtime($fullPath) ?: 0) >= $updatedAt) {
+            if (is_file($fullPath)
+                && (@filemtime($fullPath) ?: 0) >= $updatedAt
+                && OfficeDocumentFormat::isValidDocxFile($fullPath)) {
                 return $legalForm->pdf_path;
+            }
+
+            if (is_file($fullPath) && ! OfficeDocumentFormat::isValidDocxFile($fullPath)) {
+                Log::warning('Regenerating corrupt legal form DOCX cache', [
+                    'legal_form_id' => $legalForm->id,
+                    'path' => $legalForm->pdf_path,
+                ]);
+                @unlink($fullPath);
             }
         }
 

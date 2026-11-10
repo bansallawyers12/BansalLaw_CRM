@@ -11,6 +11,7 @@ use App\Services\LegalFormFileStorage;
 use App\Services\LegalFormPreviewService;
 use App\Services\LegalFormScopeAiService;
 use App\Services\LegalFormUploadRestoreService;
+use App\Support\OfficeDocumentFormat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -302,21 +303,10 @@ class LegalFormsController extends Controller
             return $this->downloadUploadedFormFile($legalForm);
         }
 
-        $docxPath = $this->previewService->ensureGeneratedDocx($legalForm);
+        $fullPath = $this->resolveGeneratedDocxFullPath($legalForm, true);
+        $filename = $this->legalFormDownloadFilename($legalForm);
 
-        $fullPath = public_path($docxPath);
-        if (!file_exists($fullPath)) {
-            abort(404, 'Document not found.');
-        }
-
-        $client = $legalForm->client;
-        $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-        $typeLabel = str_replace(' ', '_', ClientLegalForm::FORM_TYPES[$legalForm->form_type] ?? 'Form');
-        $filename = $clientName . '_' . $typeLabel . '.docx';
-
-        return response()->download($fullPath, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        ]);
+        return $this->docxDownloadResponse($fullPath, $filename);
     }
 
     public function downloadAttachment(ClientLegalForm $legalForm)
@@ -474,6 +464,11 @@ class LegalFormsController extends Controller
         }
 
         $filename = $legalForm->attachment_original_name ?: basename($relativePath);
+
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (in_array($extension, ['docx', 'doc', 'docm'], true)) {
+            return $this->downloadOfficeFileBytes($relativePath, $filename, $extension);
+        }
 
         return $this->fileStorage->downloadResponse($relativePath, $filename);
     }
@@ -637,6 +632,97 @@ class LegalFormsController extends Controller
         return response()->file($fullPath, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'Content-Disposition' => $disposition . '; filename="' . $safeFilename . '"',
+        ]);
+    }
+
+    private function resolveGeneratedDocxFullPath(ClientLegalForm $legalForm, bool $regenerateIfInvalid): string
+    {
+        $docxPath = $this->previewService->ensureGeneratedDocx($legalForm);
+        $fullPath = public_path($docxPath);
+        if (! is_file($fullPath)) {
+            abort(404, 'Document not found.');
+        }
+
+        if (! OfficeDocumentFormat::isValidDocxFile($fullPath)) {
+            if (! $regenerateIfInvalid) {
+                abort(422, 'The generated Word file is damaged. Edit the form and save again.');
+            }
+
+            @unlink($fullPath);
+            $legalForm->timestamps = false;
+            $legalForm->pdf_path = null;
+            $legalForm->save();
+            $legalForm->timestamps = true;
+            $this->previewService->forgetHtmlCache((int) $legalForm->id);
+
+            $docxPath = $this->previewService->ensureGeneratedDocx($legalForm->fresh());
+            $fullPath = public_path($docxPath);
+            if (! is_file($fullPath) || ! OfficeDocumentFormat::isValidDocxFile($fullPath)) {
+                abort(422, 'Could not generate a valid Word document. Please try again.');
+            }
+        }
+
+        return $fullPath;
+    }
+
+    private function legalFormDownloadFilename(ClientLegalForm $legalForm): string
+    {
+        $client = $legalForm->client;
+        $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        $typeLabel = str_replace(' ', '_', ClientLegalForm::FORM_TYPES[$legalForm->form_type] ?? 'Form');
+
+        return $clientName . '_' . $typeLabel . '.docx';
+    }
+
+    private function docxDownloadResponse(string $fullPath, string $downloadFilename)
+    {
+        $asciiName = preg_replace('/[^a-zA-Z0-9._-]+/', '_', $downloadFilename) ?: 'legal-form.docx';
+        $encodedUtf8 = rawurlencode($downloadFilename);
+
+        return response()->file($fullPath, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Content-Disposition' => 'attachment; filename="' . $asciiName . '"; filename*=UTF-8\'\'' . $encodedUtf8,
+            'Content-Length' => (string) filesize($fullPath),
+            'Cache-Control' => 'private, no-transform',
+        ]);
+    }
+
+    private function downloadOfficeFileBytes(string $relativePath, string $filename, string $extension)
+    {
+        $resolved = $this->fileStorage->resolveReadablePath($relativePath, $extension);
+        if ($resolved === null) {
+            abort(404, 'Uploaded form file not found.');
+        }
+
+        $bytes = null;
+        try {
+            $bytes = file_get_contents($resolved['path']);
+            if ($extension === 'docx' && ! OfficeDocumentFormat::isValidDocxFile($resolved['path'])) {
+                abort(422, 'The uploaded Word file is damaged. Re-upload the document.');
+            }
+        } finally {
+            if (! empty($resolved['temporary']) && is_file($resolved['path'])) {
+                @unlink($resolved['path']);
+            }
+        }
+
+        if (! is_string($bytes) || $bytes === '') {
+            abort(404, 'Uploaded form file not found.');
+        }
+
+        $mimeTypes = [
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'docm' => 'application/vnd.ms-word.document.macroEnabled.12',
+        ];
+
+        $asciiName = preg_replace('/[^a-zA-Z0-9._-]+/', '_', $filename) ?: 'uploaded-form.' . $extension;
+
+        return response($bytes, 200, [
+            'Content-Type' => $mimeTypes[$extension] ?? 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="' . $asciiName . '"',
+            'Content-Length' => (string) strlen($bytes),
+            'Cache-Control' => 'private, no-transform',
         ]);
     }
 

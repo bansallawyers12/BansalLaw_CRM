@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ClientAddress;
 use App\Models\ClientLegalForm;
+use App\Support\OfficeDocumentFormat;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -173,7 +174,12 @@ class LegalFormDocxService
             26 => number_format($form->estimated_total ?? 0, 2),
         ];
 
-        $this->replaceAllFormFields(public_path($path), $fieldValuesByIndex);
+        $fullPath = public_path($path);
+        if (! $this->replaceAllFormFields($fullPath, $fieldValuesByIndex) || ! OfficeDocumentFormat::isValidDocxFile($fullPath)) {
+            @unlink($fullPath);
+
+            return $this->generateShortCostsDisclosureAsPhpWord($form);
+        }
 
         return $path;
     }
@@ -247,11 +253,16 @@ class LegalFormDocxService
      * After filling, unwrap fields to plain text and turn off Word form shading
      * so downloads do not show gray backgrounds behind filled values.
      */
-    private function replaceAllFormFields(string $docxPath, array $fieldValuesByIndex): void
+    private function replaceAllFormFields(string $docxPath, array $fieldValuesByIndex): bool
     {
+        $fieldValuesByIndex = array_map(
+            static fn ($value) => OfficeDocumentFormat::sanitizeXmlText((string) $value),
+            $fieldValuesByIndex
+        );
+
         $zip = new \ZipArchive;
         if ($zip->open($docxPath) !== true) {
-            return;
+            return false;
         }
         $xml = $zip->getFromName('word/document.xml');
 
@@ -298,7 +309,11 @@ class LegalFormDocxService
             $zip->addFromString('word/settings.xml', $this->disableFormFieldShading($settingsXml));
         }
 
-        $zip->close();
+        if ($zip->close() !== true) {
+            return false;
+        }
+
+        return OfficeDocumentFormat::isValidDocxFile($docxPath);
     }
 
     /**
