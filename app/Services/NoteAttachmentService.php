@@ -31,6 +31,11 @@ class NoteAttachmentService
     /**
      * @param  UploadedFile[]|UploadedFile|null  $files
      */
+    public static function countUploads($files): int
+    {
+        return count(self::normalizeFiles($files));
+    }
+
     public static function validateUploads($files): ?string
     {
         $files = self::normalizeFiles($files);
@@ -122,6 +127,86 @@ class NoteAttachmentService
         }
 
         return $matterDocumentRefresh;
+    }
+
+    /**
+     * @return array{folder_id: string, client_matter_id: int, folder_created: bool}|null
+     */
+    public static function storeBytesForNote(
+        Note $note,
+        string $bytes,
+        string $originalName,
+        string $mimeType,
+        string $extension
+    ): ?array {
+        if ($bytes === '') {
+            return null;
+        }
+
+        $ext = strtolower($extension);
+        if ($ext === '' || ! in_array($ext, self::ALLOWED_EXTENSIONS, true)) {
+            return null;
+        }
+
+        $size = strlen($bytes);
+        if ($size <= 0 || $size > self::MAX_BYTES) {
+            return null;
+        }
+
+        $durable = app(CrmDurableStorage::class);
+        $dir = 'note_attachments/' . (int) $note->client_id . '/' . (int) $note->id;
+        $storedName = Str::uuid()->toString() . ($ext !== '' ? '.' . $ext : '');
+        $path = $dir . '/' . $storedName;
+
+        try {
+            $durable->putBytes($path, $bytes);
+        } catch (\Throwable $e) {
+            Log::warning('Note attachment store failed (embedded image)', [
+                'note_id' => $note->id,
+                'original' => $originalName,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $attachment = NoteAttachment::create([
+            'note_id' => $note->id,
+            'client_id' => $note->client_id,
+            'uploaded_by' => Auth::guard('admin')->id() ?: Auth::id(),
+            'original_name' => $originalName,
+            'stored_path' => $path,
+            'mime_type' => $mimeType,
+            'extension' => $ext,
+            'file_size' => $size,
+        ]);
+
+        try {
+            $tmpPath = tempnam(sys_get_temp_dir(), 'note_att_');
+            if ($tmpPath === false) {
+                throw new \RuntimeException('Could not create temp file for matter sync.');
+            }
+            file_put_contents($tmpPath, $bytes);
+            $uploaded = new UploadedFile(
+                $tmpPath,
+                $originalName,
+                $mimeType,
+                null,
+                true
+            );
+            $syncResult = app(NoteMatterDocumentSyncService::class)->syncAttachment($note, $attachment, $uploaded);
+            @unlink($tmpPath);
+
+            return $syncResult;
+        } catch (\Throwable $e) {
+            Log::warning('Note attachment could not sync to matter documents', [
+                'note_id' => $note->id,
+                'attachment_id' => $attachment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
     }
 
     public static function deleteAttachment(NoteAttachment $attachment): void

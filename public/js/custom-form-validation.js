@@ -315,6 +315,19 @@ function crmSubmitNoteFormAjax(formName, options) {
 	});
 }
 
+function crmSubmitNoteFormWithEditorPrep(formName, options) {
+	var submit = function() {
+		crmSubmitNoteFormAjax(formName, options);
+	};
+	if (typeof window.crmPrepareNoteEditorBeforeSave === 'function') {
+		window.crmPrepareNoteEditorBeforeSave(formName).then(submit).catch(function() {
+			submit();
+		});
+	} else {
+		submit();
+	}
+}
+
 function customValidate(formName, savetype = '')
 	{ //alert(formName);
 		if (formName === 'convert_lead_to_client') {
@@ -401,7 +414,23 @@ function customValidate(formName, savetype = '')
 								var editor = editorId ? tinymce.get(editorId) : null;
 								if (editor) {
 									editor.save();
-									rawVal = editor.getContent({ format: 'text' }) || '';
+									var noteFormHasMedia = $.inArray(formName, ['notetermform', 'notetermform_n', 'addnoteform', 'editnotetermform']) !== -1;
+									if (noteFormHasMedia) {
+										var noteHtml = editor.getContent() || '';
+										var noteText = editor.getContent({ format: 'text' }) || '';
+										var hasPastedOrEmbeddedImage = /<img\b/i.test(noteHtml);
+										var $noteForm = $element.closest('form');
+										var pendingAttach = 0;
+										if ($noteForm.length) {
+											var $attField = $noteForm.find('.note-attachments-field').first();
+											if ($attField.length) {
+												pendingAttach = ($attField.data('files') || []).length;
+											}
+										}
+										rawVal = ($.trim(noteText) || hasPastedOrEmbeddedImage || pendingAttach > 0) ? '1' : '';
+									} else {
+										rawVal = editor.getContent({ format: 'text' }) || '';
+									}
 								}
 							}
 							var trimVal = $.trim(typeof rawVal === 'string' ? rawVal : (Array.isArray(rawVal) ? (rawVal[0] || '') : (rawVal || '')));
@@ -2457,7 +2486,7 @@ function customValidate(formName, savetype = '')
 				else if(formName == 'notetermform')
 				{
 					var client_id = $('input[name="client_id"]').val() || window.ClientDetailConfig?.clientId;
-					crmSubmitNoteFormAjax('notetermform', {
+					crmSubmitNoteFormWithEditorPrep('notetermform', {
 						onSuccess: function(obj) {
 							if (obj.status) {
 								$('#create_note').modal('hide');
@@ -2494,7 +2523,7 @@ function customValidate(formName, savetype = '')
 					else if(formName == 'notetermform_n')
 					{
                         var client_id = $('input[name="client_id"]').val() || window.ClientDetailConfig?.clientId;
-						crmSubmitNoteFormAjax('notetermform_n', {
+						crmSubmitNoteFormWithEditorPrep('notetermform_n', {
 							onSuccess: function(obj) {
 								if (obj.status) {
 									$('#create_note_d input[name="title"]').val('');

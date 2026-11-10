@@ -17,6 +17,7 @@ use App\Models\ClientMatter;
 use App\Services\ClientNotesListService;
 use App\Services\NoteAttachmentService;
 use App\Support\NoteAttachmentHtml;
+use App\Support\NoteDescriptionEmbeddedImages;
 use App\Support\ReleaseSessionLock;
 use App\Traits\LogsClientActivity;
 use Illuminate\Support\Facades\Auth;
@@ -145,6 +146,28 @@ class ClientNotesController extends Controller
         if ($uploadError) {
             return response()->json(['status' => false, 'message' => $uploadError], 200, [], JSON_UNESCAPED_UNICODE);
         }
+
+        $pendingAttachmentCount = 0;
+        if ($isUpdate) {
+            $removeIds = $request->input('remove_attachment_ids', []);
+            if (! is_array($removeIds)) {
+                $removeIds = $removeIds !== null && $removeIds !== '' ? [$removeIds] : [];
+            }
+            $removeIds = array_map('intval', $removeIds);
+            $pendingAttachmentCount = NoteAttachment::where('note_id', $obj->id)
+                ->when($removeIds !== [], fn ($q) => $q->whereNotIn('id', $removeIds))
+                ->count();
+        }
+
+        $uploadedFileCount = NoteAttachmentService::countUploads($request->file('attachments'));
+        $embeddedError = NoteDescriptionEmbeddedImages::validateEmbeddedImages(
+            $request->description,
+            $pendingAttachmentCount,
+            $uploadedFileCount
+        );
+        if ($embeddedError) {
+            return response()->json(['status' => false, 'message' => $embeddedError], 200, [], JSON_UNESCAPED_UNICODE);
+        }
         
         // PostgreSQL NOT NULL constraints - must set these fields
         if(!$isUpdate) {
@@ -171,9 +194,19 @@ class ClientNotesController extends Controller
                     }
                 }
                 $matterDocumentRefresh = NoteAttachmentService::storeForNote($obj, $request->file('attachments'));
+
+                $promoted = NoteDescriptionEmbeddedImages::promoteToAttachments($obj, (string) $obj->description);
+                if ($promoted['description'] !== $obj->description) {
+                    $obj->description = $promoted['description'];
+                    $obj->save();
+                }
+                if ($promoted['matter_document_refresh']) {
+                    $matterDocumentRefresh = $promoted['matter_document_refresh'];
+                }
             }
-            
+
             if($saved){
+                $noteDescriptionForLog = (string) ($obj->description ?? $request->description);
                 // BUGFIX #5: Log activity for BOTH client and lead notes (not just client)
                 if($request->vtype == 'client' || $request->vtype == 'lead'){
                     try {
@@ -221,7 +254,7 @@ class ClientNotesController extends Controller
                                 );
                             } else {
                                 // Log full description without truncation
-                                $description = $activityPhonePrefix . $request->description;
+                                $description = $activityPhonePrefix . $noteDescriptionForLog;
                                 $this->logClientActivity(
                                     $entityId,
                                     $subjectLine,
@@ -236,7 +269,7 @@ class ClientNotesController extends Controller
                                 : "added {$entityType} {$noteTypeFormatted} Notes";
                                 
                             // Enhanced create logging - Log full description without truncation
-                            $description = $activityPhonePrefix . $request->description;
+                            $description = $activityPhonePrefix . $noteDescriptionForLog;
                             $this->logClientActivity(
                                 $entityId,
                                 $subjectLine,

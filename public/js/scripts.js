@@ -406,11 +406,13 @@ $(function () {
         'autolink',        // Auto-convert URLs to links
         'autoresize',      // Auto-adjust height based on content
         'wordcount',       // Word/character count
-        'searchreplace'    // Find and replace functionality
+        'searchreplace',   // Find and replace functionality
+        'image'            // Pasted screenshots in note body
       ],
       toolbar: 'undo redo | bold italic underline strikethrough | forecolor backcolor | bullist numlist | link | removeformat',
       placeholder: 'Write your note here...',
-      content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; padding: 12px 15px; }',
+      content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; padding: 12px 15px; } img { max-width: 100%; height: auto; }',
+      paste_data_images: true,
       branding: false,
       promotion: false,
       color_map: sharedColorMap,

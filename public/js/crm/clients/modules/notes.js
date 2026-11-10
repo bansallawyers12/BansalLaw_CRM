@@ -329,6 +329,97 @@
         syncNoteFileInput($field);
     }
 
+    function dataUriToNoteFile(dataUri, index) {
+        var match = /^data:image\/([\w.+-]+);base64,([\s\S]+)$/i.exec(String(dataUri || '').trim());
+        if (!match) {
+            throw new Error('invalid data uri');
+        }
+        var subtype = String(match[1] || 'png').toLowerCase().replace('jpeg', 'jpg');
+        var b64 = String(match[2] || '').replace(/\s+/g, '');
+        var bin = atob(b64);
+        var len = bin.length;
+        var arr = new Uint8Array(len);
+        for (var i = 0; i < len; i++) {
+            arr[i] = bin.charCodeAt(i);
+        }
+        var mime = 'image/' + (subtype === 'jpg' ? 'jpeg' : subtype);
+        return new File([arr], 'Pasted image ' + index + '.' + subtype, { type: mime, lastModified: Date.now() });
+    }
+
+    function blobUrlToNoteFile(blobUrl, index) {
+        return fetch(blobUrl).then(function(res) {
+            if (!res.ok) {
+                throw new Error('blob fetch failed');
+            }
+            return res.blob();
+        }).then(function(blob) {
+            var mime = blob.type || 'image/png';
+            var subtype = mime.split('/')[1] || 'png';
+            subtype = subtype.toLowerCase().replace('jpeg', 'jpg');
+            return new File([blob], 'Pasted image ' + index + '.' + subtype, { type: mime, lastModified: Date.now() });
+        });
+    }
+
+    function extractEmbeddedImagesFromNoteHtml(html) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString('<div id="crm-note-root">' + (html || '') + '</div>', 'text/html');
+        var root = doc.getElementById('crm-note-root');
+        if (!root) {
+            return { html: html || '', files: [], promises: [] };
+        }
+        var files = [];
+        var promises = [];
+        var seq = 0;
+        root.querySelectorAll('img').forEach(function(img) {
+            var src = img.getAttribute('src') || '';
+            if (/^data:image\//i.test(src)) {
+                seq += 1;
+                try {
+                    files.push(dataUriToNoteFile(src, seq));
+                } catch (err) { /* skip */ }
+                img.parentNode && img.parentNode.removeChild(img);
+            } else if (/^blob:/i.test(src)) {
+                seq += 1;
+                var place = seq;
+                promises.push(blobUrlToNoteFile(src, place).then(function(file) {
+                    files.push(file);
+                }));
+                img.parentNode && img.parentNode.removeChild(img);
+            }
+        });
+        return { html: root.innerHTML, files: files, promises: promises };
+    }
+
+    function crmPrepareNoteEditorBeforeSave(formName) {
+        var form = document.getElementById(formName);
+        if (!form) {
+            return Promise.resolve();
+        }
+        var textarea = form.querySelector('textarea.tinymce-editor');
+        if (!textarea || typeof tinymce === 'undefined') {
+            return Promise.resolve();
+        }
+        var editorId = textarea.id;
+        var editor = editorId ? tinymce.get(editorId) : null;
+        if (!editor) {
+            return Promise.resolve();
+        }
+        editor.save();
+        var parsed = extractEmbeddedImagesFromNoteHtml(editor.getContent() || '');
+        return Promise.all(parsed.promises || []).then(function() {
+            if (parsed.files && parsed.files.length) {
+                var $field = $(form).find('.note-attachments-field').first();
+                if ($field.length) {
+                    addNoteFiles($field, parsed.files);
+                }
+            }
+            if (parsed.html !== editor.getContent()) {
+                editor.setContent(parsed.html);
+                editor.save();
+            }
+        });
+    }
+
     function renderExistingNoteAttachments($form, attachments) {
         var $field = noteAttachmentField($form);
         var $wrap = $field.find('.note-existing-attachments');
@@ -454,6 +545,10 @@
     }
 
     window.resetNoteAttachments = resetNoteAttachments;
+    window.crmAddNoteFiles = function($field, fileList) {
+        addNoteFiles($field, fileList);
+    };
+    window.crmPrepareNoteEditorBeforeSave = crmPrepareNoteEditorBeforeSave;
     window.initNotesPaginationFromDom = initNotesPaginationFromDom;
 
     $(document).on('clientTabContentLoaded', function(_e, tabId) {

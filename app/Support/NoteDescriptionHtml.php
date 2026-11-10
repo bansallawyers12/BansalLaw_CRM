@@ -27,7 +27,20 @@ class NoteDescriptionHtml
             return '<p>'.htmlspecialchars($description, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8').'</p>';
         }
 
-        return self::purifier()->purify($description);
+        $clean = self::purifier()->purify($description);
+
+        return self::stripBrokenImages($clean);
+    }
+
+    private static function stripBrokenImages(string $html): string
+    {
+        return preg_replace_callback('/<img\b[^>]*>/i', static function (array $match): string {
+            if (preg_match('/\bsrc\s*=\s*["\'](https?:\/\/[^"\']+)["\']/i', $match[0])) {
+                return $match[0];
+            }
+
+            return '';
+        }, $html) ?? $html;
     }
 
     private static function purifier(): \HTMLPurifier

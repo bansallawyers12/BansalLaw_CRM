@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Note;
 use App\Models\Staff;
+use App\Support\NoteDescriptionEmbeddedImages;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -58,6 +59,13 @@ class ClientNotesListService
 
         $total = (clone $query)->count();
         $notes = $query->skip($offset)->take($limit)->get();
+        foreach ($notes as $note) {
+            if (NoteDescriptionEmbeddedImages::countDataUriImages((string) $note->description) > 0) {
+                NoteDescriptionEmbeddedImages::repairNoteIfNeeded($note);
+                $note->unsetRelation('attachments');
+                $note->load('attachments');
+            }
+        }
         $this->normalizeSpendMinutes($notes);
         $nextOffset = $offset + $notes->count();
         $hasMore = $nextOffset < $total;
