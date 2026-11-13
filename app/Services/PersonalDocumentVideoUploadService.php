@@ -452,16 +452,13 @@ class PersonalDocumentVideoUploadService
             return $this->videoFailure('Document checklist not found.');
         }
 
-        $adminInfo = Admin::select('client_id', 'first_name')->where('id', $clientId)->first();
+        $adminInfo = Admin::select('client_id')->where('id', $clientId)->first();
         $clientUniqueId = ! empty($adminInfo) ? $adminInfo->client_id : '';
-        $clientFirstName = ! empty($adminInfo)
-            ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminInfo->first_name)
-            : 'client';
 
         $obj->refresh();
         $checklistName = DocumentLabel::normalize($obj->checklist);
-        $timestamp = time();
-        $name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $timestamp, $extension);
+        $stored = DocumentLabel::storedUploadName((string) $clientUniqueId, $checklistName, $extension, $documentId, $clientId, 0, $doctype);
+        $name = $stored['storage_key'];
         $filePath = $clientUniqueId . '/' . $doctype . '/' . $name;
 
         $disk = Storage::disk('s3');
@@ -470,14 +467,20 @@ class PersonalDocumentVideoUploadService
         $obj->refresh();
         $finalChecklistName = DocumentLabel::normalize($obj->checklist);
         if (! empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
-            $checklistName = $finalChecklistName;
-            $name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $timestamp, $extension);
-            $newFilePath = $clientUniqueId . '/' . $doctype . '/' . $name;
-            if ($newFilePath !== $filePath) {
+            $renamed = DocumentLabel::storedUploadName((string) $clientUniqueId, $finalChecklistName, $extension, $documentId, $clientId, 0, $doctype);
+            $newFilePath = $clientUniqueId . '/' . $doctype . '/' . $renamed['storage_key'];
+            if ($newFilePath === $filePath) {
+                $checklistName = $finalChecklistName;
+                $stored = $renamed;
+                $name = $renamed['storage_key'];
+            } else {
                 try {
                     $disk->copy($filePath, $newFilePath);
                     $disk->delete($filePath);
                     $filePath = $newFilePath;
+                    $checklistName = $finalChecklistName;
+                    $stored = $renamed;
+                    $name = $renamed['storage_key'];
                 } catch (\Throwable $e) {
                     Log::error('Failed to move video after checklist change', [
                         'document_id' => $documentId,
@@ -487,7 +490,7 @@ class PersonalDocumentVideoUploadService
             }
         }
 
-        $obj->file_name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $timestamp);
+        $obj->file_name = $stored['file_name'];
         $obj->filetype = $extension;
         $obj->user_id = $userId;
         $obj->myfile = $disk->url($filePath);

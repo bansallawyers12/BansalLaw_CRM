@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Document;
+
 final class DocumentLabel
 {
     /**
@@ -50,18 +52,71 @@ final class DocumentLabel
     }
 
     /**
-     * Build a stored object basename: client_checklist_unique[.ext]
+     * Stored basename: {client reference}_{document name}[.ext]
+     * The document name is the checklist label (or the original file name for note attachments).
      */
-    public static function buildStoredFileName(
-        string $clientFirstName,
-        string $checklistName,
-        string $uniquePart,
+    public static function buildClientFileName(
+        string $clientReference,
+        string $normalName,
         ?string $extension = null
     ): string {
-        $base = self::sanitizeStorageSegment($clientFirstName)
-            . '_' . self::sanitizeStorageSegment($checklistName)
-            . '_' . self::sanitizeStorageSegment($uniquePart);
+        $reference = self::sanitizeStorageSegment($clientReference);
+        if ($reference === 'document') {
+            $reference = 'client';
+        }
 
+        $base = $reference . '_' . self::sanitizeStorageSegment($normalName);
+
+        return self::withExtension($base, $extension);
+    }
+
+    /**
+     * Names for a new upload. Another document for this client that already uses the
+     * same storage key gets this document id (or $fallbackDisambiguator) appended so
+     * the later upload does not replace that file.
+     *
+     * @return array{file_name: string, storage_key: string}
+     */
+    public static function storedUploadName(
+        string $clientReference,
+        string $normalName,
+        ?string $extension,
+        int $documentId = 0,
+        int $ownerClientId = 0,
+        int $fallbackDisambiguator = 0,
+        ?string $docType = null
+    ): array {
+        $fileName = self::buildClientFileName($clientReference, $normalName);
+        $storageKey = self::withExtension($fileName, $extension);
+
+        $suffix = $documentId > 0 ? $documentId : $fallbackDisambiguator;
+        if ($suffix > 0 && $ownerClientId > 0 && self::storageKeyTaken($storageKey, $ownerClientId, $documentId, $docType)) {
+            $fileName .= '_' . $suffix;
+            $storageKey = self::withExtension($fileName, $extension);
+        }
+
+        return [
+            'file_name' => $fileName,
+            'storage_key' => $storageKey,
+        ];
+    }
+
+    public static function storageKeyTaken(
+        string $storageKey,
+        int $ownerClientId,
+        int $exceptDocumentId = 0,
+        ?string $docType = null
+    ): bool {
+        return Document::query()
+            ->where('client_id', $ownerClientId)
+            ->when($exceptDocumentId > 0, fn ($query) => $query->where('id', '!=', $exceptDocumentId))
+            ->when($docType !== null && $docType !== '', fn ($query) => $query->where('doc_type', $docType))
+            ->where('myfile_key', $storageKey)
+            ->exists();
+    }
+
+    private static function withExtension(string $base, ?string $extension): string
+    {
         if ($extension === null || $extension === '') {
             return $base;
         }

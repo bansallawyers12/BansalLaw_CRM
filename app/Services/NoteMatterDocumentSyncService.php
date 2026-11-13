@@ -52,7 +52,6 @@ class NoteMatterDocumentSyncService
         }
 
         $clientUniqueId = (string) $admin->client_id;
-        $clientFirstName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin->first_name ?? 'client')) ?: 'client';
         $originalName = (string) $attachment->original_name;
         $checklistName = DocumentLabel::normalize(pathinfo($originalName, PATHINFO_FILENAME) ?: $originalName);
         if ($checklistName === '') {
@@ -64,8 +63,16 @@ class NoteMatterDocumentSyncService
             $extension = strtolower((string) $attachment->extension);
         }
 
-        $uniqueId = 'note_' . (int) $note->id . '_' . (int) $attachment->id . '_' . time();
-        $storedName = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, $uniqueId, $extension);
+        $stored = DocumentLabel::storedUploadName(
+            $clientUniqueId,
+            $checklistName,
+            $extension,
+            0,
+            $clientId,
+            (int) $attachment->id,
+            'matter'
+        );
+        $storedName = $stored['storage_key'];
         $filePath = $clientUniqueId . '/matter/' . $storedName;
 
         $disk = Storage::disk('s3');
@@ -89,7 +96,7 @@ class NoteMatterDocumentSyncService
         $document->client_matter_id = $matterId;
         $document->folder_name = (string) $folder->id;
         $document->checklist = $checklistName;
-        $document->file_name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, $uniqueId);
+        $document->file_name = $stored['file_name'];
         $document->filetype = $extension;
         $document->myfile = $disk->url($filePath);
         $document->myfile_key = $storedName;

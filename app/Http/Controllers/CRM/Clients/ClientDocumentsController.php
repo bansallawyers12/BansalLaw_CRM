@@ -315,9 +315,8 @@ class ClientDocumentsController extends Controller
             ob_end_clean();
             exit;
         }
-        $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
+        $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-        $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
     
         $doctype = $request->doctype ?? '';
     
@@ -407,9 +406,9 @@ class ClientDocumentsController extends Controller
                         exit;
                     }
     
-                    // Build storage key with sanitized checklist segment (labels may include ', (), etc.)
-                    $timestamp = time();
-                    $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, (string) $timestamp, $extension);
+                    // Client reference, then the checklist name. No upload timestamp.
+                    $stored = DocumentLabel::storedUploadName((string) $client_unique_id, $checklistName, $extension, (int) $obj->id, (int) $clientid, 0, (string) $doctype);
+                    $name = $stored['storage_key'];
 
                     if ($sizeError = PersonalDocumentVideoUploadService::sizeLimitError($file, (int) $size)) {
                         $response['message'] = $sizeError;
@@ -487,36 +486,38 @@ class ClientDocumentsController extends Controller
                     
                     // Use the latest checklist name
                     if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
-                        // Checklist changed during upload - rebuild name with same timestamp
-                        $checklistName = $finalChecklistName;
-                        $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, (string) $timestamp, $extension);
-                        // Update file path and move S3 file
-                        $newFilePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                        if ($newFilePath !== $filePath) {
+                        $renamed = DocumentLabel::storedUploadName((string) $client_unique_id, $finalChecklistName, $extension, (int) $obj->id, (int) $clientid, 0, (string) $doctype);
+                        $newFilePath = $client_unique_id . '/' . $doctype . '/' . $renamed['storage_key'];
+                        if ($newFilePath === $filePath) {
+                            $checklistName = $finalChecklistName;
+                            $stored = $renamed;
+                            $name = $renamed['storage_key'];
+                        } else {
                             try {
-                                // Copy to new path and delete old
                                 $this->s3Disk()->copy($filePath, $newFilePath);
                                 $this->s3Disk()->delete($filePath);
-                                $filePath = $newFilePath;
                                 Log::info('Document file moved due to checklist change during upload', [
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
                                     'old_checklist' => $checklistName,
                                     'new_checklist' => $finalChecklistName
                                 ]);
+                                $filePath = $newFilePath;
+                                $checklistName = $finalChecklistName;
+                                $stored = $renamed;
+                                $name = $renamed['storage_key'];
                             } catch (\Exception $e) {
                                 Log::error('Failed to move S3 file after checklist change', [
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
                                     'error' => $e->getMessage()
                                 ]);
-                                // Continue with old path - at least the file is uploaded
                             }
                         }
                     }
     
                     // Update document with file information
-                    $obj->file_name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, (string) $timestamp);
+                    $obj->file_name = $stored['file_name'];
                     $obj->filetype = $extension;
                     $obj->user_id = Auth::user()->id;
                     $fileUrl = $this->s3Disk()->url($filePath);
@@ -711,9 +712,8 @@ class ClientDocumentsController extends Controller
                 exit;
             }
         }
-        $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
+        $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-        $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
     
         $doctype = isset($request->doctype) ? (string) $request->doctype : 'matter';
         if ($doctype === 'visa' || $doctype === '') {
@@ -884,9 +884,9 @@ class ClientDocumentsController extends Controller
                         exit;
                     }
 
-                    // Build storage key with sanitized checklist segment (labels may include ', (), etc.)
-                    $timestamp = time();
-                    $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, (string) $timestamp, $extension);
+                    // Client reference, then the checklist name. No upload timestamp.
+                    $stored = DocumentLabel::storedUploadName((string) $client_unique_id, $checklistName, $extension, (int) $obj->id, (int) $clientid, 0, (string) $doctype);
+                    $name = $stored['storage_key'];
 
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
                     $this->fileUploadService->putUploadedFile($filePath, $file);
@@ -897,35 +897,37 @@ class ClientDocumentsController extends Controller
                     
                     // Use the latest checklist name
                     if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
-                        // Checklist changed during upload - rebuild name with same timestamp
-                        $checklistName = $finalChecklistName;
-                        $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, (string) $timestamp, $extension);
-                        // Update file path and move S3 file
-                        $newFilePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                        if ($newFilePath !== $filePath) {
+                        $renamed = DocumentLabel::storedUploadName((string) $client_unique_id, $finalChecklistName, $extension, (int) $obj->id, (int) $clientid, 0, (string) $doctype);
+                        $newFilePath = $client_unique_id . '/' . $doctype . '/' . $renamed['storage_key'];
+                        if ($newFilePath === $filePath) {
+                            $checklistName = $finalChecklistName;
+                            $stored = $renamed;
+                            $name = $renamed['storage_key'];
+                        } else {
                             try {
-                                // Copy to new path and delete old
                                 $this->s3Disk()->copy($filePath, $newFilePath);
                                 $this->s3Disk()->delete($filePath);
-                                $filePath = $newFilePath;
-                                Log::info('Visa document file moved due to checklist change during upload', [
+                                Log::info('Matter document file moved due to checklist change during upload', [
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
                                     'old_checklist' => $checklistName,
                                     'new_checklist' => $finalChecklistName
                                 ]);
+                                $filePath = $newFilePath;
+                                $checklistName = $finalChecklistName;
+                                $stored = $renamed;
+                                $name = $renamed['storage_key'];
                             } catch (\Exception $e) {
                                 Log::error('Failed to move S3 file after checklist change', [
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
                                     'error' => $e->getMessage()
                                 ]);
-                                // Continue with old path - at least the file is uploaded
                             }
                         }
                     }
 
-                    $obj->file_name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, (string) $timestamp);
+                    $obj->file_name = $stored['file_name'];
                     $obj->filetype = $extension;
                     $obj->user_id = Auth::user()->id;
                     $fileUrl = $this->s3Disk()->url($filePath);
@@ -1179,13 +1181,17 @@ class ClientDocumentsController extends Controller
             $oldKey = $doc->myfile_key ?? '';
 
             // Step 8: Build new key and S3 paths
-            // Use unique number at the end only (same convention as upload: name_timestamp.ext)
-            // so download filename does not show unique number twice (at start and end).
-            $timestamp = time();
             if (!empty($extension)) {
-                $newKey = $filename . '_' . $timestamp . '.' . $extension;
+                $newKey = $filename . '.' . $extension;
             } else {
-                $newKey = $filename . '_' . $timestamp;
+                $newKey = $filename;
+            }
+
+            if ($newKey !== $oldKey && DocumentLabel::storageKeyTaken($newKey, (int) $client_id, (int) $id, (string) $doc_type)) {
+                $response['message'] = 'A file with this name already exists for this client.';
+                $response['error_type'] = 'duplicate_filename';
+                echo json_encode($response);
+                return;
             }
             
             $newS3Path = $client_unique_id . '/' . $doc_type . '/' . $newKey;
@@ -4007,16 +4013,15 @@ class ClientDocumentsController extends Controller
                     }
 
                     $extension = $file->getClientOriginalExtension();
-                    $timestamp = time();
-                    $uniqueId = $timestamp . '_' . $index . '_' . mt_rand(1000, 9999);
-                    $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId, $extension);
+                    $stored = DocumentLabel::storedUploadName((string) $client_unique_id, $checklistName, $extension, (int) $document->id, (int) $clientid, 0, (string) $doctype);
+                    $name = $stored['storage_key'];
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
 
                     $this->fileUploadService->putUploadedFile($filePath, $file);
 
                     // Update document
                     $fileUrl = $this->s3Disk()->url($filePath);
-                    $document->file_name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId);
+                    $document->file_name = $stored['file_name'];
                     $document->filetype = $extension;
                     $document->user_id = Auth::user()->id;
                     $document->myfile = $fileUrl;
@@ -4317,9 +4322,8 @@ class ClientDocumentsController extends Controller
                     }
 
                     $extension = $file->getClientOriginalExtension();
-                    $timestamp = time();
-                    $uniqueId = $timestamp . '_' . $index . '_' . mt_rand(1000, 9999);
-                    $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId, $extension);
+                    $stored = DocumentLabel::storedUploadName((string) $client_unique_id, $checklistName, $extension, (int) $document->id, (int) $clientid, 0, (string) $doctype);
+                    $name = $stored['storage_key'];
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
 
                     $this->fileUploadService->putUploadedFile($filePath, $file);
@@ -4328,14 +4332,20 @@ class ClientDocumentsController extends Controller
                     $finalChecklistName = DocumentLabel::normalize($document->checklist);
 
                     if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
-                        $checklistName = $finalChecklistName;
-                        $name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId, $extension);
-                        $newFilePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                        if ($newFilePath !== $filePath) {
+                        $renamed = DocumentLabel::storedUploadName((string) $client_unique_id, $finalChecklistName, $extension, (int) $document->id, (int) $clientid, 0, (string) $doctype);
+                        $newFilePath = $client_unique_id . '/' . $doctype . '/' . $renamed['storage_key'];
+                        if ($newFilePath === $filePath) {
+                            $checklistName = $finalChecklistName;
+                            $stored = $renamed;
+                            $name = $renamed['storage_key'];
+                        } else {
                             try {
                                 $this->s3Disk()->copy($filePath, $newFilePath);
                                 $this->s3Disk()->delete($filePath);
                                 $filePath = $newFilePath;
+                                $checklistName = $finalChecklistName;
+                                $stored = $renamed;
+                                $name = $renamed['storage_key'];
                             } catch (\Exception $e) {
                                 Log::error('Bulk matter upload: Failed to move S3 file', [
                                     'old_path' => $filePath,
@@ -4347,7 +4357,7 @@ class ClientDocumentsController extends Controller
                     }
 
                     $fileUrl = $this->s3Disk()->url($filePath);
-                    $document->file_name = DocumentLabel::buildStoredFileName($client_first_name, $checklistName, $uniqueId);
+                    $document->file_name = $stored['file_name'];
                     $document->filetype = $extension;
                     $document->user_id = Auth::user()->id;
                     $document->myfile = $fileUrl;

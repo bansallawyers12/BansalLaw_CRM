@@ -137,9 +137,9 @@ class ClientDocumentFileUploadService
         }
 
         $checklistName = DocumentLabel::normalize((string) $document->checklist);
-        $timestamp = time();
-        $uniqueId = $timestamp.'_'.mt_rand(1000, 9999);
-        $name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $uniqueId, $extension);
+        $reference = trim($clientUniqueId) !== '' ? $clientUniqueId : $clientFirstName;
+        $stored = DocumentLabel::storedUploadName($reference, $checklistName, $extension, $documentId, $clientId, 0, $doctype);
+        $name = $stored['storage_key'];
         $filePath = $clientUniqueId.'/'.$doctype.'/'.$name;
 
         $absolute = Storage::disk('local')->path($tempPath);
@@ -162,14 +162,20 @@ class ClientDocumentFileUploadService
         $document->refresh();
         $finalChecklistName = DocumentLabel::normalize((string) $document->checklist);
         if ($finalChecklistName !== '' && $finalChecklistName !== $checklistName) {
-            $checklistName = $finalChecklistName;
-            $name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $uniqueId, $extension);
-            $newPath = $clientUniqueId.'/'.$doctype.'/'.$name;
-            if ($newPath !== $filePath) {
+            $renamed = DocumentLabel::storedUploadName($reference, $finalChecklistName, $extension, $documentId, $clientId, 0, $doctype);
+            $newPath = $clientUniqueId.'/'.$doctype.'/'.$renamed['storage_key'];
+            if ($newPath === $filePath) {
+                $checklistName = $finalChecklistName;
+                $stored = $renamed;
+                $name = $renamed['storage_key'];
+            } else {
                 try {
                     Storage::disk('s3')->copy($filePath, $newPath);
                     Storage::disk('s3')->delete($filePath);
                     $filePath = $newPath;
+                    $checklistName = $finalChecklistName;
+                    $stored = $renamed;
+                    $name = $renamed['storage_key'];
                 } catch (\Throwable $e) {
                     Log::warning('Document bulk upload rename after checklist change failed', [
                         'document_id' => $documentId,
@@ -180,7 +186,7 @@ class ClientDocumentFileUploadService
         }
 
         $fileUrl = $this->durableStorage->myfileValue($filePath);
-        $document->file_name = DocumentLabel::buildStoredFileName($clientFirstName, $checklistName, (string) $uniqueId);
+        $document->file_name = $stored['file_name'];
         $document->filetype = $extension;
         $document->user_id = $userId;
         $document->myfile = $fileUrl;
