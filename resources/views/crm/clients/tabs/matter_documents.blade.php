@@ -153,6 +153,7 @@
                                                 </button>
                                             </div>
                                         </div>
+                                        <p class="doc-row-context-hint">Right-click a name for further actions.</p>
                                         
                                         <!-- Bulk upload dropzone for matter documents (hidden by default) -->
                                         <div class="bulk-upload-dropzone-container-visa matter-bulk-dropzone" id="bulk-upload-visa-<?= $id ?>" data-bulk-open="0" style="display: none;">
@@ -204,18 +205,15 @@
                                                     ?>
                                                     <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" class="visachecklist-row md-checklist-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>">
+                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" class="visachecklist-row md-checklist-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showVisaFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? '') ?>, <?= json_encode($fetch->file_name ? $previewUrl : '') ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
                                                                 <span class="md-checklist-label" title="<?= e(\App\Support\DocumentLabel::forDisplay($fetch->checklist)) ?>"><?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?></span>
+                                                                <?php if (!$fetch->file_name): ?>
                                                                 <div class="checklist-actions">
-                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Rename checklist">
-                                                                        <i class="fa-solid fa-pen-to-square"></i>
-                                                                    </a>
-                                                                    <?php if (!$fetch->file_name): ?>
                                                                     <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Delete Checklist">
                                                                         <i class="fa-solid fa-trash"></i>
                                                                     </a>
-                                                                    <?php endif; ?>
                                                                 </div>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">
@@ -241,7 +239,6 @@
                                                                             <i class="fa-solid <?= $matterFileIcon ?> matter-doc-file-icon"></i> <span title="<?= e(\App\Support\DocumentLabel::forDisplay($displayFileName)) ?>"><?= \App\Support\DocumentLabel::forDisplay($displayFileName) ?></span>
                                                                         </a>
                                                                     </div>
-                                                                    <a href="javascript:;" class="edit-file-name-btn" title="Rename file" aria-label="Rename file"><i class="fa-solid fa-pen-to-square"></i></a>
                                                                 </div>
                                                             <?php else: ?>
                                                                 <div class="migration_upload_document" style="display: inline-block;">
@@ -265,8 +262,8 @@
                                                             <?php endif; ?>
                                                         </td>
                                                         <td>
+                                                            <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <?php if ($fetch->myfile): ?>
-                                                                <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="download-file" data-id="<?= $fetch->id ?>" data-document-id="<?= $fetch->id ?>" data-filename="<?= e($downloadFilename) ?>" href="#" style="display: none;"></a>
                                                                 <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
@@ -445,28 +442,28 @@
 
             <!-- Custom context menu for matter documents (must stay inside .tab-pane for lazy-tab load) -->
             <div id="visaFileContextMenu" class="context-menu matter-docs-context-menu crm-doc-context-menu" style="display: none; position: fixed; z-index: 10050; min-width: 220px;" role="menu" aria-label="Document actions">
-                <div id="visa-context-send-signature" class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('send-for-signature')" style="display: none;">
+                <div id="visa-context-send-signature" class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('send-for-signature')" style="display: none;">
                     <i class="fa-solid fa-pen-fancy" aria-hidden="true"></i><span>Place Signature Fields</span>
                 </div>
                 <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('rename-checklist')">
                     <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>Rename Checklist</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('rename-doc')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('rename-doc')">
                     <i class="fa-solid fa-file-pen" aria-hidden="true"></i><span>Rename File Name</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('move')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('move')">
                     <i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i><span>Move Document</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('preview')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('preview')">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i><span>Preview</span>
                 </div>
-                <div id="visa-context-pdf-option" class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('pdf')" style="display: none;">
+                <div id="visa-context-pdf-option" class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('pdf')" style="display: none;">
                     <i class="fa-solid fa-file-pdf" aria-hidden="true"></i><span>PDF</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('download')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('download')">
                     <i class="fa-solid fa-download" aria-hidden="true"></i><span>Download</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleVisaContextAction('not-used')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('not-used')">
                     <i class="fa-solid fa-trash" aria-hidden="true"></i><span>Not Used</span>
                 </div>
             </div>
@@ -540,6 +537,11 @@
                     if (menu.parentElement !== document.body) {
                         document.body.appendChild(menu);
                     }
+
+                    const hasFile = !!(fileUrl && String(fileUrl).trim());
+                    menu.querySelectorAll('.context-menu-item--needs-file').forEach(function(item) {
+                        item.style.display = hasFile ? 'flex' : 'none';
+                    });
                     
                     // Show/hide PDF option based on file type
                     const pdfOption = document.getElementById('visa-context-pdf-option');

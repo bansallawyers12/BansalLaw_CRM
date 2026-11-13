@@ -46,11 +46,16 @@
             return;
         }
         var isVisa = $parent.hasClass('visachecklist-row');
+        var escapedChecklist = $('<div>').text(obj.checklist).html();
+        var deleteHtml = '';
+        var $delete = $parent.find('.delete-checklist-btn').first();
+        if ($delete.length) {
+            $delete.attr('data-checklist', obj.checklist);
+            deleteHtml = '<div class="checklist-actions" style="display:flex;gap:5px;">' + $delete.prop('outerHTML') + '</div>';
+        }
         var fallbackHtml = isVisa
-            ? '<span class="md-checklist-label" title="' + $('<div>').text(obj.checklist).html() + '">' + $('<div>').text(obj.checklist).html() + '</span>'
-                + '<div class="checklist-actions"><a href="javascript:;" class="edit-checklist-btn" data-id="' + obj.Id + '" data-checklist="' + $('<div>').text(obj.checklist).html() + '" title="Rename checklist"><i class="fa-solid fa-pen-to-square"></i></a></div>'
-            : '<span style="flex: 1;" title="' + $('<div>').text(obj.checklist).html() + '">' + $('<div>').text(obj.checklist).html() + '</span>'
-                + '<div class="checklist-actions" style="display:flex;gap:5px;"><a href="javascript:;" class="edit-checklist-btn" data-id="' + obj.Id + '" data-checklist="' + $('<div>').text(obj.checklist).html() + '" title="Rename checklist"><i class="fa-solid fa-pen-to-square"></i></a></div>';
+            ? '<span class="md-checklist-label" title="' + escapedChecklist + '">' + escapedChecklist + '</span>' + deleteHtml
+            : '<span style="flex: 1;" title="' + escapedChecklist + '">' + escapedChecklist + '</span>' + deleteHtml;
         $parent.empty()
             .data('id', obj.Id)
             .data(isVisa ? 'visachecklistname' : 'personalchecklistname', obj.checklist)
@@ -185,12 +190,6 @@
             e.preventDefault();
             e.stopPropagation();
             return openRenameChecklistModal($(this).closest('.drow'));
-        });
-
-        $(document).on('click', '.edit-checklist-btn', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            return openRenameChecklistModal($(this).closest('.drow'), $(this).data('checklist'));
         });
 
         $('#renameChecklistSaveBtn').on('click', function(e) {

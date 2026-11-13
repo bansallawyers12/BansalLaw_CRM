@@ -7,18 +7,15 @@
     @endphp
     <tr class="drow" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">
-            <div data-id="{{ $fetch->id }}" data-personalchecklistname="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" class="personalchecklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" style="display: flex; align-items: center; gap: 8px;">
+            <div data-id="{{ $fetch->id }}" data-personalchecklistname="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" class="personalchecklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" style="display: flex; align-items: center; gap: 8px;" oncontextmenu="showFileContextMenu(event, {{ (int) $fetch->id }}, {{ json_encode($fetch->filetype ?? '') }}, {{ json_encode($fetch->file_name ? $previewUrl : '') }}, {{ json_encode((string) $folderName) }}, {{ json_encode($fetch->status ?? 'draft') }}); return false;">
                 <span style="flex: 1;">{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}</span>
-                <div class="checklist-actions" style="display: flex; gap: 5px;">
-                    @if (!$fetch->file_name)
-                        <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
+                @if (!$fetch->file_name)
+                    <div class="checklist-actions" style="display: flex; gap: 5px;">
                         <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
                             <i class="fa-solid fa-trash"></i>
                         </a>
-                    @endif
-                </div>
+                    </div>
+                @endif
             </div>
         </td>
         <td style="white-space: initial;">
@@ -52,8 +49,8 @@
             @endif
         </td>
         <td>
+            <a class="renamechecklist" data-id="{{ $fetch->id }}" href="javascript:;" style="display: none;"></a>
             @if ($fetch->myfile)
-                <a class="renamechecklist" data-id="{{ $fetch->id }}" href="javascript:;" style="display: none;"></a>
                 <a class="renamedoc" data-id="{{ $fetch->id }}" href="javascript:;" style="display: none;"></a>
                 <a class="download-file" data-document-id="{{ $fetch->id }}" data-id="{{ $fetch->id }}" data-filename="{{ htmlspecialchars($downloadFilename) }}" href="#" style="display: none;"></a>
                 <a class="notuseddoc" data-id="{{ $fetch->id }}" data-doctype="personal" data-doccategory="{{ $doccategoryTitle }}" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>

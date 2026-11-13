@@ -355,8 +355,6 @@
   border-color: rgba(58, 111, 168, 0.5) !important;
   color: var(--navy, #1e3d60) !important;
 }
-#personaldocuments-tab .edit-checklist-btn { color: var(--sidebar-active, #3a6fa8); cursor: pointer; }
-#personaldocuments-tab .edit-checklist-btn:hover { color: var(--navy, #1e3d60); }
 #personaldocuments-tab .delete-checklist-btn { color: var(--danger, #a83020); cursor: pointer; }
 #personaldocuments-tab .delete-checklist-btn:hover { filter: brightness(1.08); }
 #personaldocuments-tab .preview-pane .preview-placeholder-text { color: var(--text-muted, #5e7a90); margin: 0; }
@@ -691,8 +689,6 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 #matterdocuments-tab .matter-bulk-dropzone-icon { font-size: 48px; color: var(--sidebar-active, #3a6fa8); margin-bottom: 15px; display: inline-block; }
 #matterdocuments-tab .matter-bulk-dropzone-lead { font-size: 16px; color: var(--text-dark, #1a2c40); margin-bottom: 10px; }
 #matterdocuments-tab .matter-bulk-dropzone-hint { font-size: 14px; color: var(--text-muted, #5e7a90); margin-bottom: 0; }
-#matterdocuments-tab .edit-checklist-btn { color: var(--sidebar-active, #3a6fa8); cursor: pointer; }
-#matterdocuments-tab .edit-checklist-btn:hover { color: var(--navy, #1e3d60); }
 #matterdocuments-tab .delete-checklist-btn { color: var(--danger, #a83020); cursor: pointer; }
 #matterdocuments-tab .delete-checklist-btn:hover { filter: brightness(1.08); }
 #matterdocuments-tab .visa-sig-action-bar { background: var(--page-bg, #f0f6ff) !important; border-left: 4px solid var(--sidebar-active, #3a6fa8) !important; }
@@ -1045,9 +1041,7 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 }
 
 #matterdocuments-tab .checklist-actions a,
-#personaldocuments-tab .checklist-actions a,
-#matterdocuments-tab .edit-file-name-btn,
-#personaldocuments-tab .edit-file-name-btn {
+#personaldocuments-tab .checklist-actions a {
   color: var(--sidebar-active, #3a6fa8);
   flex-shrink: 0;
   padding: 2px 4px;
@@ -1055,10 +1049,17 @@ body.crm-closed-matter-view .context-menu-item[onclick*="preview"]:hover {
 }
 
 #matterdocuments-tab .checklist-actions a:hover,
-#personaldocuments-tab .checklist-actions a:hover,
-#matterdocuments-tab .edit-file-name-btn:hover,
-#personaldocuments-tab .edit-file-name-btn:hover {
+#personaldocuments-tab .checklist-actions a:hover {
   color: var(--navy, #1e3d60);
+}
+
+#matterdocuments-tab .doc-row-context-hint,
+#personaldocuments-tab .doc-row-context-hint {
+  margin: 0 0 8px;
+  padding: 0 2px;
+  color: var(--text-muted, #5e7a90);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 #matterdocuments-tab .checklist-actions .delete-checklist-btn,

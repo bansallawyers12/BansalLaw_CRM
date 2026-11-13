@@ -1784,12 +1784,11 @@ class ClientDocumentsController extends Controller
                 $labelClassAttr = $labelClass !== '' ? ' class="' . $labelClass . '"' : '';
                 $displayChecklist = DocumentLabel::forDisplay($checklist);
                 $html = '<span' . $labelClassAttr . $labelStyle . ' title="' . e($displayChecklist) . '">' . $displayChecklist . '</span>';
-                $html .= '<div class="checklist-actions" style="display: flex; gap: 5px;">';
-                $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . e($displayChecklist) . '" title="Rename checklist"><i class="fa-solid fa-pen-to-square"></i></a>';
                 if (!$doc->file_name) {
+                    $html .= '<div class="checklist-actions" style="display: flex; gap: 5px;">';
                     $html .= '<a href="javascript:;" class="delete-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . e($displayChecklist) . '" title="Delete Checklist"><i class="fa-solid fa-trash"></i></a>';
+                    $html .= '</div>';
                 }
-                $html .= '</div>';
                 
                 $response['status'] = true;
                 $response['data'] = 'Checklist renamed successfully';

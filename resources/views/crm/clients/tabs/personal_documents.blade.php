@@ -90,6 +90,7 @@
                                                 </button>
                                             </div>
                                         </div>
+                                        <p class="doc-row-context-hint">Right-click a name for further actions.</p>
                                         
                                         <!-- Bulk Upload Dropzone (Hidden by default) -->
                                         <div class="bulk-upload-dropzone-container" id="bulk-upload-<?= $id ?>" data-bulk-open="0" style="display: none; margin: 15px 0; padding: 20px;">
@@ -149,18 +150,15 @@
                                                     ?>
                                                     <tr class="drow" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $fetch->id ?>" data-personalchecklistname="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" class="personalchecklist-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;">
+                                                            <div data-id="<?= $fetch->id ?>" data-personalchecklistname="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" class="personalchecklist-row" title="Uploaded by: <?= \App\Support\DocumentLabel::forDisplay($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;" oncontextmenu='showFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? '') ?>, <?= json_encode($fetch->file_name ? $previewUrl : '') ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
                                                                 <span style="flex: 1;" title="<?= e(\App\Support\DocumentLabel::forDisplay($fetch->checklist)) ?>"><?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?></span>
+                                                                <?php if (!$fetch->file_name): ?>
                                                                 <div class="checklist-actions" style="display: flex; gap: 5px;">
-                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Rename checklist">
-                                                                        <i class="fa-solid fa-pen-to-square"></i>
-                                                                    </a>
-                                                                    <?php if (!$fetch->file_name): ?>
                                                                     <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= \App\Support\DocumentLabel::forDisplay($fetch->checklist) ?>" title="Delete Checklist">
                                                                         <i class="fa-solid fa-trash"></i>
                                                                     </a>
-                                                                    <?php endif; ?>
                                                                 </div>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </td>
                                                         <td style="white-space: initial;">
@@ -171,7 +169,6 @@
                                                                             <i class="fa-solid <?= $fileIcon ?>"></i> <span title="<?= e(\App\Support\DocumentLabel::forDisplay($fetch->file_name . '.' . $fetch->filetype)) ?>"><?= \App\Support\DocumentLabel::forDisplay($fetch->file_name . '.' . $fetch->filetype) ?></span>
                                                                         </a>
                                                                     </div>
-                                                                    <a href="javascript:;" class="edit-file-name-btn" title="Rename file" aria-label="Rename file"><i class="fa-solid fa-pen-to-square"></i></a>
                                                                 </div>
                                                             <?php else: ?>
                                                                 <div class="upload_document" style="display: inline-block;">
@@ -208,8 +205,8 @@
                                                         </td>
                                                         <td>
                                                             <!-- Hidden elements for context menu actions -->
+                                                            <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <?php if ($fetch->myfile): ?>
-                                                                <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="download-file" data-filelink="" data-document-id="<?= $fetch->id ?>" data-filename="<?= e(\App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '')) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
                                                                 <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="personal" data-doccategory="<?= $catVal->title ?>" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
@@ -278,22 +275,22 @@
                 <div class="context-menu-item" role="menuitem" onclick="handleContextAction('rename-checklist')">
                     <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>Rename Checklist</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('rename-doc')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleContextAction('rename-doc')">
                     <i class="fa-solid fa-file-pen" aria-hidden="true"></i><span>Rename File Name</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('move')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleContextAction('move')">
                     <i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i><span>Move Document</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('preview')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleContextAction('preview')">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i><span>Preview</span>
                 </div>
-                <div id="context-pdf-option" class="context-menu-item" role="menuitem" onclick="handleContextAction('pdf')" style="display: none;">
+                <div id="context-pdf-option" class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleContextAction('pdf')" style="display: none;">
                     <i class="fa-solid fa-file-pdf" aria-hidden="true"></i><span>PDF</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('download')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleContextAction('download')">
                     <i class="fa-solid fa-download" aria-hidden="true"></i><span>Download</span>
                 </div>
-                <div class="context-menu-item" role="menuitem" onclick="handleContextAction('not-used')">
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleContextAction('not-used')">
                     <i class="fa-solid fa-trash" aria-hidden="true"></i><span>Not Used</span>
                 </div>
             </div>
@@ -683,6 +680,11 @@
                     if (menu.parentElement !== document.body) {
                         document.body.appendChild(menu);
                     }
+
+                    const hasFile = !!(fileUrl && String(fileUrl).trim());
+                    menu.querySelectorAll('.context-menu-item--needs-file').forEach(function(item) {
+                        item.style.display = hasFile ? 'flex' : 'none';
+                    });
                     
                     // Show/hide PDF option based on file type
                     const pdfOption = document.getElementById('context-pdf-option');

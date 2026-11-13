@@ -9,18 +9,15 @@
     @endphp
     <tr class="drow" data-matterid="{{ $fetch->client_matter_id }}" data-catid="{{ $fetch->folder_name }}" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">
-            <div data-id="{{ $fetch->id }}" data-visachecklistname="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" class="visachecklist-row md-checklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}">
+            <div data-id="{{ $fetch->id }}" data-visachecklistname="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" class="visachecklist-row md-checklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" oncontextmenu="showVisaFileContextMenu(event, {{ (int) $fetch->id }}, {{ json_encode($fetch->filetype ?? '') }}, {{ json_encode($fetch->file_name ? $previewUrl : '') }}, {{ json_encode((string) $fetch->folder_name) }}, {{ json_encode($fetch->status ?? 'draft') }}); return false;">
                 <span class="md-checklist-label" title="{{ e(\App\Support\DocumentLabel::normalize($fetch->checklist)) }}">{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}</span>
-                <div class="checklist-actions">
-                    <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" title="Rename checklist">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                    </a>
-                    @if (!$fetch->file_name)
+                @if (!$fetch->file_name)
+                    <div class="checklist-actions">
                         <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ \App\Support\DocumentLabel::normalize($fetch->checklist) }}" title="Delete Checklist">
                             <i class="fa-solid fa-trash"></i>
                         </a>
-                    @endif
-                </div>
+                    </div>
+                @endif
             </div>
         </td>
         <td style="white-space: initial;">
@@ -45,7 +42,6 @@
                             <i class="fa-solid {{ $matterFileIcon }} matter-doc-file-icon"></i> <span title="{{ e($fetch->file_name . '.' . $fetch->filetype) }}">{{ htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) }}</span>
                         </a>
                     </div>
-                    <a href="javascript:;" class="edit-file-name-btn" title="Rename file" aria-label="Rename file"><i class="fa-solid fa-pen-to-square"></i></a>
                 </div>
             @else
                 <div class="migration_upload_document" style="display: inline-block;">
@@ -78,8 +74,8 @@
             @endif
         </td>
         <td>
+            <a class="renamechecklist" data-id="{{ $fetch->id }}" href="javascript:;" style="display: none;"></a>
             @if ($fetch->myfile)
-                <a class="renamechecklist" data-id="{{ $fetch->id }}" href="javascript:;" style="display: none;"></a>
                 <a class="renamedoc" data-id="{{ $fetch->id }}" href="javascript:;" style="display: none;"></a>
                 <a class="download-file" data-document-id="{{ $fetch->id }}" data-id="{{ $fetch->id }}" data-filename="{{ htmlspecialchars($downloadFilename) }}" href="#" style="display: none;"></a>
                 <a class="notuseddoc" data-id="{{ $fetch->id }}" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
