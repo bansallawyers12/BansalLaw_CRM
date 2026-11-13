@@ -177,16 +177,4 @@ class Note extends Model
         return url('/clients/detail/' . $encoded);
     }
 
-    /**
-     * Legacy relationship - Appointment model has been removed
-     * This relationship is kept for backward compatibility but will return null
-     * 
-     * @deprecated Appointment system has been removed
-     */
-    public function lead()
-    {
-        // Legacy relationship returning empty relation object for eager-loading safety
-        return $this->belongsTo(Admin::class, 'lead_id')->whereRaw('1=0');
-    }
-
 }

@@ -1097,8 +1097,6 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 	</div>
 </div>
 
-{{-- Matter Ownership Ratio modal REMOVED (MAT-4): applications.ratio field gone; stub route crm.matter.ownership remains for BC. --}}
-
 <div class="modal fade custom_modal" id="tags_clients" tabindex="-1" role="dialog" aria-labelledby="matterModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -1828,8 +1826,6 @@ $(document).ready(function() {
         }
     });
 </script>
-<script src="{{ URL::asset('js/crm/clients/detail.js') }}?v={{ @filemtime(public_path('js/crm/clients/detail.js')) ?: time() }}" defer></script>
-
 {{-- Client detail utilities (must load before detail-main.js) --}}
 <script src="{{ URL::asset('js/crm/clients/utils/flatpickr-helpers.js') }}?v={{ @filemtime(public_path('js/crm/clients/utils/flatpickr-helpers.js')) ?: time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/utils/editor-helpers.js') }}?v={{ @filemtime(public_path('js/crm/clients/utils/editor-helpers.js')) ?: time() }}"></script>

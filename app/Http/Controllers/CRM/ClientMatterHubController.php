@@ -1413,55 +1413,7 @@ class ClientMatterHubController extends Controller
 	}
 
 	/**
-	 * Matter ownership ratio stub (applications.ratio removed).
-	 * Preferred name for former application_ownership().
-	 */
-	public function updateMatterOwnership(Request $request)
-	{
-		return response()->json([
-			'status' => true,
-			'message' => 'Ownership ratio field removed with applications table.',
-			'ratio' => $request->input('ratio', 0),
-		]);
-	}
-
-	/** @deprecated Use updateMatterOwnership() */
-	public function application_ownership(Request $request)
-	{
-		return $this->updateMatterOwnership($request);
-	}
-
-	// Removed legacy method: saleforcast
-
-	// REMOVED - Unused method (no references found in views or JavaScript)
-	// This method returned application dropdown options for a client but was never used
-	// public function getapplicationbycid(Request $request){ ... }
-
-
-	public function applicationsavefee(Request $request){
-		// Fee options functionality has been removed
-		$response = [
-			'status' => false,
-			'message' => 'Application fee options feature has been removed.'
-		];
-		return response()->json($response);
-	}
-
-	// REMOVED - Application PDF export functionality (view file deleted, was broken and unused)
-	// public function exportapplicationpdf(Request $request, $id){
-	// 	$applications = \App\Models\Application::where('id', $id)->first();
-	// 	$cleintname = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id',@$applications->client_id)->first();
-	// 	$pdf = PDF::setOptions([
-	// 		'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
-	// 		'logOutputFile' => storage_path('logs/log.htm'),
-	// 		'tempDir' => storage_path('logs/')
-	// 		])->loadView('emails.application',compact(['cleintname','applications','productdetail','PartnerBranch','partnerdetail']));
-	// 	return $pdf->stream('application.pdf');
-	// }
-
-	/**
 	 * Client matter options for select dropdowns.
-	 * Preferred name for former getapplications().
 	 */
 	public function listClientMatters(Request $request)
 	{
@@ -1499,14 +1451,6 @@ class ClientMatterHubController extends Controller
 			'matters' => $options,
 		]);
 	}
-
-	/** @deprecated Use listClientMatters() */
-	public function getapplications(Request $request)
-	{
-		return $this->listClientMatters($request);
-	}
-
-
 
 	/**
 	 * Return personal or visa document categories for the Move Document modal.

@@ -81,12 +81,6 @@
 								<span class="lh-info-value">{{ @$fetchedData->marital_status }}</span>
 							</div>
 							@endif
-							@if($fetchedData->visa_expiry_date != '')
-							<div class="lh-info-row">
-								<span class="lh-info-label">Visa Exp</span>
-								<span class="lh-info-value">{{ date('d/m/Y', strtotime($fetchedData->visa_expiry_date)) }}</span>
-							</div>
-							@endif
 							<div class="lh-info-row">
 								<span class="lh-info-label">Assignee</span>
 								<div class="lh-info-value lh-info-value--wrap">

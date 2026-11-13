@@ -1787,21 +1787,6 @@ class ClientDocumentsController extends Controller
         }
     }
 
-        /**
-     * Get Visa Checklist
-     */
-    public function getvisachecklist(Request $request) {
-        // DISABLED: VisaDocChecklist model has been removed
-        // Visa checklist functionality disabled - VisaDocChecklist model has been removed
-        $response = [
-            'status' => false, 
-            'message' => 'Matter document checklist (legacy API) is disabled — VisaDocChecklist model has been removed.', 
-            'visaCheckListInfo' => []
-        ];
-        echo json_encode($response);
-        return;
-    }
-
     /**
      * Mark Document as Not Used
      */

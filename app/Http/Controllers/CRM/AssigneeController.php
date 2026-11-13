@@ -126,7 +126,7 @@ class AssigneeController extends Controller
     public function index(Request $request)
     {
         $query = Note::query()
-            ->with(['noteStaff','noteClient.company','lead.service','assigned_staff'])
+            ->with(['noteStaff','noteClient.company','assigned_staff'])
             ->where('type','client')
             ->where('is_action', 1)
             ->where('status','<>','1');
@@ -146,7 +146,7 @@ class AssigneeController extends Controller
     //All completed action lists
     public function completed(Request $request)
     {
-        $query = Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])
+        $query = Note::with(['noteStaff','noteClient.company','assigned_staff'])
             ->where('type','client')
             ->where('is_action', 1)
             ->where('status','1');
@@ -358,7 +358,7 @@ class AssigneeController extends Controller
     //All assigned to me action list
     public function assigned_to_me(Request $request)
     {
-        $base = Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff','clientMatter'])
+        $base = Note::with(['noteStaff','noteClient.company','assigned_staff','clientMatter'])
             ->where('type','client')
             ->where('is_action', 1)
             ->where('assigned_to', Auth::user()->id);
