@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Admin;
 use App\Models\Staff;
 use App\Models\ActivitiesLog;
+use App\Models\ClientLegalForm;
 use App\Models\Document;
 use App\Models\EmailLog;
 use App\Models\ClientMatter;
@@ -31,6 +32,8 @@ use App\Support\DocumentLabel;
 use App\Support\StaffClientVisibility;
 use App\Services\ClientDocumentFileUploadService;
 use App\Services\ClientDocumentFolderListService;
+use App\Services\CrmDurableStorage;
+use App\Services\LegalFormFromDocumentService;
 use App\Services\LegacyDocHtmlPreviewService;
 use App\Services\OfficeToPdfConverterService;
 use App\Services\PptxPresentationPreviewService;
@@ -1603,6 +1606,127 @@ class ClientDocumentsController extends Controller
         }
         
         return response()->json($response);
+    }
+
+    public function legalFormMovePreview(Request $request): JsonResponse
+    {
+        $request->validate([
+            'document_id' => 'required|integer',
+        ]);
+
+        $document = Document::find($request->integer('document_id'));
+        if (! $document) {
+            return response()->json(['success' => false, 'message' => 'Document not found'], 404);
+        }
+
+        if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $document->client_id)) {
+            return $deny;
+        }
+
+        $service = app(LegalFormFromDocumentService::class);
+        $reason = $service->refusalReason($document);
+
+        return response()->json([
+            'success' => true,
+            'allowed' => $reason === null,
+            'message' => $reason,
+            'suggested_form_type' => $service->suggestFormType($document),
+            'file_name' => $document->getFilenameWithExtensionForDisplay(),
+            'form_types' => ClientLegalForm::FORM_TYPES,
+        ]);
+    }
+
+    public function moveToLegalForm(Request $request): JsonResponse
+    {
+        $request->validate([
+            'document_id' => 'required|integer',
+            'form_type' => 'required|in:short_costs_disclosure,cost_agreement,authority_to_act',
+        ]);
+
+        $document = Document::find($request->integer('document_id'));
+        if (! $document) {
+            return response()->json(['success' => false, 'message' => 'Document not found'], 404);
+        }
+
+        if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $document->client_id)) {
+            return $deny;
+        }
+
+        $createdBy = (int) Auth::id();
+        if ($createdBy <= 0) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $service = app(LegalFormFromDocumentService::class);
+        $reason = $service->refusalReason($document);
+        if ($reason !== null) {
+            return response()->json(['success' => false, 'message' => $reason], 422);
+        }
+
+        $bytes = $this->readBytesForLegalForm($document);
+        if ($bytes === null || $bytes === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'The file could not be read from storage.',
+            ], 422);
+        }
+
+        try {
+            $form = $service->storeFromDocument($document, (string) $request->input('form_type'), $createdBy, $bytes);
+        } catch (\RuntimeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            Log::error('Move document to legal form failed', [
+                'document_id' => $document->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'The document could not be moved to Legal Forms.',
+            ], 422);
+        }
+
+        $label = ClientLegalForm::FORM_TYPES[$form->form_type] ?? 'Legal form';
+        $documentName = $document->file_name ?: $document->checklist ?: 'Document';
+        $this->logClientActivity(
+            (int) $document->client_id,
+            'moved document to legal forms: '.$documentName,
+            '<p>Filed <strong>'.e($documentName).'</strong> as <strong>'.e($label).'</strong></p>',
+            'document'
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => $label.' is now on Legal Forms.',
+            'form_id' => $form->id,
+            'document_id' => $document->id,
+        ]);
+    }
+
+    /**
+     * Prefer the signed PDF when one exists. Otherwise read the stored document file.
+     */
+    private function readBytesForLegalForm(Document $document): ?string
+    {
+        $durable = app(CrmDurableStorage::class);
+
+        if (strtolower((string) $document->status) === 'signed') {
+            $signedKey = $document->getSignedStorageKey();
+            if ($signedKey) {
+                $signedBytes = $durable->get($signedKey, $document->signed_doc_link);
+                if (is_string($signedBytes) && $signedBytes !== '') {
+                    return $signedBytes;
+                }
+            }
+        }
+
+        $key = $this->resolveS3KeyForDocument($document);
+        if ($key === null || $key === '') {
+            return null;
+        }
+
+        return $this->readDocumentFileContent($document, $key);
     }
 
     /**

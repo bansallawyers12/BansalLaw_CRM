@@ -203,6 +203,9 @@
                 <div class="context-menu-item" role="menuitem" onclick="handleNotUsedContextAction('download')">
                     <i class="fa-solid fa-download" aria-hidden="true"></i><span>Download</span>
                 </div>
+                <div class="context-menu-item" role="menuitem" onclick="handleNotUsedContextAction('move-legal-form')">
+                    <i class="fa-solid fa-file-signature" aria-hidden="true"></i><span>Move to Legal Forms</span>
+                </div>
                 <div class="context-menu-item" role="menuitem" onclick="handleNotUsedContextAction('back-to-doc')">
                     <i class="fa-solid fa-undo" aria-hidden="true"></i><span>Revert</span>
                 </div>
@@ -304,6 +307,11 @@
                             break;
                         case 'back-to-doc':
                             $('.backtodoc[data-id="' + currentNotUsedContextFile + '"]').first().trigger('click');
+                            break;
+                        case 'move-legal-form':
+                            if (typeof openMoveToLegalFormModal === 'function') {
+                                openMoveToLegalFormModal(currentNotUsedContextFile);
+                            }
                             break;
                     }
                 }

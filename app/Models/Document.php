@@ -17,6 +17,9 @@ class Document extends Model
 {
     use SortableTrait, HasFactory;
 
+    /** Hidden from document lists because the file was moved onto Legal Forms. */
+    public const FILED_AS_LEGAL_FORM = 2;
+
     protected $table = 'documents';
 
     protected $fillable = [
@@ -141,6 +144,17 @@ class Document extends Model
     {
         return $query->where(function ($q) {
             $q->whereNull('status')->orWhere('status', '!=', 'archived');
+        });
+    }
+
+    /**
+     * Document lists. A file moved to Legal Forms stays in the table for the signature record.
+     */
+    public function scopeNotFiledAsLegalForm($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('not_used_doc')
+                ->orWhere('not_used_doc', '!=', self::FILED_AS_LEGAL_FORM);
         });
     }
 

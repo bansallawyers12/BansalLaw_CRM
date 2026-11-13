@@ -281,6 +281,9 @@
                 <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleContextAction('move')">
                     <i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i><span>Move Document</span>
                 </div>
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleContextAction('move-legal-form')">
+                    <i class="fa-solid fa-file-signature" aria-hidden="true"></i><span>Move to Legal Forms</span>
+                </div>
                 <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleContextAction('preview')">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i><span>Preview</span>
                 </div>
@@ -768,6 +771,11 @@
                             break;
                         case 'move':
                             openMoveDocumentModal(currentContextFile, 'personal');
+                            break;
+                        case 'move-legal-form':
+                            if (typeof openMoveToLegalFormModal === 'function') {
+                                openMoveToLegalFormModal(currentContextFile);
+                            }
                             break;
                         case 'preview':
                             window.open(currentContextData.fileUrl, '_blank');

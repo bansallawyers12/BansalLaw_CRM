@@ -13,6 +13,7 @@ class ClientLegalForm extends Model
         'client_id',
         'client_matter_id',
         'created_by',
+        'source_document_id',
         'form_type',
         'is_uploaded',
         'matter_reference',
@@ -83,6 +84,11 @@ class ClientLegalForm extends Model
     {
         // created_by is Auth::guard('admin') → staff.id
         return $this->belongsTo(Staff::class, 'created_by');
+    }
+
+    public function sourceDocument()
+    {
+        return $this->belongsTo(Document::class, 'source_document_id');
     }
 
     public function getFormTypeLabelAttribute(): string

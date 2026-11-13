@@ -1304,6 +1304,8 @@ body.crm-closed-matter-view .context-menu-item[onclick*='"preview"'] {
 </div>
 @endif
 
+@include('crm.clients.partials.move_to_legal_form_modal')
+
 @endsection
 @push('scripts')
 <script>

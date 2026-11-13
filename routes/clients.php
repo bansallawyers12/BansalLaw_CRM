@@ -201,6 +201,8 @@ Route::post('/documents/rename', [ClientDocumentsController::class, 'renamedoc']
 Route::post('/documents/delete', [ClientDocumentsController::class, 'deletedocs'])->name('clients.documents.deletedocs');
 // BUGFIX #3: Add move document feature
 Route::post('/documents/move', [ClientDocumentsController::class, 'moveDocument'])->name('clients.documents.moveDocument');
+Route::get('/documents/legal-form-move', [ClientDocumentsController::class, 'legalFormMovePreview'])->name('clients.documents.legalFormMovePreview');
+Route::post('/documents/move-to-legal-form', [ClientDocumentsController::class, 'moveToLegalForm'])->name('clients.documents.moveToLegalForm');
 // BUGFIX #3: Get visa categories for a specific matter
 Route::get('/get-visa-categories', [ClientDocumentsController::class, 'getVisaCategories'])->name('clients.documents.getVisaCategories');
 Route::post('/documents/not-used', [ClientDocumentsController::class, 'notuseddoc'])->name('clients.documents.notuseddoc');

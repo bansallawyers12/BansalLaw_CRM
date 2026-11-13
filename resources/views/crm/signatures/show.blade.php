@@ -1022,6 +1022,12 @@
                     @endif
                     @endif
                     
+                    @if($document->client_id && (int) $document->not_used_doc !== \App\Models\Document::FILED_AS_LEGAL_FORM && ! in_array((string) $document->status, ['sent', 'pending', 'placed', 'viewed'], true))
+                    <button type="button" class="btn btn-secondary btn-block" onclick="openMoveToLegalFormModal({{ (int) $document->id }})">
+                        <i class="fa-solid fa-file-signature"></i> Move to Legal Forms
+                    </button>
+                    @endif
+
                     <a href="{{ route('documents.edit', $document->id) }}" class="btn btn-primary btn-block">
                         <i class="fa-solid fa-pen-to-square"></i> Edit Signature Placement
                     </a>
@@ -1874,5 +1880,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+<script>document.body.setAttribute('data-reload-after-legal-form-move', '1');</script>
+@include('crm.clients.partials.move_to_legal_form_modal')
 @endsection
 

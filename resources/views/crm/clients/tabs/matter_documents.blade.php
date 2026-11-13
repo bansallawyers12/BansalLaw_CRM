@@ -454,6 +454,9 @@
                 <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('move')">
                     <i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i><span>Move Document</span>
                 </div>
+                <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('move-legal-form')">
+                    <i class="fa-solid fa-file-signature" aria-hidden="true"></i><span>Move to Legal Forms</span>
+                </div>
                 <div class="context-menu-item context-menu-item--needs-file" role="menuitem" onclick="handleVisaContextAction('preview')">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i><span>Preview</span>
                 </div>
@@ -661,6 +664,11 @@
                             break;
                         case 'move':
                             openMoveVisaDocumentModal(currentVisaContextFile, 'matter');
+                            break;
+                        case 'move-legal-form':
+                            if (typeof openMoveToLegalFormModal === 'function') {
+                                openMoveToLegalFormModal(currentVisaContextFile);
+                            }
                             break;
                         case 'preview':
                             if (currentVisaContextData.fileUrl) {

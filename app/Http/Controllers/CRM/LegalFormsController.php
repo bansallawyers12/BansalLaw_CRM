@@ -286,10 +286,18 @@ class LegalFormsController extends Controller
     public function destroy(ClientLegalForm $legalForm): JsonResponse
     {
         $this->ensureCrmRecordAccess((int) $legalForm->client_id);
+        $sourceDocumentId = (int) $legalForm->source_document_id;
         $this->deleteStoredFile($legalForm->pdf_path);
         $this->deleteStoredFile($legalForm->attachment_path);
         $this->previewService->forgetHtmlCache((int) $legalForm->id);
         $legalForm->delete();
+
+        if ($sourceDocumentId > 0) {
+            \App\Models\Document::query()
+                ->where('id', $sourceDocumentId)
+                ->where('not_used_doc', \App\Models\Document::FILED_AS_LEGAL_FORM)
+                ->update(['not_used_doc' => null]);
+        }
 
         return response()->json([
             'success' => true,
@@ -770,6 +778,7 @@ class LegalFormsController extends Controller
                 'client_id',
                 'client_matter_id',
                 'created_by',
+                'source_document_id',
                 'form_type',
                 'is_uploaded',
                 'matter_reference',
