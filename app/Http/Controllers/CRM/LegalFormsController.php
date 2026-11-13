@@ -573,11 +573,16 @@ class LegalFormsController extends Controller
         $file = $request->file('attachment');
         $dir = 'legal_forms/' . $clientId . '/attachments';
         $originalName = $file->getClientOriginalName();
-        $safeName = DocumentLabel::plainStoredName(
-            pathinfo($originalName, PATHINFO_FILENAME) ?: 'attachment',
-            pathinfo($originalName, PATHINFO_EXTENSION)
-        )['storage_key'];
+        $stem = pathinfo($originalName, PATHINFO_FILENAME) ?: 'attachment';
+        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+        $safeName = DocumentLabel::plainStoredName($stem, $extension)['storage_key'];
         $relativePath = $dir . '/' . $safeName;
+        $suffix = 2;
+        while ($this->fileStorage->exists($relativePath) && $suffix <= 30) {
+            $safeName = DocumentLabel::plainStoredName($stem . '_' . $suffix, $extension)['storage_key'];
+            $relativePath = $dir . '/' . $safeName;
+            $suffix++;
+        }
 
         $this->fileStorage->putUploadedFile($file, $relativePath);
         if (! $this->fileStorage->exists($relativePath)) {

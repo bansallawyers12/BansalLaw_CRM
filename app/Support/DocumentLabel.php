@@ -71,9 +71,10 @@ final class DocumentLabel
     }
 
     /**
-     * Names for a new upload. Another document for this client that already uses the
-     * same storage key gets this document id (or $fallbackDisambiguator) appended so
-     * the later upload does not replace that file.
+     * Names for a new upload. If another document for this client already uses the
+     * same storage key, the document id is appended when we have one. A new upload
+     * that does not have an id yet gets _2, _3, and so on, so it does not replace
+     * the earlier file.
      *
      * @return array{file_name: string, storage_key: string}
      */
@@ -88,12 +89,14 @@ final class DocumentLabel
     ): array {
         $fileName = self::buildClientFileName($clientReference, $normalName);
         $storageKey = self::withExtension($fileName, $extension);
-
-        $suffix = $documentId > 0 ? $documentId : $fallbackDisambiguator;
-        if ($suffix > 0 && $ownerClientId > 0 && self::storageKeyTaken($storageKey, $ownerClientId, $documentId, $docType)) {
-            $fileName .= '_' . $suffix;
-            $storageKey = self::withExtension($fileName, $extension);
-        }
+        [$fileName, $storageKey] = self::avoidTakenKey(
+            $fileName,
+            $storageKey,
+            $extension,
+            $documentId > 0 ? $documentId : $fallbackDisambiguator,
+            $ownerClientId,
+            $docType
+        );
 
         return [
             'file_name' => $fileName,
@@ -118,11 +121,14 @@ final class DocumentLabel
             $fileName = 'file';
         }
         $storageKey = self::withExtension($fileName, $extension);
-        $suffix = $documentId > 0 ? $documentId : 0;
-        if ($suffix > 0 && $ownerClientId > 0 && self::storageKeyTaken($storageKey, $ownerClientId, $documentId, $docType)) {
-            $fileName .= '_' . $suffix;
-            $storageKey = self::withExtension($fileName, $extension);
-        }
+        [$fileName, $storageKey] = self::avoidTakenKey(
+            $fileName,
+            $storageKey,
+            $extension,
+            $documentId,
+            $ownerClientId,
+            $docType
+        );
 
         return [
             'file_name' => $fileName,
@@ -177,6 +183,38 @@ final class DocumentLabel
         $key = basename(str_replace('\\', '/', trim((string) $storageKey)));
 
         return $key !== '' ? $key : 'document';
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private static function avoidTakenKey(
+        string $fileName,
+        string $storageKey,
+        ?string $extension,
+        int $documentId,
+        int $ownerClientId,
+        ?string $docType
+    ): array {
+        if ($ownerClientId <= 0) {
+            return [$fileName, $storageKey];
+        }
+
+        $base = $fileName;
+        $n = 2;
+        while (self::storageKeyTaken($storageKey, $ownerClientId, $documentId, $docType)) {
+            $suffix = $documentId > 0
+                ? ($n === 2 ? (string) $documentId : $documentId.'_'.$n)
+                : (string) $n;
+            $fileName = $base . '_' . $suffix;
+            $storageKey = self::withExtension($fileName, $extension);
+            $n++;
+            if ($n > 30) {
+                break;
+            }
+        }
+
+        return [$fileName, $storageKey];
     }
 
     public static function storageKeyTaken(

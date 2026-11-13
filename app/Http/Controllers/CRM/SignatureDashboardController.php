@@ -279,23 +279,24 @@ class SignatureDashboardController extends Controller
             // Handle file upload for new documents
             $file = $request->file('file');
             $clientReference = '';
-            $ownerClientId = 0;
             if ($request->filled('association_id')) {
                 $linked = Admin::find((int) $request->association_id);
                 if ($linked && trim((string) $linked->client_id) !== '') {
                     $clientReference = (string) $linked->client_id;
-                    $ownerClientId = (int) $linked->id;
                 }
             }
+            $storedExtension = strtolower((string) ($file->getClientOriginalExtension() ?: $file->extension() ?: 'pdf'));
             $storedNames = DocumentLabel::clientFileNames(
                 $clientReference,
-                $file->getClientOriginalName(),
-                0,
-                $ownerClientId
+                $file->getClientOriginalName()
             );
+            $baseName = $storedNames['file_name'];
+            $suffix = 2;
+            while (Storage::disk('public')->exists('documents/' . $storedNames['storage_key']) && $suffix <= 30) {
+                $storedNames = DocumentLabel::plainStoredName($baseName . '_' . $suffix, $storedExtension);
+                $suffix++;
+            }
             $filePath = $file->storeAs('documents', $storedNames['storage_key'], 'public');
-
-            $storedExtension = strtolower((string) ($file->getClientOriginalExtension() ?: $file->extension() ?: 'pdf'));
 
             // Create document
             $document = Document::create([

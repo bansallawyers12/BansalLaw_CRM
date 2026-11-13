@@ -76,6 +76,15 @@ class UploadChecklistController extends Controller
 
                 // 1. Upload to S3 + durable local mirror via CrmDurableStorage
                 $durable = app(CrmDurableStorage::class);
+                $suffix = 2;
+                while ($durable->localMirrorExists($relativePath) || $durable->cloudExists($relativePath)) {
+                    $fileName = DocumentLabel::plainStoredName($cleanBase . '_' . $suffix, $ext)['storage_key'];
+                    $relativePath = 'checklists/' . $fileName;
+                    $suffix++;
+                    if ($suffix > 30) {
+                        break;
+                    }
+                }
                 $durable->putUploadedFile($file, $relativePath);
 
                 // 2. Also mirror to public/checklists for legacy webserver direct file access

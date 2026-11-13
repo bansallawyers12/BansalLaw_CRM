@@ -1780,11 +1780,23 @@ class EmailUploadController extends Controller
                 // Default: store under client attachments path (email-only)
                 $attachmentFileName = $displayName;
                 $sanitizedAttachmentFileName = $this->sanitizeFilename($attachmentFileName);
-                $attachmentStored = DocumentLabel::plainStoredName(
-                    pathinfo($sanitizedAttachmentFileName, PATHINFO_FILENAME),
-                    pathinfo($sanitizedAttachmentFileName, PATHINFO_EXTENSION)
-                );
+                $attachmentStem = pathinfo($sanitizedAttachmentFileName, PATHINFO_FILENAME);
+                $attachmentExt = pathinfo($sanitizedAttachmentFileName, PATHINFO_EXTENSION);
+                $attachmentStored = DocumentLabel::plainStoredName($attachmentStem, $attachmentExt);
                 $s3Key = $clientUniqueId.'/attachments/'.((int) $mailReportId).'/'.$attachmentStored['storage_key'];
+                $attachmentSuffix = 2;
+                $attachmentKeyTaken = function (string $key): bool {
+                    try {
+                        return $this->emailUploadStorage()->exists($key);
+                    } catch (\Throwable) {
+                        return false;
+                    }
+                };
+                while ($attachmentKeyTaken($s3Key) && $attachmentSuffix <= 30) {
+                    $attachmentStored = DocumentLabel::plainStoredName($attachmentStem.'_'.$attachmentSuffix, $attachmentExt);
+                    $s3Key = $clientUniqueId.'/attachments/'.((int) $mailReportId).'/'.$attachmentStored['storage_key'];
+                    $attachmentSuffix++;
+                }
 
                 try {
                     $uploadSuccess = $this->emailUploadStorage()->put($s3Key, $decodedData);

@@ -133,10 +133,22 @@ class CrmSentEmailS3Service
                 return;
             }
 
-            $stored = DocumentLabel::plainStoredName(
-                pathinfo($displayName, PATHINFO_FILENAME) ?: 'attachment',
-                pathinfo($displayName, PATHINFO_EXTENSION)
-            );
+            $stem = pathinfo($displayName, PATHINFO_FILENAME) ?: 'attachment';
+            $extension = pathinfo($displayName, PATHINFO_EXTENSION);
+            $stored = DocumentLabel::plainStoredName($stem, $extension);
+            $suffix = 2;
+            $folder = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId) . '/attachments/' . $emailLogId . '/';
+            $keyTaken = function (string $key): bool {
+                try {
+                    return Storage::disk('s3')->exists($key);
+                } catch (\Throwable) {
+                    return false;
+                }
+            };
+            while ($keyTaken($folder . $stored['storage_key']) && $suffix <= 30) {
+                $stored = DocumentLabel::plainStoredName($stem . '_' . $suffix, $extension);
+                $suffix++;
+            }
             $s3Key = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId) . '/attachments/' . $emailLogId . '/' . $stored['storage_key'];
 
             $uploaded = Storage::disk('s3')->put($s3Key, $content);
