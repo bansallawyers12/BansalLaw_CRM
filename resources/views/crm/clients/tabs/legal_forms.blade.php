@@ -1106,14 +1106,12 @@
             html += '<div class="legal-form-list-item legal-form-row" id="legal-form-row-' + form.id + '" data-form-id="' + form.id + '" data-preview-label="' + previewLabel.replace(/"/g, '&quot;') + '" data-preview-type="' + previewType + '" style="--lf-accent:' + color + ';" role="button" tabindex="0">';
             html += '<div class="legal-form-list-item__main" onclick="previewLegalForm(' + form.id + ', \'' + safePreviewLabel + '\', \'' + previewType + '\')">';
             var uploadBadge = '';
-            if (form.source_document_id) {
+            if ((form.is_uploaded || form.source_document_id) && form.upload_file_available === false) {
+                uploadBadge = ' <span class="legal-form-missing-badge" title="File missing from storage">File missing</span>';
+            } else if (form.source_document_id) {
                 uploadBadge = ' <span class="legal-form-uploaded-badge">From documents</span>';
             } else if (form.is_uploaded) {
-                if (form.upload_file_available === false) {
-                    uploadBadge = ' <span class="legal-form-missing-badge" title="File missing from storage">File missing</span>';
-                } else {
-                    uploadBadge = ' <span class="legal-form-uploaded-badge">Uploaded</span>';
-                }
+                uploadBadge = ' <span class="legal-form-uploaded-badge">Uploaded</span>';
             }
             html += '<div class="legal-form-list-item__title">' + label + uploadBadge + '</div>';
             html += '<dl class="legal-form-list-item__meta">';

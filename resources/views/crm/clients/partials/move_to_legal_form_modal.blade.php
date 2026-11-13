@@ -33,6 +33,7 @@
     }
 
     var currentDocumentId = null;
+    var previewRequestId = 0;
     var previewUrl = @json(route('clients.documents.legalFormMovePreview'));
     var moveUrl = @json(route('clients.documents.moveToLegalForm'));
     var csrf = @json(csrf_token());
@@ -57,6 +58,7 @@
 
     window.openMoveToLegalFormModal = function (documentId) {
         currentDocumentId = documentId;
+        var requestId = ++previewRequestId;
         var modal = modalEl();
         if (!modal || typeof $ === 'undefined') {
             return;
@@ -72,6 +74,9 @@
 
         $.get(previewUrl, { document_id: documentId })
             .done(function (res) {
+                if (requestId !== previewRequestId) {
+                    return;
+                }
                 document.getElementById('moveToLegalFormFileName').textContent = (res && res.file_name) ? res.file_name : 'Document';
                 if (res && res.suggested_form_type) {
                     document.getElementById('moveToLegalFormType').value = res.suggested_form_type;
@@ -84,6 +89,9 @@
                 document.getElementById('confirmMoveToLegalForm').disabled = false;
             })
             .fail(function (xhr) {
+                if (requestId !== previewRequestId) {
+                    return;
+                }
                 var message = 'This document cannot be moved to Legal Forms.';
                 if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
                     message = xhr.responseJSON.message;

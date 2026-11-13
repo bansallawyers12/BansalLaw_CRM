@@ -28,7 +28,7 @@ class LegalFormFromDocumentService
     {
         $haystack = $this->labelHaystack($document);
 
-        if ($this->containsAny($haystack, ['authority to act', 'authority_to_act', 'a2a'])) {
+        if (str_contains($haystack, 'authority to act') || preg_match('/\ba2a\b/', $haystack) === 1) {
             return 'authority_to_act';
         }
 
@@ -104,15 +104,28 @@ class LegalFormFromDocumentService
         $originalName = $this->originalName($document, $extension);
         $relativePath = $this->storagePath((int) $document->client_id, (int) $document->id, $originalName, $extension);
 
+        $matterId = null;
         $matterReference = null;
         if ($document->client_matter_id) {
-            $matterReference = ClientMatter::query()
+            $matter = ClientMatter::query()
                 ->where('id', $document->client_matter_id)
                 ->where('client_id', $document->client_id)
-                ->value('client_unique_matter_no');
+                ->first(['id', 'client_unique_matter_no']);
+            if ($matter) {
+                $matterId = (int) $matter->id;
+                $reference = trim((string) $matter->client_unique_matter_no);
+                $matterReference = $reference !== '' ? $reference : null;
+            }
         }
 
         $formDate = $document->created_at ? $document->created_at->toDateString() : now()->toDateString();
+        $signedDate = null;
+        if (strtolower((string) $document->status) === 'signed' && $document->exists) {
+            $signedAt = $document->signers()->whereNotNull('signed_at')->orderByDesc('signed_at')->value('signed_at');
+            if ($signedAt) {
+                $signedDate = \Illuminate\Support\Carbon::parse($signedAt)->toDateString();
+            }
+        }
 
         return DB::transaction(function () use (
             $document,
@@ -121,8 +134,10 @@ class LegalFormFromDocumentService
             $bytes,
             $relativePath,
             $originalName,
+            $matterId,
             $matterReference,
-            $formDate
+            $formDate,
+            $signedDate
         ) {
             $this->fileStorage->putBytes($relativePath, $bytes);
             if (! $this->fileStorage->exists($relativePath)) {
@@ -132,33 +147,32 @@ class LegalFormFromDocumentService
             try {
                 $form = ClientLegalForm::create([
                     'client_id' => $document->client_id,
-                    'client_matter_id' => $matterReference ? $document->client_matter_id : null,
+                    'client_matter_id' => $matterId,
                     'created_by' => $createdBy,
                     'source_document_id' => $document->id,
                     'form_type' => $formType,
                     'is_uploaded' => true,
                     'matter_reference' => $matterReference,
                     'form_date' => $formDate,
-                    'signed_date' => strtolower((string) $document->status) === 'signed' ? $formDate : null,
+                    'signed_date' => $signedDate,
                     'pdf_path' => $relativePath,
                     'attachment_path' => $relativePath,
                     'attachment_original_name' => $originalName,
                 ]);
+                $document->not_used_doc = Document::FILED_AS_LEGAL_FORM;
+                $document->save();
+
+                return $form;
             } catch (\Throwable $e) {
                 $this->fileStorage->delete($relativePath);
                 throw $e;
             }
-
-            $document->not_used_doc = Document::FILED_AS_LEGAL_FORM;
-            $document->save();
-
-            return $form;
         });
     }
 
     public function extensionOf(Document $document): string
     {
-        foreach ([$document->file_name, $document->myfile_key, $document->checklist] as $name) {
+        foreach ([$document->file_name, $document->myfile_key] as $name) {
             $extension = strtolower((string) pathinfo((string) $name, PATHINFO_EXTENSION));
             if ($extension !== '' && preg_match('/^[a-z0-9]{1,8}$/', $extension)) {
                 return $extension;
@@ -226,19 +240,5 @@ class LegalFormFromDocumentService
         $haystack = str_replace(['_', '-'], ' ', $haystack);
 
         return preg_replace('/\s+/', ' ', $haystack) ?? $haystack;
-    }
-
-    /**
-     * @param  list<string>  $needles
-     */
-    private function containsAny(string $haystack, array $needles): bool
-    {
-        foreach ($needles as $needle) {
-            if (str_contains($haystack, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

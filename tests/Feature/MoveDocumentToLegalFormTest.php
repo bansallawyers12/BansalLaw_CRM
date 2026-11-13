@@ -111,4 +111,64 @@ class MoveDocumentToLegalFormTest extends TestCase
         $document->refresh();
         $this->assertNotSame(Document::FILED_AS_LEGAL_FORM, (int) $document->not_used_doc);
     }
+
+    #[Test]
+    public function a_checklist_label_with_a_dot_does_not_hide_a_pdf(): void
+    {
+        $staff = Staff::factory()->superAdmin()->create();
+        $client = Admin::factory()->create(['type' => 'client']);
+        $relative = 'client-docs/checklist-dot.pdf';
+        app(CrmDurableStorage::class)->putBytes($relative, '%PDF-1.4 checklist');
+
+        $document = Document::factory()->create([
+            'client_id' => $client->id,
+            'created_by' => $staff->id,
+            'file_name' => 'Costs Disclosure',
+            'checklist' => 'No.1',
+            'filetype' => 'pdf',
+            'myfile' => CrmDurableStorage::localMyfile($relative),
+            'myfile_key' => 'Costs_Disclosure',
+            'doc_type' => 'matter',
+            'type' => 'client',
+            'status' => 'draft',
+        ]);
+
+        $this->actingAs($staff, 'admin')->postJson(route('clients.documents.moveToLegalForm'), [
+            'document_id' => $document->id,
+            'form_type' => 'cost_agreement',
+        ])->assertOk();
+
+        $form = ClientLegalForm::query()->where('source_document_id', $document->id)->first();
+        $this->assertNotNull($form);
+        $this->assertStringEndsWith('.pdf', (string) $form->attachment_original_name);
+    }
+
+    #[Test]
+    public function a_signed_document_is_not_replaced_by_the_unsigned_file(): void
+    {
+        $staff = Staff::factory()->superAdmin()->create();
+        $client = Admin::factory()->create(['type' => 'client']);
+        $relative = 'client-docs/unsigned.pdf';
+        app(CrmDurableStorage::class)->putBytes($relative, '%PDF-1.4 unsigned');
+
+        $document = Document::factory()->create([
+            'client_id' => $client->id,
+            'created_by' => $staff->id,
+            'file_name' => 'Costs Disclosure',
+            'filetype' => 'pdf',
+            'myfile' => CrmDurableStorage::localMyfile($relative),
+            'myfile_key' => 'Costs_Disclosure.pdf',
+            'signed_doc_link' => 'https://example.test/signed/costs-disclosure.pdf',
+            'doc_type' => 'agreement',
+            'type' => 'client',
+            'status' => 'signed',
+        ]);
+
+        $this->actingAs($staff, 'admin')->postJson(route('clients.documents.moveToLegalForm'), [
+            'document_id' => $document->id,
+            'form_type' => 'cost_agreement',
+        ])->assertStatus(422);
+
+        $this->assertNull(ClientLegalForm::query()->where('source_document_id', $document->id)->first());
+    }
 }

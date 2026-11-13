@@ -339,7 +339,11 @@ class LegalFormsController extends Controller
         ]);
 
         try {
-            $this->deleteStoredFile($legalForm->attachment_path);
+            $attachmentPath = $this->fileStorage->normalize($legalForm->attachment_path);
+            $formPath = $this->fileStorage->normalize($legalForm->pdf_path);
+            if ($attachmentPath !== '' && $attachmentPath !== $formPath) {
+                $this->deleteStoredFile($legalForm->attachment_path);
+            }
             $attachmentMeta = $this->storeAttachment($request, (int) $legalForm->client_id);
             if ($attachmentMeta === []) {
                 return response()->json([

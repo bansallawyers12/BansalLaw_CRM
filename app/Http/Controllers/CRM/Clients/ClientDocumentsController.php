@@ -1711,13 +1711,19 @@ class ClientDocumentsController extends Controller
     {
         $durable = app(CrmDurableStorage::class);
 
-        if (strtolower((string) $document->status) === 'signed') {
+        $signedLink = trim((string) $document->signed_doc_link);
+        if (strtolower((string) $document->status) === 'signed' && $signedLink !== '') {
             $signedKey = $document->getSignedStorageKey();
             if ($signedKey) {
                 $signedBytes = $durable->get($signedKey, $document->signed_doc_link);
                 if (is_string($signedBytes) && $signedBytes !== '') {
                     return $signedBytes;
                 }
+            }
+
+            // The stored document file is the unsigned copy. Do not file that in its place.
+            if (trim((string) $document->myfile) !== $signedLink) {
+                return null;
             }
         }
 
