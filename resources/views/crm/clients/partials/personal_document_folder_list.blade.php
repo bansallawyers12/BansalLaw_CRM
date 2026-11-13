@@ -2,7 +2,7 @@
     @php
         $admin = $fetch->staff;
         $previewUrl = url('/documents/preview/' . $fetch->id);
-        $downloadFilename = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
+        $downloadFilename = \App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '');
         $fileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'], true) ? 'fa-file-video' : 'fa-file-image';
     @endphp
     <tr class="drow" id="id_{{ $fetch->id }}">

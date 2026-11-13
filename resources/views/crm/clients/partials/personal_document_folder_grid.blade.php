@@ -2,7 +2,7 @@
     @if ($fetch->myfile)
         @php
             $gridPreviewUrl = url('/documents/preview/' . $fetch->id);
-            $gridDownloadFilename = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
+            $gridDownloadFilename = \App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '');
             $gridFileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'], true) ? 'fa-file-video' : 'fa-file-image';
         @endphp
         <div class="grid_list" id="gid_{{ $fetch->id }}">

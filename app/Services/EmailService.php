@@ -56,7 +56,15 @@ class EmailService
 
                 if (!empty($attachments)) {
                     foreach ($attachments as $attachment) {
-                        if (file_exists($attachment)) {
+                        if (is_array($attachment)) {
+                            $path = (string) ($attachment['path'] ?? '');
+                            $as = (string) ($attachment['name'] ?? basename($path));
+                            if ($path !== '' && file_exists($path)) {
+                                $message->attach($path, ['as' => $as]);
+                            }
+                            continue;
+                        }
+                        if (is_string($attachment) && file_exists($attachment)) {
                             $message->attach($attachment);
                         }
                     }

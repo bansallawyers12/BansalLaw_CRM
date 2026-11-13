@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use App\Models\Admin;
 use App\Models\UploadChecklist;
 use App\Services\CrmDurableStorage;
+use App\Support\DocumentLabel;
 
 use Auth;
 
@@ -67,8 +68,9 @@ class UploadChecklistController extends Controller
                 $file      = $request->file('checklists');
                 $ext       = strtolower((string) $file->getClientOriginalExtension());
                 $origBase  = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                $cleanBase = Str::slug(substr($origBase, 0, 50));
-                $fileName  = time() . '_' . Str::uuid()->toString() . ($cleanBase !== '' ? '_' . $cleanBase : '') . ($ext !== '' ? '.' . $ext : '');
+                $cleanBase = $origBase !== '' ? $origBase : (string) ($requestData['name'] ?? 'checklist');
+                $storedNames = DocumentLabel::plainStoredName($cleanBase, $ext);
+                $fileName  = $storedNames['storage_key'];
 
                 $relativePath = 'checklists/' . $fileName;
 

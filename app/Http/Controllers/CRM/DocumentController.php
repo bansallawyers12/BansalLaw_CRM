@@ -20,6 +20,7 @@ use App\Models\UploadChecklist;
 use App\Models\Email;
 use App\Models\EmailLog;
 use App\Services\PythonService;
+use App\Support\DocumentLabel;
 
 class DocumentController extends Controller
 {
@@ -389,9 +390,9 @@ class DocumentController extends Controller
             
             // Sanitize filename to avoid issues with special characters
             $originalFileName = $uploadedFile->getClientOriginalName();
-            $sanitizedFileName = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', pathinfo($originalFileName, PATHINFO_FILENAME));
             $extension = pathinfo($originalFileName, PATHINFO_EXTENSION);
-            $fileName = time() . '_' . $sanitizedFileName . '.' . $extension;
+            $storedNames = DocumentLabel::plainStoredName(pathinfo($originalFileName, PATHINFO_FILENAME), $extension);
+            $fileName = $storedNames['storage_key'];
             
             $s3FilePath = $adminId . '/' . $docType . '/' . $fileName;
             

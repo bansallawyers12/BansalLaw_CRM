@@ -2788,12 +2788,7 @@ class ClientDocumentsController extends Controller
 
     private function documentDownloadFilename(Document $document): string
     {
-        if (! empty($document->myfile_key)) {
-            return basename((string) $document->myfile_key);
-        }
-        $name = trim((string) ($document->file_name ?? '') . '.' . (string) ($document->filetype ?? ''), '.');
-
-        return $name !== '' ? $name : 'document';
+        return DocumentLabel::downloadName($document->file_name, $document->filetype, $document->myfile_key);
     }
 
     /**
@@ -3017,10 +3012,7 @@ class ClientDocumentsController extends Controller
                 if ($s3Key === null) {
                     return $jsonError('File not found in storage', 404);
                 }
-                $filename = $document->myfile_key ? basename((string) $document->myfile_key) : basename($s3Key);
-                if (str_contains($s3Key, 'personal/')) {
-                    $filename = $this->normalizePersonalDownloadFilename($filename);
-                }
+                $filename = DocumentLabel::downloadName($document->file_name, $document->filetype, $document->myfile_key ?: $s3Key);
             } else {
                 $fileUrl = $request->input('filelink');
                 if (! $fileUrl) {

@@ -27,6 +27,7 @@ use App\Services\ComposeMatterDocumentService;
 use App\Services\EmailService;
 use App\Services\CrmSentEmailS3Service;
 use App\Support\ClientActivity;
+use App\Support\DocumentLabel;
 use App\Support\EmailTimelineActivity;
 use App\Support\WorkflowStageFreeze;
 
@@ -1686,14 +1687,14 @@ class CRMUtilityController extends Controller
 
                 if(isset($array['filesatta'])){
                     foreach($array['filesatta'] as $file) {
-                        $filename = time().'_'.$file->getClientOriginalName(); // Unique filename
-                        $filePath = storage_path('app/uploads/'.$filename); // Save in storage/uploads folder
+                        $originalName = $file->getClientOriginalName();
+                        $filename = Str::uuid()->toString().'_'.DocumentLabel::sanitizeStorageSegment($originalName);
+                        $filePath = storage_path('app/uploads/'.$filename);
 
-                        // Move the file to storage folder
+                        // Move the file to storage folder. The mail name stays the original filename.
                         $file->move(storage_path('app/uploads'), $filename);
 
-                        // Add saved file path to attachments
-                        $attachments[] = $filePath;
+                        $attachments[] = ['path' => $filePath, 'name' => $originalName];
                     }
                 }
 
@@ -1730,6 +1731,8 @@ class CRMUtilityController extends Controller
                     foreach ($attachments as $p) {
                         if (is_string($p) && file_exists($p)) {
                             $attachmentTuples[] = ['path' => $p, 'name' => basename($p)];
+                        } elseif (is_array($p) && ! empty($p['path']) && file_exists($p['path'])) {
+                            $attachmentTuples[] = ['path' => $p['path'], 'name' => $p['name'] ?? basename($p['path'])];
                         }
                     }
                     $this->crmSentEmailS3Service->storeToS3($obj, $subject, $message, $attachmentTuples);

@@ -101,6 +101,84 @@ final class DocumentLabel
         ];
     }
 
+    /**
+     * A file with no client reference keeps the original name only.
+     *
+     * @return array{file_name: string, storage_key: string}
+     */
+    public static function plainStoredName(
+        string $normalName,
+        ?string $extension,
+        int $documentId = 0,
+        int $ownerClientId = 0,
+        ?string $docType = null
+    ): array {
+        $fileName = self::sanitizeStorageSegment($normalName);
+        if ($fileName === 'document') {
+            $fileName = 'file';
+        }
+        $storageKey = self::withExtension($fileName, $extension);
+        $suffix = $documentId > 0 ? $documentId : 0;
+        if ($suffix > 0 && $ownerClientId > 0 && self::storageKeyTaken($storageKey, $ownerClientId, $documentId, $docType)) {
+            $fileName .= '_' . $suffix;
+            $storageKey = self::withExtension($fileName, $extension);
+        }
+
+        return [
+            'file_name' => $fileName,
+            'storage_key' => $storageKey,
+        ];
+    }
+
+    /**
+     * Client files are {client reference}_{original name}. No reference means the original name only.
+     *
+     * @return array{file_name: string, storage_key: string}
+     */
+    public static function clientFileNames(
+        string $clientReference,
+        string $originalFileName,
+        int $documentId = 0,
+        int $ownerClientId = 0,
+        ?string $docType = null
+    ): array {
+        $stem = pathinfo($originalFileName, PATHINFO_FILENAME);
+        $extension = pathinfo($originalFileName, PATHINFO_EXTENSION);
+        $normal = $stem !== '' ? $stem : $originalFileName;
+        if (trim($clientReference) === '') {
+            return self::plainStoredName($normal, $extension, $documentId, $ownerClientId, $docType);
+        }
+
+        return self::storedUploadName($clientReference, $normal, $extension, $documentId, $ownerClientId, 0, $docType);
+    }
+
+    /**
+     * Name a person downloads. Prefer the saved document name over the storage key.
+     */
+    public static function downloadName(?string $fileName, ?string $fileType = null, ?string $storageKey = null): string
+    {
+        $name = trim(self::normalize($fileName));
+        $ext = strtolower(trim((string) $fileType));
+        if (str_contains($ext, '/')) {
+            $ext = '';
+        } else {
+            $ext = preg_replace('/[^a-z0-9]+/', '', $ext) ?: '';
+        }
+
+        if ($name !== '') {
+            $current = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if ($ext !== '' && $current !== $ext) {
+                return $name . '.' . $ext;
+            }
+
+            return $name;
+        }
+
+        $key = basename(str_replace('\\', '/', trim((string) $storageKey)));
+
+        return $key !== '' ? $key : 'document';
+    }
+
     public static function storageKeyTaken(
         string $storageKey,
         int $ownerClientId,

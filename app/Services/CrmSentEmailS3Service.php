@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\EmailLog;
 use App\Models\EmailLogAttachment;
 use App\Models\Admin;
+use App\Support\DocumentLabel;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -43,7 +44,7 @@ class CrmSentEmailS3Service
             $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
 
             $docType = 'crm_sent';
-            $uniqueFileName = time() . '-' . substr(uniqid(), -6) . '-email.html';
+            $uniqueFileName = 'email-' . $emailLog->id . '.html';
             $s3Path = $sanitizedClientId . '/' . $docType . '/sent/' . $uniqueFileName;
 
             $htmlContent = $this->buildEmailHtml($emailLog, $subject, $messageHtml);
@@ -132,10 +133,11 @@ class CrmSentEmailS3Service
                 return;
             }
 
-            $sanitized = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $displayName);
-            $sanitized = preg_replace('/_+/', '_', trim($sanitized, '_')) ?: 'attachment';
-            $ext = pathinfo($displayName, PATHINFO_EXTENSION);
-            $s3Key = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId) . '/attachments/' . time() . '_' . substr(uniqid(), -6) . '_' . $sanitized . ($ext ? '.' . $ext : '');
+            $stored = DocumentLabel::plainStoredName(
+                pathinfo($displayName, PATHINFO_FILENAME) ?: 'attachment',
+                pathinfo($displayName, PATHINFO_EXTENSION)
+            );
+            $s3Key = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId) . '/attachments/' . $emailLogId . '/' . $stored['storage_key'];
 
             $uploaded = Storage::disk('s3')->put($s3Key, $content);
             $s3Path = $uploaded ? Storage::disk('s3')->url($s3Key) : null;

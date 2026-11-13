@@ -10,6 +10,7 @@ use App\Models\Staff;
 use App\Models\Lead;
 use App\Services\SignatureService;
 use App\Services\SignatureAnalyticsService;
+use App\Support\DocumentLabel;
 use App\Support\StaffClientVisibility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -277,16 +278,31 @@ class SignatureDashboardController extends Controller
             
             // Handle file upload for new documents
             $file = $request->file('file');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('documents', $fileName, 'public');
+            $clientReference = '';
+            $ownerClientId = 0;
+            if ($request->filled('association_id')) {
+                $linked = Admin::find((int) $request->association_id);
+                if ($linked && trim((string) $linked->client_id) !== '') {
+                    $clientReference = (string) $linked->client_id;
+                    $ownerClientId = (int) $linked->id;
+                }
+            }
+            $storedNames = DocumentLabel::clientFileNames(
+                $clientReference,
+                $file->getClientOriginalName(),
+                0,
+                $ownerClientId
+            );
+            $filePath = $file->storeAs('documents', $storedNames['storage_key'], 'public');
 
             $storedExtension = strtolower((string) ($file->getClientOriginalExtension() ?: $file->extension() ?: 'pdf'));
 
             // Create document
             $document = Document::create([
-                'file_name' => $fileName,
+                'file_name' => $storedNames['file_name'],
                 'filetype' => $storedExtension,
                 'myfile' => $filePath,
+                'myfile_key' => $storedNames['storage_key'],
                 'status' => 'draft',
                 'client_id' => Auth::guard('admin')->id(),
             ]);

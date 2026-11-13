@@ -5,7 +5,7 @@
         $visaDocumentTypeTitle = $visaTitles[(string) $fetch->folder_name]
             ?? (\App\Models\VisaDocumentType::where('id', $fetch->folder_name)->value('title') ?? '');
         $previewUrl = url('/documents/preview/' . $fetch->id);
-        $downloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
+        $downloadFilename = \App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '');
     @endphp
     <tr class="drow" data-matterid="{{ $fetch->client_matter_id }}" data-catid="{{ $fetch->folder_name }}" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">

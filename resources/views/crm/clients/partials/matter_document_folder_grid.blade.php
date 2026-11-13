@@ -2,7 +2,7 @@
     @if ($fetch->myfile)
     @php
         $gridPreviewUrl = url('/documents/preview/' . $fetch->id);
-        $gridDownloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
+        $gridDownloadFilename = \App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '');
     @endphp
     <div class="grid_list">
         <div class="grid_col">

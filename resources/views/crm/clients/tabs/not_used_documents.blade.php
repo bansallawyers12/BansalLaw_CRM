@@ -114,7 +114,7 @@
                                                     @php
                                                         $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                                         $previewUrl = url('/documents/preview/' . $fetch->id);
-                                                        $downloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
+                                                        $downloadFilename = \App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '');
                                                         $uploadMeta = 'Uploaded by: ' . ($admin->first_name ?? 'NA') . ' on ' . date('d/m/Y H:i', strtotime($fetch->created_at));
                                                         $typeLabel = $notUsedDocTypeLabel($fetch->doc_type);
                                                         $typeClass = $fetch->doc_type === 'personal' ? 'personal' : 'matter';

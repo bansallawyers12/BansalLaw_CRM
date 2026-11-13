@@ -19,6 +19,7 @@ use App\Services\EmailSync\UnassignedEmailAssignmentService;
 use App\Services\EmailSync\UnassignedEmailUploadMatchService;
 use App\Services\PythonEmailCliFallback;
 use App\Services\PythonService;
+use App\Support\DocumentLabel;
 use App\Support\EmailTimelineActivity;
 use App\Traits\LogsClientActivity;
 use Aws\Exception\AwsException;
@@ -657,8 +658,15 @@ class EmailUploadController extends Controller
 
             // Sanitized name is used for S3 keys, document records, and Python parsing.
             $sanitizedFileName = $fileName;
-            $uniqueFileName = time().'_'.$sanitizedFileName;
             $docType = 'conversion_email_fetch';
+            $storedNames = DocumentLabel::clientFileNames(
+                (string) $clientUniqueId,
+                $sanitizedFileName,
+                0,
+                (int) ($clientId ?? 0),
+                $docType
+            );
+            $uniqueFileName = $storedNames['storage_key'];
 
             // 1. Parse email using Python microservice (reuse sync pre-parse when PDF already present)
             $parsedData = $this->resolveParsedEmailData($file, $preParsedData, ! empty($syncMeta));
@@ -778,7 +786,7 @@ class EmailUploadController extends Controller
 
             // 3. Save document record
             $document = new Document;
-            $document->file_name = pathinfo($fileName, PATHINFO_FILENAME);
+            $document->file_name = $storedNames['file_name'];
             $document->filetype = pathinfo($fileName, PATHINFO_EXTENSION);
             $document->user_id = $actingUserId;
             $document->myfile = $fileUrl;
@@ -1269,7 +1277,7 @@ class EmailUploadController extends Controller
             $pdfFileUrl = $this->emailUploadStorage()->url($pdfFilePath);
 
             $pdfDocument = new Document;
-            $pdfDocument->file_name = pathinfo($fileName, PATHINFO_FILENAME);
+            $pdfDocument->file_name = pathinfo($pdfUniqueFileName, PATHINFO_FILENAME);
             $pdfDocument->filetype = 'pdf';
             $pdfDocument->user_id = Auth::id();
             $pdfDocument->myfile = $pdfFileUrl;
@@ -1772,7 +1780,11 @@ class EmailUploadController extends Controller
                 // Default: store under client attachments path (email-only)
                 $attachmentFileName = $displayName;
                 $sanitizedAttachmentFileName = $this->sanitizeFilename($attachmentFileName);
-                $s3Key = $clientUniqueId.'/attachments/'.time().'_'.uniqid().'_'.$sanitizedAttachmentFileName;
+                $attachmentStored = DocumentLabel::plainStoredName(
+                    pathinfo($sanitizedAttachmentFileName, PATHINFO_FILENAME),
+                    pathinfo($sanitizedAttachmentFileName, PATHINFO_EXTENSION)
+                );
+                $s3Key = $clientUniqueId.'/attachments/'.((int) $mailReportId).'/'.$attachmentStored['storage_key'];
 
                 try {
                     $uploadSuccess = $this->emailUploadStorage()->put($s3Key, $decodedData);
@@ -1862,10 +1874,10 @@ class EmailUploadController extends Controller
             (string) ($storageConfig['file_name'] ?? pathinfo($originalFilename, PATHINFO_FILENAME))
         );
         $extension = $this->resolveAttachmentExtension($displayName, $contentType);
-        $customStem = pathinfo($displayName, PATHINFO_FILENAME);
 
         $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
-        $uniqueFileName = time().'_'.uniqid().'_'.$this->sanitizeFilename($displayName);
+        $storedNames = DocumentLabel::clientFileNames($clientUniqueId, $displayName, 0, $clientId, $storageType);
+        $uniqueFileName = $storedNames['storage_key'];
         $filePath = $sanitizedClientId.'/'.$storageType.'/'.$uniqueFileName;
 
         $uploadSuccess = $this->emailUploadStorage()->put($filePath, $decodedData);
@@ -1877,7 +1889,7 @@ class EmailUploadController extends Controller
         $fileSize = strlen($decodedData);
 
         $document = new Document;
-        $document->file_name = $customStem;
+        $document->file_name = $storedNames['file_name'];
         $document->filetype = $extension ?: pathinfo($displayName, PATHINFO_EXTENSION);
         $document->user_id = Auth::user()->id;
         $document->myfile = $fileUrl;

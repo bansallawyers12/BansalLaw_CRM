@@ -147,8 +147,8 @@ class SendHubdocInvoiceJob implements ShouldQueue
             ]));
 
             // Save PDF to temporary file
-            $pdfFileName = 'Invoice_' . $record_get[0]->invoice_no . '_' . time() . '.pdf';
-            $pdfPath = storage_path('app/temp/' . $pdfFileName);
+            $pdfFileName = 'Invoice-' . ($record_get[0]->invoice_no ?? 'invoice') . '.pdf';
+            $pdfPath = storage_path('app/temp/hubdoc_' . uniqid('', true) . '_' . $pdfFileName);
             
             // Create temp directory if it doesn't exist
             if (!file_exists(storage_path('app/temp'))) {

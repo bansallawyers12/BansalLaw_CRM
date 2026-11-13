@@ -211,7 +211,7 @@
                                                             <?php if ($fetch->myfile): ?>
                                                                 <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
-                                                                <a class="download-file" data-filelink="" data-document-id="<?= $fetch->id ?>" data-filename="<?= \App\Support\DocumentLabel::forDisplay($fetch->myfile_key ?: basename(parse_url($fetch->myfile, PHP_URL_PATH) ?: $fetch->myfile)) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
+                                                                <a class="download-file" data-filelink="" data-document-id="<?= $fetch->id ?>" data-filename="<?= e(\App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '')) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
                                                                 <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="personal" data-doccategory="<?= $catVal->title ?>" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                             <?php endif; ?>
                                                         </td>
@@ -227,7 +227,7 @@
                                             <?php if ($fetch->myfile): ?>
                                                 <?php
                                                 $previewUrlGrid = url('/documents/preview/' . $fetch->id);
-                                                $dlFilenameGrid = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
+                                                $dlFilenameGrid = \App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '');
                                                 $gridExt = strtolower((string) ($fetch->filetype ?? ''));
                                                 if (in_array($gridExt, ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv', 'vob'], true)) {
                                                     $gridFileIcon = 'fa-file-video';

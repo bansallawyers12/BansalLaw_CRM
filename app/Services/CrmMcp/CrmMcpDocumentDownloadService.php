@@ -27,9 +27,11 @@ class CrmMcpDocumentDownloadService
             throw new CrmMcpAccessException('File not found in storage.', 404);
         }
 
-        $filename = $document->myfile_key
-            ? basename((string) $document->myfile_key)
-            : basename($s3Key);
+        $filename = \App\Support\DocumentLabel::downloadName(
+            $document->file_name,
+            $document->filetype,
+            $document->myfile_key ?: $s3Key
+        );
 
         $minutes = max(1, min(15, (int) config('crm_mcp.download_url_minutes', 5)));
         $mime = $this->mimeTypeForS3Key($s3Key);

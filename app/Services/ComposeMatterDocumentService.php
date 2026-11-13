@@ -118,19 +118,7 @@ class ComposeMatterDocumentService
 
     public function displayFileName(Document $document): string
     {
-        if (! empty($document->myfile_key)) {
-            return basename((string) $document->myfile_key);
-        }
-
-        $name = trim((string) ($document->file_name ?? '') . '.' . (string) ($document->filetype ?? ''), '.');
-
-        if ($name !== '') {
-            return $name;
-        }
-
-        $checklist = DocumentLabel::forDisplay($document->checklist);
-
-        return $checklist !== '' ? $checklist : 'document';
+        return \App\Support\DocumentLabel::downloadName($document->file_name, $document->filetype, $document->myfile_key);
     }
 
     protected function readFileContent(Document $document): ?string

@@ -200,7 +200,7 @@
                                                     <?php
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                                     $previewUrl = url('/documents/preview/' . $fetch->id);
-                                                    $downloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
+                                                    $downloadFilename = \App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '');
                                                     ?>
                                                     <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
@@ -394,7 +394,7 @@
                                                 if ($fetch->myfile):
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                                     $gridPreviewUrl = url('/documents/preview/' . $fetch->id);
-                                                    $gridDownloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
+                                                    $gridDownloadFilename = \App\Support\DocumentLabel::downloadName($fetch->file_name ?? '', $fetch->filetype ?? '', $fetch->myfile_key ?? '');
                                                     $gridExt = strtolower((string) ($fetch->filetype ?? ''));
                                                     if (in_array($gridExt, ['xls', 'xlsx', 'csv', 'ods'], true)) {
                                                         $gridFileIcon = 'fa-file-excel';

@@ -24,6 +24,7 @@ use App\Support\InvoiceTimesheetLine;
 use App\Support\InvoiceWorkDate;
 use App\Services\ClientAccountTabService;
 use App\Services\CrmDurableStorage;
+use App\Support\DocumentLabel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -270,6 +271,14 @@ class ClientAccountsController extends Controller
     /**
      * Resolve durable storage service instance.
      */
+    /**
+     * @return array{file_name: string, storage_key: string}
+     */
+    protected function storedClientUploadName(string $clientReference, string $originalName, int $ownerClientId, string $docType): array
+    {
+        return DocumentLabel::clientFileNames($clientReference, $originalName, 0, $ownerClientId, $docType);
+    }
+
     protected function durableStorage(): CrmDurableStorage
     {
         return app(CrmDurableStorage::class);
@@ -594,13 +603,14 @@ class ClientAccountsController extends Controller
                 $fileName = $file->getClientOriginalName();
                 $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
                 $fileExtension = $file->getClientOriginalExtension();
-                $name = time() . $file->getClientOriginalName();
+                $storedNames = $this->storedClientUploadName((string) $client_unique_id, $fileName, (int) ($requestData['client_id'] ?? 0), (string) $doctype);
+                $name = $storedNames['storage_key'];
                 $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
                 $durable = $this->durableStorage();
                 $durable->putUploadedFile($file, $filePath);
    
                 $obj = new \App\Models\Document;
-                $obj->file_name = $nameWithoutExtension;
+                $obj->file_name = $storedNames['file_name'];
                 $obj->filetype = $fileExtension;
                 $obj->user_id = Auth::user()->id;
                 $obj->myfile = $durable->myfileValue($filePath);
@@ -2092,13 +2102,14 @@ class ClientAccountsController extends Controller
            $fileName = $file->getClientOriginalName();
            $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
            $fileExtension = $file->getClientOriginalExtension();
-           $name = time() . $file->getClientOriginalName();
+           $storedNames = $this->storedClientUploadName((string) $client_unique_id, $fileName, (int) ($requestData['client_id'] ?? 0), (string) $doctype);
+                $name = $storedNames['storage_key'];
            $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
            $durable = $this->durableStorage();
            $durable->putUploadedFile($file, $filePath);
 
            $obj = new \App\Models\Document;
-           $obj->file_name = $nameWithoutExtension;
+           $obj->file_name = $storedNames['file_name'];
            $obj->filetype = $fileExtension;
            $obj->user_id = Auth::user()->id;
            $obj->myfile = $durable->myfileValue($filePath);
@@ -2482,7 +2493,8 @@ class ClientAccountsController extends Controller
            $fileName = $file->getClientOriginalName();
            $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
            $fileExtension = $file->getClientOriginalExtension();
-           $name = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+           $storedNames = $this->storedClientUploadName((string) $client_unique_id, $fileName, (int) ($requestData['client_id'] ?? 0), (string) $doctype);
+           $name = $storedNames['storage_key'];
            $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
            $myfileUrl = null;
            $durable = app(\App\Services\CrmDurableStorage::class);
@@ -2490,7 +2502,7 @@ class ClientAccountsController extends Controller
            $myfileUrl = $durable->myfileValue($filePath);
            
            $obj = new \App\Models\Document;
-           $obj->file_name = $nameWithoutExtension;
+           $obj->file_name = $storedNames['file_name'];
            $obj->filetype = $fileExtension;
            $obj->user_id = Auth::user()->id;
            $obj->myfile = $myfileUrl;
@@ -3335,13 +3347,14 @@ class ClientAccountsController extends Controller
            $fileName = $file->getClientOriginalName();
            $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
            $fileExtension = $file->getClientOriginalExtension();
-           $name = time() . $file->getClientOriginalName();
+           $storedNames = $this->storedClientUploadName((string) $client_unique_id, $fileName, (int) ($requestData['client_id'] ?? 0), (string) $doctype);
+                $name = $storedNames['storage_key'];
            $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
            $durable = $this->durableStorage();
            $durable->putUploadedFile($file, $filePath);
 
            $obj = new \App\Models\Document;
-           $obj->file_name = $nameWithoutExtension;
+           $obj->file_name = $storedNames['file_name'];
            $obj->filetype = $fileExtension;
            $obj->user_id = Auth::user()->id;
            $obj->myfile = $durable->myfileValue($filePath);
@@ -3684,7 +3697,7 @@ class ClientAccountsController extends Controller
           // Save final invoice PDF to durable storage (local mirror + S3)
           $client_unique_id = $clientname->client_id ?? 'unknown';
           $docType = 'invoices'; // Category for storage
-          $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
+          $s3FileName = $fileName;
           $filePath = $client_unique_id . '/' . $docType . '/' . $s3FileName;
           
           $durable = $this->durableStorage();
@@ -3844,8 +3857,8 @@ class ClientAccountsController extends Controller
 
            //$file = $request->file('document_upload');
            // Sanitize filename to prevent issues with special characters
-           $sanitizedFilename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $file->getClientOriginalName());
-           $name = time() . '_' . $sanitizedFilename;
+           $storedNames = $this->storedClientUploadName((string) $client_id, $fileName, (int) $id, (string) $doctype);
+           $name = $storedNames['storage_key'];
            //$explodeFileName1 = explode('.', $name);
            //$filePath = 'documents/' . $name;
            // New folder structure: Client/Matter/Accounts
@@ -3865,7 +3878,7 @@ class ClientAccountsController extends Controller
                $fileExtension = $file->getClientOriginalExtension();
 
                $obj = new \App\Models\Document;
-               $obj->file_name = $nameWithoutExtension;
+               $obj->file_name = $storedNames['file_name'];
                $obj->filetype = $fileExtension;
                $obj->user_id = Auth::user()->id;
                $obj->myfile_key = $name;
@@ -4073,8 +4086,8 @@ class ClientAccountsController extends Controller
 
            //$file = $request->file('document_upload');
            // Sanitize filename to prevent issues with special characters
-           $sanitizedFilename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $file->getClientOriginalName());
-           $name = time() . '_' . $sanitizedFilename;
+           $storedNames = $this->storedClientUploadName((string) $client_id, $fileName, (int) $id, (string) $doctype);
+           $name = $storedNames['storage_key'];
            //$explodeFileName1 = explode('.', $name);
            //$filePath = 'documents/' . $name;
            // New folder structure: Client/Matter/Accounts
@@ -4094,7 +4107,7 @@ class ClientAccountsController extends Controller
                $fileExtension = $file->getClientOriginalExtension();
 
                $obj = new \App\Models\Document;
-               $obj->file_name = $nameWithoutExtension;
+               $obj->file_name = $storedNames['file_name'];
                $obj->filetype = $fileExtension;
                $obj->user_id = Auth::user()->id;
                $obj->myfile_key = $name;
@@ -4301,8 +4314,8 @@ class ClientAccountsController extends Controller
 
            //$file = $request->file('document_upload');
            // Sanitize filename to prevent issues with special characters
-           $sanitizedFilename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $file->getClientOriginalName());
-           $name = time() . '_' . $sanitizedFilename;
+           $storedNames = $this->storedClientUploadName((string) $client_id, $fileName, (int) $id, (string) $doctype);
+           $name = $storedNames['storage_key'];
            //$explodeFileName1 = explode('.', $name);
            //$filePath = 'documents/' . $name;
            // New folder structure: Client/Matter/Accounts
@@ -4322,7 +4335,7 @@ class ClientAccountsController extends Controller
                $fileExtension = $file->getClientOriginalExtension();
 
                $obj = new \App\Models\Document;
-               $obj->file_name = $nameWithoutExtension;
+               $obj->file_name = $storedNames['file_name'];
                $obj->filetype = $fileExtension;
                $obj->user_id = Auth::user()->id;
                $obj->myfile_key = $name;
@@ -5514,7 +5527,7 @@ class ClientAccountsController extends Controller
         $fileName = 'Receipt-' . ($record_get->trans_no ?? $id) . '.pdf';
         $client_unique_id = $clientname->client_id ?? 'unknown';
         $docType = 'receipts';
-        $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
+        $s3FileName = $fileName;
         $filePath = $client_unique_id . '/' . $docType . '/' . $s3FileName;
         
         $durable = $this->durableStorage();
@@ -5847,7 +5860,7 @@ public function genofficereceiptInvoice(Request $request, $id){
         $fileName = 'Office-Receipt-' . ($record_get->trans_no ?? $id) . '.pdf';
         $client_unique_id = $clientname->client_id ?? 'unknown';
         $docType = 'office_receipts'; // Category for storage
-        $s3FileName = time() . '_' . uniqid() . '_' . $fileName;
+        $s3FileName = $fileName;
         $filePath = $client_unique_id . '/' . $docType . '/' . $s3FileName;
         
         $durable = $this->durableStorage();
@@ -5945,13 +5958,14 @@ public function genofficereceiptInvoice(Request $request, $id){
          $fileName = $file->getClientOriginalName();
          $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
          $fileExtension = $file->getClientOriginalExtension();
-         $name = time() . $file->getClientOriginalName();
+         $storedNames = $this->storedClientUploadName((string) $client_unique_id, $fileName, (int) ($requestData['client_id'] ?? 0), (string) $doctype);
+                $name = $storedNames['storage_key'];
          $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
          $durable = $this->durableStorage();
          $durable->putUploadedFile($file, $filePath);
 
          $obj = new \App\Models\Document;
-         $obj->file_name = $nameWithoutExtension;
+         $obj->file_name = $storedNames['file_name'];
          $obj->filetype = $fileExtension;
          $obj->user_id = Auth::user()->id;
          $obj->myfile = $durable->myfileValue($filePath);
@@ -6092,13 +6106,14 @@ public function updateClientFundsLedger(Request $request)
             $fileName = $file->getClientOriginalName();
             $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
             $fileExtension = $file->getClientOriginalExtension();
-            $name = time() . $file->getClientOriginalName();
+            $storedNames = $this->storedClientUploadName((string) $client_unique_id, $fileName, (int) ($requestData['client_id'] ?? 0), (string) $doctype);
+                $name = $storedNames['storage_key'];
             $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
             $durable = $this->durableStorage();
             $durable->putUploadedFile($file, $filePath);
 
             $obj = new \App\Models\Document;
-            $obj->file_name = $nameWithoutExtension;
+            $obj->file_name = $storedNames['file_name'];
             $obj->filetype = $fileExtension;
             $obj->user_id = Auth::user()->id;
             $obj->myfile = $durable->myfileValue($filePath);
@@ -6379,8 +6394,8 @@ public function getInvoiceAmount(Request $request)
          ]));
 
          // Save PDF to temporary file
-         $pdfFileName = 'Invoice_' . $record_get[0]->invoice_no . '_' . time() . '.pdf';
-         $pdfPath = storage_path('app/temp/' . $pdfFileName);
+         $pdfFileName = 'Invoice-' . ($record_get[0]->invoice_no ?? 'invoice') . '.pdf';
+         $pdfPath = storage_path('app/temp/hubdoc_' . uniqid('', true) . '_' . $pdfFileName);
          
          // Create temp directory if it doesn't exist
          if (!file_exists(storage_path('app/temp'))) {

@@ -11,6 +11,7 @@ use App\Services\LegalFormFileStorage;
 use App\Services\LegalFormPreviewService;
 use App\Services\LegalFormScopeAiService;
 use App\Services\LegalFormUploadRestoreService;
+use App\Support\DocumentLabel;
 use App\Support\OfficeDocumentFormat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -367,7 +368,8 @@ class LegalFormsController extends Controller
         $dir = 'legal_forms/' . $clientId . '/uploads';
         $originalName = $file->getClientOriginalName();
         $extension = strtolower($file->getClientOriginalExtension());
-        $safeName = time() . '_' . $formId . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
+        $stem = pathinfo($originalName, PATHINFO_FILENAME);
+        $safeName = DocumentLabel::plainStoredName(($stem !== '' ? $formId . '_' . $stem : (string) $formId), $extension)['storage_key'];
         $relativePath = $dir . '/' . $safeName;
 
         $this->fileStorage->putUploadedFile($file, $relativePath);
@@ -571,7 +573,10 @@ class LegalFormsController extends Controller
         $file = $request->file('attachment');
         $dir = 'legal_forms/' . $clientId . '/attachments';
         $originalName = $file->getClientOriginalName();
-        $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        $safeName = DocumentLabel::plainStoredName(
+            pathinfo($originalName, PATHINFO_FILENAME) ?: 'attachment',
+            pathinfo($originalName, PATHINFO_EXTENSION)
+        )['storage_key'];
         $relativePath = $dir . '/' . $safeName;
 
         $this->fileStorage->putUploadedFile($file, $relativePath);

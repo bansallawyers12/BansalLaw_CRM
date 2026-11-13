@@ -13,8 +13,6 @@ use App\Mail\CommonMail;
 use App\Services\MailRoutingService;
 
 use App\Models\UserRole;
-use Illuminate\Support\Str;
-
 class Controller extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
@@ -72,9 +70,8 @@ class Controller extends BaseController
 
 		$fileName = $file->getClientOriginalName();
 		$baseName = pathinfo($fileName, PATHINFO_FILENAME);
-		$cleanBase = Str::slug(str_replace(' ', '_', $baseName));
 		$ext = $file->getClientOriginalExtension();
-		$newFileName = time() . '_' . Str::uuid()->toString() . ($cleanBase !== '' ? '_' . $cleanBase : '') . ($ext ? '.' . $ext : '');
+		$newFileName = \App\Support\DocumentLabel::plainStoredName($baseName !== '' ? $baseName : 'file', $ext)['storage_key'];
 
 		if (!is_dir($filePath)) {
 			@mkdir($filePath, 0755, true);
