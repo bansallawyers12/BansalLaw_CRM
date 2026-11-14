@@ -267,7 +267,7 @@
         <div class="bill-to-section">
             <div class="bill-to-label">Bill To:</div>
             <div class="bill-to-content">
-                <strong>{{@$clientname->first_name}} {{@$clientname->last_name}}</strong><br/>
+                <strong>{{ $clientname->bill_to_name ?? trim(($clientname->first_name ?? '') . ' ' . ($clientname->last_name ?? '')) }}</strong><br/>
                 @if(!empty($clientname->address))
                     {{$clientname->address}}@if(!empty($clientname->city) || !empty($clientname->state) || !empty($clientname->zip) || !empty($clientname->country)), @endif
                 @endif

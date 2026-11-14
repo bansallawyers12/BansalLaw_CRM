@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class ClientLegalForm extends Model
 {
@@ -69,6 +70,38 @@ class ClientLegalForm extends Model
         'cost_agreement' => 'Long Costs Disclosure',
         'authority_to_act' => 'Authority to Act',
     ];
+
+    /**
+     * Columns returned by the Legal Forms tab list API (tolerates pre-migration DBs).
+     */
+    public static function apiListSelectColumns(): array
+    {
+        $columns = [
+            'id',
+            'client_id',
+            'client_matter_id',
+            'created_by',
+            'form_type',
+            'is_uploaded',
+            'matter_reference',
+            'estimated_legal_fees',
+            'estimated_disbursements',
+            'estimated_barrister_fees',
+            'gst_amount',
+            'estimated_total',
+            'retainer_amount',
+            'attachment_path',
+            'attachment_original_name',
+            'form_date',
+            'created_at',
+        ];
+
+        if (Schema::hasColumn((new static)->getTable(), 'source_document_id')) {
+            array_splice($columns, 4, 0, ['source_document_id']);
+        }
+
+        return $columns;
+    }
 
     public function client()
     {

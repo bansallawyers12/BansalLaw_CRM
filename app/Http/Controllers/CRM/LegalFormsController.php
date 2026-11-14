@@ -777,26 +777,7 @@ class LegalFormsController extends Controller
 
         $query = ClientLegalForm::query()
             ->where('client_id', $clientId)
-            ->select([
-                'id',
-                'client_id',
-                'client_matter_id',
-                'created_by',
-                'source_document_id',
-                'form_type',
-                'is_uploaded',
-                'matter_reference',
-                'estimated_legal_fees',
-                'estimated_disbursements',
-                'estimated_barrister_fees',
-                'gst_amount',
-                'estimated_total',
-                'retainer_amount',
-                'attachment_path',
-                'attachment_original_name',
-                'form_date',
-                'created_at',
-            ])
+            ->select(ClientLegalForm::apiListSelectColumns())
             ->with([
                 'matter:id,client_unique_matter_no',
                 'creator:id,first_name,last_name',

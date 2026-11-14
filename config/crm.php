@@ -600,4 +600,18 @@ return [
         'kpi_cache_seconds' => max(30, (int) env('DASHBOARD_KPI_CACHE_SECONDS', 300)),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Invoice PDF cache
+    |--------------------------------------------------------------------------
+    |
+    | Final invoice PDFs stored before pdf_regenerate_before are rebuilt on the
+    | next view/download (e.g. after Bill To or layout template changes).
+    | Set CRM_INVOICE_PDF_REGENERATE_BEFORE= to disable forced regen by date.
+    |
+    */
+    'invoice' => [
+        'pdf_regenerate_before' => env('CRM_INVOICE_PDF_REGENERATE_BEFORE', '2026-11-14 00:00:00'),
+    ],
+
 ];

@@ -18,6 +18,7 @@ use App\Models\Staff;
 use App\Models\AccountClientReceipt;
 use App\Models\AccountAllInvoiceReceipt;
 use App\Mail\HubdocInvoiceMail;
+use App\Support\ClientBillToDisplay;
 use App\Support\InvoiceChargeTypes;
 use App\Support\MatterScopedAccess;
 use App\Support\InvoiceTimesheetLine;
@@ -28,6 +29,7 @@ use App\Support\DocumentLabel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Carbon\Carbon;
 
 /**
  * ClientAccountsController
@@ -461,6 +463,38 @@ class ClientAccountsController extends Controller
         return response($pdfBinary, 200)
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', $disp . '; filename="' . $name . '"');
+    }
+
+    /**
+     * Whether a stored final invoice PDF may be streamed without rebuilding (Bill To / layout version).
+     */
+    private function shouldServeCachedInvoicePdf(Request $request, object $existingPdf): bool
+    {
+        if ($request->boolean('regenerate')) {
+            return false;
+        }
+
+        $cutoffRaw = trim((string) config('crm.invoice.pdf_regenerate_before', ''));
+        if ($cutoffRaw === '') {
+            return true;
+        }
+
+        try {
+            $cutoff = Carbon::parse($cutoffRaw);
+        } catch (\Throwable) {
+            return true;
+        }
+
+        $createdRaw = $existingPdf->created_at ?? null;
+        if ($createdRaw === null || $createdRaw === '') {
+            return false;
+        }
+
+        try {
+            return Carbon::parse($createdRaw)->greaterThanOrEqualTo($cutoff);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -3515,7 +3549,7 @@ class ClientAccountsController extends Controller
            ->where('id', $receipt_entry->pdf_document_id)
            ->first();
           
-          if ($existingPdf) {
+          if ($existingPdf && $this->shouldServeCachedInvoicePdf($request, $existingPdf)) {
               $stream = $this->pdfBinaryResponseFromDocument(
                   $existingPdf,
                   (int) $queryClientId,
@@ -3603,6 +3637,8 @@ class ClientAccountsController extends Controller
           $clientname->zip = $clientAddress->zip ?? '';
           $clientname->country = $clientAddress->country ?? '';
       }
+
+      ClientBillToDisplay::applyToClientRow($clientname);
 
       //Get payment method
       if( $record_get->count() > 0 && $record_get[0]->invoice_no != '') {
@@ -6269,6 +6305,9 @@ public function getInvoiceAmount(Request $request)
 
          // Get client info
          $clientname = DB::table('admins')->where('id',$record_get[0]->client_id)->first();
+         if ($clientname) {
+             ClientBillToDisplay::applyToClientRow($clientname);
+         }
          
          // Calculate amounts
          $total_Invoice_Amount = AccountAllInvoiceReceipt::where('receipt_type', 3)
