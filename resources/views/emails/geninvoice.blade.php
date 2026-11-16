@@ -341,7 +341,6 @@
                 $displayGross = 0;
                 $displayGST = 0;
                 $displayInvoice = 0;
-                $displayPending = 0;
                 
                 try {
                     $displayGross = floatval($total_Gross_Amount ?? 0);
@@ -361,11 +360,12 @@
                     $displayInvoice = 0;
                 }
                 
-                try {
-                    $displayPending = floatval($total_Pending_amount ?? 0);
-                } catch (\Exception $e) {
-                    $displayPending = 0;
-                }
+            @endphp
+            @php
+                $paymentSummaryRows = $invoice_payment_summary['rows'] ?? [
+                    ['label' => 'Amount is Pending:', 'amount' => floatval($total_Pending_amount ?? 0)],
+                ];
+                $showPaymentInstructions = $invoice_payment_summary['show_payment_instructions'] ?? true;
             @endphp
             <div class="totals-row">
                 <span class="totals-label">Subtotal (ex GST):</span>
@@ -379,12 +379,15 @@
                 <span class="totals-label">Total due (incl GST):</span>
                 <span class="totals-value">${{ number_format($displayInvoice, 2) }}</span>
             </div>
-            <div class="totals-row">
-                <span class="totals-label">Total Pending Amount:</span>
-                <span class="totals-value">${{ number_format($displayPending, 2) }}</span>
-            </div>
+            @foreach($paymentSummaryRows as $paymentRow)
+                <div class="totals-row">
+                    <span class="totals-label">{{ $paymentRow['label'] }}</span>
+                    <span class="totals-value">${{ number_format((float) ($paymentRow['amount'] ?? 0), 2) }}</span>
+                </div>
+            @endforeach
         </div>
 
+        @if($showPaymentInstructions)
         <div class="payment-instructions">
             <p class="payment-method-highlight">Payment Method: {{ $invoice_payment_method ?? 'N/A' }}</p>
             <p>If you wish to make payment by Direct Debit, use the following details in your Electronic Funds Transfer. Please remember to quote your MATTER NO <strong>{{ $client_matter_display ?? $client_matter_no ?? 'N/A' }}</strong> and advise us by email when you have made the transfer.</p>
@@ -394,6 +397,7 @@
                 <strong>Account Number:</strong> 787266100
             </div>
         </div>
+        @endif
 
         <div class="costs-rights-notice">
             <p><strong>Costs rights notice:</strong> You may dispute this bill with the Victorian Legal Services Board and Commissioner and may apply for a costs assessment. Time limits apply. Further information is available from the Victorian Legal Services Board + Commissioner.</p>

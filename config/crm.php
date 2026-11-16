@@ -612,6 +612,8 @@ return [
     */
     'invoice' => [
         'pdf_regenerate_before' => env('CRM_INVOICE_PDF_REGENERATE_BEFORE', '2026-11-14 00:00:00'),
+        // Bump when invoice PDF layout/footer changes; older cached PDFs are rebuilt on next view.
+        'pdf_template_version' => (int) env('CRM_INVOICE_PDF_TEMPLATE_VERSION', 2),
     ],
 
 ];

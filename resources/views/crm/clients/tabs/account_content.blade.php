@@ -407,6 +407,22 @@
                                                 <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}" target="_blank">
                                                     <i class="fa-solid fa-eye"></i> {{ $invoiceSaveType == 'draft' ? 'View Draft PDF' : 'View Invoice' }}
                                                 </a>
+                                                @if($invoiceSaveType != 'draft')
+                                                <?php
+                                                    $invoicePdfBalanceMode = \App\Support\InvoicePdfPaymentSummary::normalizeDisplayMode($inc_val->invoice_pdf_balance_display ?? 'auto');
+                                                ?>
+                                                <div class="dropdown-divider"></div>
+                                                <div class="account-ref-menu__label">PDF amount line</div>
+                                                <a class="dropdown-item set-invoice-pdf-balance-display {{ $invoicePdfBalanceMode === 'paid' ? 'active' : '' }}" href="javascript:;" data-client-id="{{ $fetchedData->id }}" data-receipt-id="{{ $inc_val->receipt_id }}" data-display="paid">
+                                                    <i class="fa-solid fa-circle-check"></i> Amount is paid @if($invoicePdfBalanceMode === 'paid')<i class="fa-solid fa-check ms-1 text-success"></i>@endif
+                                                </a>
+                                                <a class="dropdown-item set-invoice-pdf-balance-display {{ $invoicePdfBalanceMode === 'pending' ? 'active' : '' }}" href="javascript:;" data-client-id="{{ $fetchedData->id }}" data-receipt-id="{{ $inc_val->receipt_id }}" data-display="pending">
+                                                    <i class="fa-solid fa-clock"></i> Amount is pending @if($invoicePdfBalanceMode === 'pending')<i class="fa-solid fa-check ms-1 text-success"></i>@endif
+                                                </a>
+                                                <a class="dropdown-item set-invoice-pdf-balance-display {{ $invoicePdfBalanceMode === 'auto' ? 'active' : '' }}" href="javascript:;" data-client-id="{{ $fetchedData->id }}" data-receipt-id="{{ $inc_val->receipt_id }}" data-display="auto">
+                                                    <i class="fa-solid fa-arrows-rotate"></i> Follow payment status @if($invoicePdfBalanceMode === 'auto')<i class="fa-solid fa-check ms-1 text-success"></i>@endif
+                                                </a>
+                                                @endif
                                                 <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}?download=1">
                                                     <i class="fa-solid fa-download"></i> {{ $invoiceSaveType == 'draft' ? 'Download Draft PDF' : 'Download PDF' }}
                                                 </a>

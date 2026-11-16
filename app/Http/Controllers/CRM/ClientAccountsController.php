@@ -22,6 +22,7 @@ use App\Support\ClientBillToDisplay;
 use App\Support\InvoiceChargeTypes;
 use App\Support\MatterScopedAccess;
 use App\Support\InvoiceTimesheetLine;
+use App\Support\InvoicePdfPaymentSummary;
 use App\Support\InvoiceWorkDate;
 use App\Services\ClientAccountTabService;
 use App\Services\CrmDurableStorage;
@@ -234,6 +235,7 @@ class ClientAccountsController extends Controller
                 'invoice_status' => $newStatus,
                 'partial_paid_amount' => $totalPaid,
                 'balance_amount' => $newBalance,
+                'pdf_document_id' => null,
                 'updated_at' => now(),
             ]);
 
@@ -468,10 +470,34 @@ class ClientAccountsController extends Controller
     /**
      * Whether a stored final invoice PDF may be streamed without rebuilding (Bill To / layout version).
      */
-    private function shouldServeCachedInvoicePdf(Request $request, object $existingPdf): bool
+    private function shouldServeCachedInvoicePdf(Request $request, object $existingPdf, ?object $receiptEntry = null): bool
     {
         if ($request->boolean('regenerate')) {
             return false;
+        }
+
+        if ($request->query('balance_display') !== null && trim((string) $request->query('balance_display')) !== '') {
+            return false;
+        }
+
+        $requiredTemplateVersion = (int) config('crm.invoice.pdf_template_version', 1);
+        if ($receiptEntry && $requiredTemplateVersion > 0) {
+            $cachedTemplateVersion = (int) ($receiptEntry->invoice_pdf_template_version ?? 0);
+            if ($cachedTemplateVersion < $requiredTemplateVersion) {
+                return false;
+            }
+        }
+
+        if ($receiptEntry && ! empty($receiptEntry->updated_at)) {
+            try {
+                $receiptUpdated = Carbon::parse($receiptEntry->updated_at);
+                $pdfCreated = Carbon::parse($existingPdf->created_at ?? '');
+                if ($receiptUpdated->greaterThan($pdfCreated)) {
+                    return false;
+                }
+            } catch (\Throwable) {
+                // Fall through to cutoff check
+            }
         }
 
         $cutoffRaw = trim((string) config('crm.invoice.pdf_regenerate_before', ''));
@@ -3549,7 +3575,7 @@ class ClientAccountsController extends Controller
            ->where('id', $receipt_entry->pdf_document_id)
            ->first();
           
-          if ($existingPdf && $this->shouldServeCachedInvoicePdf($request, $existingPdf)) {
+          if ($existingPdf && $this->shouldServeCachedInvoicePdf($request, $existingPdf, $receipt_entry)) {
               $stream = $this->pdfBinaryResponseFromDocument(
                   $existingPdf,
                   (int) $queryClientId,
@@ -3604,6 +3630,18 @@ class ClientAccountsController extends Controller
       if ($total_Pending_amount === null) {
           $total_Pending_amount = 0.00;
       }
+
+      $balanceDisplay = InvoicePdfPaymentSummary::resolveDisplayMode($request->query('balance_display'), $receipt_entry);
+      $invoice_payment_summary = InvoicePdfPaymentSummary::footerRows(
+          $receipt_entry,
+          (float) $total_Invoice_Amount,
+          (float) $total_Pending_amount,
+          $balanceDisplay
+      );
+      $hasBalanceDisplayQuery = $request->query('balance_display') !== null
+          && trim((string) $request->query('balance_display')) !== '';
+      $persistInvoicePdfCache = ! $is_draft_invoice && ! $hasBalanceDisplayQuery;
+      $invoicePdfTemplateVersion = (int) config('crm.invoice.pdf_template_version', 1);
 
       $clientname = DB::table('admins')->where('id',$record_get[0]->client_id)->first();
       
@@ -3714,6 +3752,7 @@ class ClientAccountsController extends Controller
            'total_Invoice_Amount',
            'total_GST_amount',
            'total_Pending_amount',
+           'invoice_payment_summary',
 
            'clientname',
            'invoice_payment_method',
@@ -3727,6 +3766,10 @@ class ClientAccountsController extends Controller
 
           // Draft PDFs are generated on demand — do not cache to S3 so edits always show.
           if ($is_draft_invoice) {
+              return $this->pdfBinaryResponse($pdfContent, $fileName, $request->has('download'));
+          }
+
+          if (! $persistInvoicePdfCache) {
               return $this->pdfBinaryResponse($pdfContent, $fileName, $request->has('download'));
           }
 
@@ -3761,7 +3804,10 @@ class ClientAccountsController extends Controller
            ->where('receipt_id', $id)
            ->where('receipt_type', 3)
            ->where('client_id', $queryClientId)
-           ->update(['pdf_document_id' => $document->id]);
+           ->update([
+               'pdf_document_id' => $document->id,
+               'invoice_pdf_template_version' => $invoicePdfTemplateVersion,
+           ]);
           
           // Return PDF bytes directly (no external redirect — avoids Chrome ERR_UNSAFE_REDIRECT)
           return $this->pdfBinaryResponse($pdfContent, $fileName, $request->has('download'));
@@ -3786,6 +3832,7 @@ class ClientAccountsController extends Controller
            'total_Invoice_Amount',
            'total_GST_amount',
            'total_Pending_amount',
+           'invoice_payment_summary',
 
            'clientname',
            'invoice_payment_method',
@@ -3794,6 +3841,22 @@ class ClientAccountsController extends Controller
           ]));
 
           $pdfFileName = ($is_draft_invoice ? 'Draft-Invoice-' : 'Invoice-') . ($record_get[0]->invoice_no ?? $record_get[0]->trans_no ?? $id) . '.pdf';
+
+          if ($is_draft_invoice) {
+              if ($request->has('download')) {
+                  return $pdf->download($pdfFileName);
+              }
+
+              return $pdf->stream($pdfFileName);
+          }
+
+          if (! $persistInvoicePdfCache) {
+              if ($request->has('download')) {
+                  return $pdf->download($pdfFileName);
+              }
+
+              return $pdf->stream($pdfFileName);
+          }
 
           if (!$is_draft_invoice) {
               try {
@@ -6360,6 +6423,17 @@ public function getInvoiceAmount(Request $request)
              $total_Pending_amount = 0.00;
          }
 
+         $hubdocReceiptEntry = DB::table('account_client_receipts')
+             ->where('receipt_type', 3)
+             ->where('receipt_id', $id)
+             ->first();
+         $invoice_payment_summary = InvoicePdfPaymentSummary::footerRows(
+             $hubdocReceiptEntry,
+             (float) $total_Invoice_Amount,
+             (float) $total_Pending_amount,
+             'auto'
+         );
+
          // Get payment method
          $invoice_payment_method = '';
          if( !empty($record_get) && $record_get[0]->invoice_no != '') {
@@ -6425,6 +6499,7 @@ public function getInvoiceAmount(Request $request)
              'total_Invoice_Amount',
              'total_GST_amount',
              'total_Pending_amount',
+             'invoice_payment_summary',
 
              'clientname',
              'invoice_payment_method',
@@ -6526,6 +6601,52 @@ public function getInvoiceAmount(Request $request)
      * SEND TO CLIENT FUNCTIONALITY
      * ================================================================
      */
+
+    /**
+     * Set whether the invoice PDF footer shows "Amount is Paid" or "Amount is Pending".
+     */
+    public function setInvoicePdfBalanceDisplay(Request $request)
+    {
+        $request->validate([
+            'client_id' => 'required|integer',
+            'receipt_id' => 'required|integer',
+            'display' => 'required|in:auto,paid,pending',
+        ]);
+
+        $clientId = (int) $request->input('client_id');
+        $receiptId = (int) $request->input('receipt_id');
+        $this->ensureCrmRecordAccess($clientId);
+
+        $display = InvoicePdfPaymentSummary::normalizeDisplayMode($request->input('display'));
+        $storedValue = $display === 'auto' ? null : $display;
+
+        $updated = DB::table('account_client_receipts')
+            ->where('client_id', $clientId)
+            ->where('receipt_type', 3)
+            ->where('receipt_id', $receiptId)
+            ->update([
+                'invoice_pdf_balance_display' => $storedValue,
+                'pdf_document_id' => null,
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invoice not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'display' => $display,
+            'message' => $display === 'paid'
+                ? 'Invoice PDF will show Amount is Paid.'
+                : ($display === 'pending'
+                    ? 'Invoice PDF will show Amount is Pending.'
+                    : 'Invoice PDF will follow payment status.'),
+        ]);
+    }
 
     /**
      * Send Invoice to Client via Email

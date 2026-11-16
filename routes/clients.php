@@ -248,6 +248,8 @@ Route::post('/clients/listOfInvoice', [ClientAccountsController::class, 'listOfI
 Route::post('/clients/getTopReceiptValInDB', [ClientAccountsController::class, 'getTopReceiptValInDB'])->name('clients.getTopReceiptValInDB');
 Route::post('/clients/getInfoByReceiptId', [ClientAccountsController::class, 'getInfoByReceiptId'])->name('clients.getInfoByReceiptId');
 Route::get('/clients/genInvoice/{id}/{client_id?}', [ClientAccountsController::class, 'genInvoice']);
+Route::post('/clients/invoice-pdf-balance-display', [ClientAccountsController::class, 'setInvoicePdfBalanceDisplay'])
+    ->name('clients.invoicePdfBalanceDisplay');
 Route::post('/clients/sendToHubdoc/{id}', [ClientAccountsController::class, 'sendToHubdoc'])->name('clients.sendToHubdoc');
 Route::get('/clients/checkHubdocStatus/{id}', [ClientAccountsController::class, 'checkHubdocStatus'])->name('clients.checkHubdocStatus');
 Route::get('/clients/printPreview/{id}', [ClientAccountsController::class, 'printPreview']);

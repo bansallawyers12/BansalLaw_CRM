@@ -413,6 +413,65 @@
         });
     }
 
+    function handleSetInvoicePdfBalanceDisplay($btn) {
+        var clientId = $btn.data('client-id');
+        var receiptId = $btn.data('receipt-id');
+        var display = $btn.data('display');
+        var url = window.ClientDetailConfig && window.ClientDetailConfig.urls
+            ? window.ClientDetailConfig.urls.invoicePdfBalanceDisplay
+            : null;
+
+        if (!url || !clientId || !receiptId || !display) {
+            return;
+        }
+
+        $btn.addClass('disabled');
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                client_id: clientId,
+                receipt_id: receiptId,
+                display: display
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response && response.status) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: response.message || 'PDF amount line updated.',
+                            showConfirmButton: false,
+                            timer: 2800
+                        }).then(function() {
+                            location.reload();
+                        });
+                    } else {
+                        alert(response.message || 'PDF amount line updated.');
+                        location.reload();
+                    }
+                } else {
+                    $btn.removeClass('disabled');
+                    alert((response && response.message) ? response.message : 'Could not update PDF amount line.');
+                }
+            },
+            error: function(xhr) {
+                $btn.removeClass('disabled');
+                var msg = 'Could not update PDF amount line.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                alert(msg);
+            }
+        });
+    }
+
     function attachSendToClientHandlers() {
         $('.dropdown-menu .send-invoice-to-client').off('click').on('click', function(e) {
             e.preventDefault();
@@ -442,6 +501,12 @@
             e.preventDefault();
             e.stopPropagation();
             handleRefreshHubdocStatus($(this));
+        });
+
+        $('.dropdown-menu .set-invoice-pdf-balance-display').off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSetInvoicePdfBalanceDisplay($(this));
         });
     }
 
@@ -486,6 +551,13 @@
             return;
         }
         handleRefreshHubdocStatus($(this));
+    });
+
+    $(document).on('click', '.set-invoice-pdf-balance-display', function() {
+        if ($(this).closest('.dropdown-menu').length > 0) {
+            return;
+        }
+        handleSetInvoicePdfBalanceDisplay($(this));
     });
 
 })();

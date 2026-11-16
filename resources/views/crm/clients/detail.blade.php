@@ -1780,6 +1780,7 @@ $(document).ready(function() {
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
             deletePersonalCategory: '{{ route("clients.documents.deletePersonalDocCategory") }}',
             sendInvoiceToClient: '{{ url("/clients/send-invoice-to-client") }}',
+            invoicePdfBalanceDisplay: '{{ route("clients.invoicePdfBalanceDisplay") }}',
             sendClientFundReceiptToClient: '{{ url("/clients/send-client-fund-receipt-to-client") }}',
             sendOfficeReceiptToClient: '{{ url("/clients/send-office-receipt-to-client") }}',
             accountTabHtml: '{{ url("/clients/account-tab/" . ($encodeId ?? "")) }}',

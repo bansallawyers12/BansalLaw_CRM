@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use App\Models\AccountAllInvoiceReceipt;
 use App\Support\InvoiceChargeTypes;
+use App\Support\InvoicePdfPaymentSummary;
 use PDF;
 
 class SendHubdocInvoiceJob implements ShouldQueue
@@ -90,6 +91,17 @@ class SendHubdocInvoiceJob implements ShouldQueue
             })
             ->sum('balance_amount');
 
+            $hubdocReceiptEntry = DB::table('account_client_receipts')
+                ->where('receipt_type', 3)
+                ->where('receipt_id', $this->invoiceId)
+                ->first();
+            $invoice_payment_summary = InvoicePdfPaymentSummary::footerRows(
+                $hubdocReceiptEntry,
+                (float) $total_Invoice_Amount,
+                (float) $total_Pending_amount,
+                'auto'
+            );
+
             // Get payment method
             $invoice_payment_method = '';
             if( !empty($record_get) && $record_get[0]->invoice_no != '') {
@@ -140,6 +152,7 @@ class SendHubdocInvoiceJob implements ShouldQueue
                 'total_Invoice_Amount',
                 'total_GST_amount',
                 'total_Pending_amount',
+                'invoice_payment_summary',
 
                 'clientname',
                 'invoice_payment_method',
