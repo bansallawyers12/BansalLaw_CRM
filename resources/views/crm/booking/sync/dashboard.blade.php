@@ -50,6 +50,10 @@ html, body {
     animation: pulse 1.5s infinite;
 }
 
+.status-indicator.warning {
+    background-color: #ffc107;
+}
+
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
@@ -94,12 +98,18 @@ html, body {
                     </h4>
                     <div class="card-header-action">
                         @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
-                        <button onclick="triggerManualSync()" class="btn btn-primary">
+                        @if(!empty($pollingEnabled))
+                        <button type="button" onclick="triggerManualSync()" class="btn btn-primary">
                             <i class="fa-solid fa-rotate"></i> Manual Sync Now
                         </button>
-                        <button onclick="testConnection()" class="btn btn-info">
+                        <button type="button" onclick="testConnection()" class="btn btn-info">
                             <i class="fa-solid fa-plug"></i> Test Connection
                         </button>
+                        @else
+                        <button type="button" onclick="showPollingDisabledInfo()" class="btn btn-outline-secondary" title="Legacy website polling is off">
+                            <i class="fa-solid fa-circle-info"></i> How bookings reach CRM
+                        </button>
+                        @endif
                         @endif
                     </div>
                 </div>
@@ -145,7 +155,13 @@ html, body {
                                     <h5><i class="fa-solid fa-calendar-check me-2"></i>Next Scheduled Sync</h5>
                                     <p class="mb-0">
                                         <strong>{{ $nextSync ?? 'Within 10 minutes' }}</strong><br>
-                                        <small class="text-muted">Runs every 10 minutes</small>
+                                        <small class="text-muted">
+                                            @if(!empty($scheduledPolling))
+                                                Runs every 10 minutes when scheduled polling is enabled
+                                            @else
+                                                Scheduled polling is off (see App\Console\Kernel / BANSAL_APPOINTMENT_SCHEDULED_POLLING)
+                                            @endif
+                                        </small>
                                     </p>
                                 </div>
                             </div>
@@ -327,7 +343,30 @@ html, body {
 </div>
 
 <script>
+const appointmentPollingEnabled = @json(!empty($pollingEnabled));
+
+function showPollingDisabledInfo() {
+    const message = 'Website polling is turned off. New appointments should be sent from the public website to the CRM API '
+        + '(POST /api/booking-appointments or /api/appointments/add-appointment-without-login), not pulled by this dashboard. '
+        + 'Turn on BANSAL_APPOINTMENT_POLLING_ENABLED only after GET /appointments/recent exists on the API host.';
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'info',
+            title: 'Polling disabled',
+            text: message,
+            confirmButtonText: 'OK',
+        });
+    } else {
+        crmAlert(message);
+    }
+}
+
 function triggerManualSync() {
+    if (!appointmentPollingEnabled) {
+        showPollingDisabledInfo();
+        return;
+    }
+
     if (!confirm('Start manual sync now? This may take a few minutes.')) {
         return;
     }
@@ -389,6 +428,11 @@ function triggerManualSync() {
 }
 
 function testConnection() {
+    if (!appointmentPollingEnabled) {
+        showPollingDisabledInfo();
+        return;
+    }
+
     // Show loading
     if (typeof Swal !== 'undefined') {
         Swal.fire({
@@ -402,7 +446,7 @@ function testConnection() {
     }
     
     $.ajax({
-        url: '{{ url("/booking/sync/test-connection") }}',
+        url: '{{ route("booking.sync.test-connection") }}',
         method: 'GET',
         success: function(response) {
             if (typeof Swal !== 'undefined') {

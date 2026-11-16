@@ -34,11 +34,28 @@ class AppointmentSyncService
         return $this->apiClient->isConfigured();
     }
 
+    public function isPollingEnabled(): bool
+    {
+        return filter_var(config('services.bansal_api.polling_enabled', false), FILTER_VALIDATE_BOOLEAN);
+    }
+
     /**
      * Sync recent appointments (main polling method)
      */
     public function syncRecentAppointments(int $minutes = 10): array
     {
+        if (! $this->isPollingEnabled()) {
+            return [
+                'fetched' => 0,
+                'new' => 0,
+                'updated' => 0,
+                'skipped' => 0,
+                'failed' => 0,
+                'errors' => [],
+                'polling_disabled' => true,
+            ];
+        }
+
         // Create sync log
         $this->syncLog = AppointmentSyncLog::create([
             'sync_type' => 'polling',

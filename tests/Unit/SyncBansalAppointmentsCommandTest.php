@@ -10,9 +10,23 @@ use Tests\TestCase;
 class SyncBansalAppointmentsCommandTest extends TestCase
 {
     #[Test]
+    public function skips_successfully_when_polling_disabled(): void
+    {
+        $sync = Mockery::mock(AppointmentSyncService::class);
+        $sync->shouldReceive('isPollingEnabled')->once()->andReturn(false);
+        $sync->shouldNotReceive('isApiConfigured');
+        $sync->shouldNotReceive('syncRecentAppointments');
+        $this->app->instance(AppointmentSyncService::class, $sync);
+
+        $this->artisan('booking:sync-appointments', ['--minutes' => 1440])
+            ->assertExitCode(0);
+    }
+
+    #[Test]
     public function skips_successfully_when_api_not_configured(): void
     {
         $sync = Mockery::mock(AppointmentSyncService::class);
+        $sync->shouldReceive('isPollingEnabled')->once()->andReturn(true);
         $sync->shouldReceive('isApiConfigured')->once()->andReturn(false);
         $sync->shouldNotReceive('syncRecentAppointments');
         $this->app->instance(AppointmentSyncService::class, $sync);
@@ -25,6 +39,7 @@ class SyncBansalAppointmentsCommandTest extends TestCase
     public function returns_success_when_some_appointments_fail(): void
     {
         $sync = Mockery::mock(AppointmentSyncService::class);
+        $sync->shouldReceive('isPollingEnabled')->once()->andReturn(true);
         $sync->shouldReceive('isApiConfigured')->once()->andReturn(true);
         $sync->shouldReceive('syncRecentAppointments')->once()->with(1440)->andReturn([
             'fetched' => 3,
@@ -44,6 +59,7 @@ class SyncBansalAppointmentsCommandTest extends TestCase
     public function returns_failure_when_sync_throws(): void
     {
         $sync = Mockery::mock(AppointmentSyncService::class);
+        $sync->shouldReceive('isPollingEnabled')->once()->andReturn(true);
         $sync->shouldReceive('isApiConfigured')->once()->andReturn(true);
         $sync->shouldReceive('syncRecentAppointments')->once()->andThrow(new \RuntimeException('API down'));
         $this->app->instance(AppointmentSyncService::class, $sync);

@@ -87,6 +87,10 @@ Route::controller(BookingAppointmentsController::class)
             ->name('sync.manual')
             ->middleware('can:trigger-manual-sync');
 
+        Route::get('/sync/test-connection', 'syncTestConnection')
+            ->name('sync.test-connection')
+            ->middleware('can:trigger-manual-sync');
+
         Route::match(['get', 'post'], '/api/appointments', 'getAppointments')
             ->name('api.appointments');
 

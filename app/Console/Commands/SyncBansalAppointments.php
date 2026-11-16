@@ -29,6 +29,12 @@ class SyncBansalAppointments extends Command
 
         $this->info("Starting appointment sync (last {$minutes} minutes)...");
 
+        if (! $syncService->isPollingEnabled()) {
+            $this->warn('Website appointment polling is disabled (BANSAL_APPOINTMENT_POLLING_ENABLED). Skipping sync.');
+
+            return self::SUCCESS;
+        }
+
         if (! $syncService->isApiConfigured()) {
             $this->warn('Bansal appointment API is not configured; skipping sync.');
 

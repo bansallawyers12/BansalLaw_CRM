@@ -2472,29 +2472,43 @@ class BookingAppointmentsController extends Controller
             ->latest('created_at')
             ->first();
 
+        $pollingEnabled = filter_var(config('services.bansal_api.polling_enabled', false), FILTER_VALIDATE_BOOLEAN);
+        $scheduledPolling = filter_var(config('services.bansal_api.scheduled_polling_enabled', false), FILTER_VALIDATE_BOOLEAN);
+        $pollingApiUrl = rtrim((string) config('services.bansal_api.url'), '/') . '/appointments/recent';
+
         // Determine system status
         $lastLog = AppointmentSyncLog::latest('created_at')->first();
         $systemStatus = [
             'status' => 'success',
-            'message' => 'All systems operational'
+            'message' => 'All systems operational',
         ];
 
-        if ($lastLog) {
+        if (! $pollingEnabled) {
+            $systemStatus = [
+                'status' => 'warning',
+                'message' => 'Website polling is disabled. Use website POST to CRM or enable BANSAL_APPOINTMENT_POLLING_ENABLED with BANSAL_API_URL pointing at the site poll API (local: http://127.0.0.1:3000/api/crm).',
+            ];
+        } elseif ($lastLog) {
             if ($lastLog->status === 'failed') {
+                $errorMessage = (string) ($lastLog->error_message ?? 'Unknown error');
+                if (str_contains($errorMessage, 'status code 404')) {
+                    $errorMessage .= ' — verify BANSAL_API_BASE_URL and that GET /appointments/recent exists on the API host.';
+                }
                 $systemStatus = [
                     'status' => 'error',
-                    'message' => 'Last sync failed: ' . ($lastLog->error_message ?? 'Unknown error')
+                    'message' => 'Last sync failed: ' . $errorMessage,
                 ];
             } elseif ($lastLog->status === 'running') {
                 $systemStatus = [
                     'status' => 'running',
-                    'message' => 'Sync currently in progress'
+                    'message' => 'Sync currently in progress',
                 ];
             }
         }
 
-        // Calculate next sync time (every 10 minutes)
-        $nextSync = $lastSync ? $lastSync->created_at->addMinutes(10)->diffForHumans() : 'Within 10 minutes';
+        $nextSync = $scheduledPolling
+            ? ($lastSync ? $lastSync->created_at->copy()->addMinutes(10)->diffForHumans() : 'Within 10 minutes')
+            : 'Not scheduled (polling disabled in application)';
 
         // Calculate statistics
         $totalSyncs = AppointmentSyncLog::where('status', 'success')->count();
@@ -2512,7 +2526,15 @@ class BookingAppointmentsController extends Controller
             'success_rate' => $successRate,
         ];
 
-        return view('crm.booking.sync.dashboard', compact('syncLogs', 'systemStatus', 'lastSync', 'nextSync', 'stats'));
+        return view('crm.booking.sync.dashboard', compact(
+            'syncLogs',
+            'systemStatus',
+            'lastSync',
+            'nextSync',
+            'stats',
+            'pollingEnabled',
+            'scheduledPolling',
+        ));
     }
 
     /**
@@ -2528,8 +2550,15 @@ class BookingAppointmentsController extends Controller
             ], 403);
         }
 
+        if (! $this->syncService->isPollingEnabled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Website appointment polling is disabled. Enable BANSAL_APPOINTMENT_POLLING_ENABLED only when GET /appointments/recent is available on the configured API host.',
+            ], 422);
+        }
+
         try {
-            $minutes = $request->input('minutes', 60);
+            $minutes = max(1, (int) $request->input('minutes', 1440));
             $stats = $this->syncService->syncRecentAppointments($minutes);
 
             // Log activity - no need to log this as it's already logged in AppointmentSyncLog
@@ -2545,6 +2574,42 @@ class BookingAppointmentsController extends Controller
                 'message' => 'Sync failed: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Test Bansal / website poll API (GET .../appointments/recent).
+     */
+    public function syncTestConnection()
+    {
+        if (! Gate::allows('trigger-manual-sync')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access',
+            ], 403);
+        }
+
+        if (! $this->syncService->isPollingEnabled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Website appointment polling is disabled. Set BANSAL_APPOINTMENT_POLLING_ENABLED=true and BANSAL_API_URL to the website poll base (e.g. http://127.0.0.1:3000/api/crm).',
+            ], 422);
+        }
+
+        if (! $this->bansalApiClient->isConfigured()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'API token not configured. Set APPOINTMENT_API_BEARER_TOKEN (or BANSAL_API_TOKEN) to match BOOKING_SHARED_SECRET on the website.',
+            ], 422);
+        }
+
+        $ok = $this->bansalApiClient->testConnection();
+
+        return response()->json([
+            'success' => $ok,
+            'message' => $ok
+                ? 'Connection successful. Poll URL: ' . rtrim((string) config('services.bansal_api.url'), '/') . '/appointments/recent'
+                : 'Connection failed. Ensure the website is running (npm run dev) and GET /api/crm/appointments/recent accepts your bearer token.',
+        ], $ok ? 200 : 502);
     }
 
     /**

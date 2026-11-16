@@ -176,6 +176,13 @@ return [
          * POST /appointments/add-appointment on an external host. Off by default: bookings are created in CRM;
          * www.bansallawyers.com.au no longer serves the legacy Laravel booking API (Next.js returns 404 HTML).
          */
+        /**
+         * Poll GET {url}/appointments/recent (legacy website → CRM import). Off by default: the public
+         * marketing site no longer serves this route (404 HTML), and bookings are created via CRM /api.
+         */
+        'polling_enabled' => filter_var(env('BANSAL_APPOINTMENT_POLLING_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        /** When true, schedule:run may invoke booking:sync-appointments (see App\Console\Kernel). */
+        'scheduled_polling_enabled' => filter_var(env('BANSAL_APPOINTMENT_SCHEDULED_POLLING', false), FILTER_VALIDATE_BOOLEAN),
         'external_create' => env('BANSAL_API_EXTERNAL_CREATE', false),
         /** Full POST URL; Bearer token = APPOINTMENT_API_BEARER_TOKEN (or BANSAL_API_TOKEN) */
         'disabled_datetime_url' => env(
