@@ -9602,7 +9602,7 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-scroll--matters {
-  max-height: 16rem;
+  max-height: 18rem;
   border: none;
   background: transparent;
   padding: 0;
@@ -9753,7 +9753,7 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-row {
   position: relative;
-  padding: 0.7rem 0.55rem 0.7rem 0.75rem;
+  padding: 2px 0;
   border: 0;
   border-bottom: 1px solid #e8eef5;
   border-radius: 0;
@@ -9765,8 +9765,8 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   content: "";
   position: absolute;
   left: 0;
-  top: 0.55rem;
-  bottom: 0.55rem;
+  top: 4px;
+  bottom: 4px;
   width: 3px;
   border-radius: 999px;
   background: transparent;
@@ -9865,6 +9865,8 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 
 #personaldetails-tab .cdn-overview #clientMattersListCard .cdn-ov-card__body {
   min-height: 0;
+  padding: 6px 10px 8px;
+  gap: 0;
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-matter-item.is-current {
@@ -10727,23 +10729,23 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
   width: fit-content;
 }
 
-/* Active Matter Card */
+/* Active Matter Card — one line per matter */
 #personaldetails-tab .cdn-ov-matter-card-inner {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-left: 4px solid #0284c7;
-  border-radius: 10px;
-  transition: all 0.15s ease;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  min-width: 0;
 }
 
 #personaldetails-tab .cdn-ov-matter-card-inner:hover {
-  background: #f0f7ff;
-  border-color: #bae6fd;
-  border-left-color: #0284c7;
+  background: transparent;
+  border-color: transparent;
 }
 
 #personaldetails-tab .cdn-ov-matter-card-top {
@@ -10761,10 +10763,12 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-ov-matter-code {
+  flex: 0 0 auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #0f172a;
+  white-space: nowrap;
 }
 
 #personaldetails-tab .cdn-ov-active-matter-pill {
@@ -10822,10 +10826,13 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-ov-party-summary-line {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
   color: #475569;
 }
 
@@ -11599,18 +11606,21 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-ov-matter-card-inner {
-  background: #f7fafd;
-  border: 1px solid #d5e3f0;
-  border-left: 3px solid #1e3d60;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background: transparent;
+  border: 0;
   border-radius: 4px;
   box-shadow: none;
-  padding: 8px 10px 8px 10px;
-  gap: 4px;
+  padding: 3px 6px;
+  gap: 8px;
+  min-width: 0;
 }
 
 #personaldetails-tab .cdn-ov-matter-card-inner:hover {
-  background: #f0f6ff;
-  border-color: #d5e3f0;
+  background: transparent;
+  border-color: transparent;
 }
 
 #personaldetails-tab .cdn-ov-conflict-status-card {
@@ -11662,12 +11672,16 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-ov-active-matter-pill {
+  flex: 0 0 auto;
   background: #eef6f1 !important;
   border: 1px solid #c9ddd2 !important;
   border-radius: 3px !important;
   padding: 1px 6px !important;
   box-shadow: none !important;
   color: #1e7a52 !important;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
 }
 
 #personaldetails-tab .cdn-ov-matter-code,
