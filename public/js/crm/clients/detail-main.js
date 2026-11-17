@@ -3215,15 +3215,29 @@ success: function(response) {
 
                         var obj = safeParseJsonResponse(response);
                         if (!obj) return;
-                        var contactlist = '<option value="">Select Contact</option>';
 
-                        $.each(obj.clientContacts, function(index, subArray) {
-
-                            contactlist += '<option value="'+subArray.phone+'">'+subArray.phone+'</option>';
-
+                        var phones = [];
+                        var seen = {};
+                        $.each(obj.clientContacts || [], function(index, subArray) {
+                            var phone = subArray && subArray.phone != null ? String(subArray.phone).trim() : '';
+                            if (!phone || seen[phone]) {
+                                return;
+                            }
+                            seen[phone] = true;
+                            phones.push(phone);
                         });
 
-                        $('#mobileNumber').append(contactlist);
+                        var $select = additionalFields.find('select[name="mobileNumber"]');
+                        $select.empty();
+                        $select.append($('<option>', { value: '', text: 'Select Contact' }));
+                        $.each(phones, function(index, phone) {
+                            $select.append($('<option>', { value: phone, text: phone }));
+                        });
+
+                        // One number is the call target; several stay as a choice.
+                        if (phones.length === 1) {
+                            $select.val(phones[0]);
+                        }
 
                     }
 

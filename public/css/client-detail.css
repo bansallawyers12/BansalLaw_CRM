@@ -9602,7 +9602,13 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-overview .cdn-ov-scroll--matters {
-  max-height: 18rem;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  max-height: none;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   border: none;
   background: transparent;
   padding: 0;
@@ -9743,8 +9749,10 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 #personaldetails-tab .cdn-overview .cdn-ov-matter-list {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 0;
   flex: 1 1 auto;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -9864,8 +9872,9 @@ body.sidebar-mini #personaldetails-tab .cdn-overview .cdn-ov-field__value a:hove
 }
 
 #personaldetails-tab .cdn-overview #clientMattersListCard .cdn-ov-card__body {
+  flex: 1 1 auto;
   min-height: 0;
-  padding: 6px 10px 8px;
+  padding: 8px 10px;
   gap: 0;
 }
 
