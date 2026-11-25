@@ -647,6 +647,7 @@
                             <div class="meta-recipients" id="readTo">Loading...</div>
                             <div class="meta-recipients meta-cc" id="readCc" hidden></div>
                             <div class="meta-recipients meta-bcc" id="readBcc" hidden></div>
+                            <div class="gmail-read-meta-popover" id="gmailReadMetaPopover" hidden role="dialog" aria-label="Email addresses"></div>
                         </div>
                         <div class="gmail-read-meta__right">
                             <div class="meta-date" id="readDate"></div>

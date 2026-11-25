@@ -147,7 +147,7 @@ class ClientEmailFilterController extends Controller
     public function chain(Request $request, int $id): JsonResponse
     {
         $email = EmailLog::query()->find($id, [
-            'id', 'client_id', 'client_matter_id', 'subject', 'from_mail', 'to_mail', 'cc',
+            'id', 'client_id', 'client_matter_id', 'subject', 'from_mail', 'to_mail', 'cc', 'bcc',
             'mail_body_type', 'mail_type', 'type', 'text_preview', 'received_date',
             'fetch_mail_sent_time', 'sent_at', 'created_at', 'mailbox_email',
         ]);

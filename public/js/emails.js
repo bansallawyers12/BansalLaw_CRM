@@ -2559,6 +2559,14 @@
         // Reset Cc/Bcc unless explicitly provided (compose / reply / forward)
         setComposeRecipientField('email_cc[]', data.cc || []);
         setComposeRecipientField('email_bcc[]', data.bcc || []);
+        if (typeof window.setComposeOptionalRecipientField === 'function') {
+            if (data.cc && data.cc.length) {
+                window.setComposeOptionalRecipientField('emailmodalCcField', 'emailmodalShowCc', true);
+            }
+            if (data.bcc && data.bcc.length) {
+                window.setComposeOptionalRecipientField('emailmodalBccField', 'emailmodalShowBcc', true);
+            }
+        }
 
         // Always set matter ID - use provided one or get from dropdown
         const matterIdInput = document.getElementById('compose_client_matter_id');

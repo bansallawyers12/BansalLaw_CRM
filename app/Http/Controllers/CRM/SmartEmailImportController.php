@@ -360,6 +360,7 @@ class SmartEmailImportController extends EmailUploadController
             'from' => (string) ($parsedData['sender_email'] ?? $parsedData['sender_name'] ?? ''),
             'to' => $this->formatParsedRecipientList($parsedData, 'to_recipients', 'recipients'),
             'cc' => $this->formatParsedRecipientList($parsedData, 'cc_recipients'),
+            'bcc' => $this->formatParsedRecipientList($parsedData, 'bcc_recipients'),
             'sent_date' => (string) ($parsedData['sent_date'] ?? ''),
             'body_snippet' => $bodySnippet,
             'attachment_count' => count($attachmentNames),

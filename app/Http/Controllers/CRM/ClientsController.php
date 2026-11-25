@@ -6979,8 +6979,8 @@ class ClientsController extends Controller
             }
 
             $email->to_mail = \App\Models\EmailLog::resolveRecipientDisplay($email->to_mail ?? '', $email->type ?? null);
-            $email->cc = $email->cc ?? '';
-            $email->bcc = $email->bcc ?? '';
+            $email->cc = \App\Models\EmailLog::resolveRecipientDisplay($email->cc ?? '', $email->type ?? null);
+            $email->bcc = \App\Models\EmailLog::resolveRecipientDisplay($email->bcc ?? '', $email->type ?? null);
             $email->send_status = $email->send_status ?? \App\Models\EmailLog::SEND_STATUS_SENT;
             $email->send_error = $email->send_error ?? '';
             $email->sync_assignment_status = $email->sync_assignment_status ?? '';

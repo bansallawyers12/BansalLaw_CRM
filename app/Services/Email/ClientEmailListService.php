@@ -520,6 +520,7 @@ class ClientEmailListService
                 'from_mail' => (string) ($email->from_mail ?? ''),
                 'to_mail' => EmailLog::resolveRecipientDisplay($email->to_mail ?? '', $email->type ?? null),
                 'cc' => EmailLog::resolveRecipientDisplay($email->cc ?? '', $email->type ?? null),
+                'bcc' => EmailLog::resolveRecipientDisplay($email->bcc ?? '', $email->type ?? null),
                 'mail_body_type' => (string) ($email->mail_body_type ?? ''),
                 'mail_type' => $email->mail_type,
                 'direction' => $dir,

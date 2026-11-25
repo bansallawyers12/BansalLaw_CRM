@@ -1533,6 +1533,7 @@ $(document).ready(function() {
         $toggle.toggleClass('is-active', !!show);
         $toggle.attr('aria-expanded', show ? 'true' : 'false');
     }
+    window.setComposeOptionalRecipientField = setComposeOptionalRecipientField;
 
     $('#emailmodal').on('click', '#emailmodalShowCc', function(e) {
         e.preventDefault();

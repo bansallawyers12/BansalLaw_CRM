@@ -368,6 +368,8 @@ function crmInitOutlookEmailsInterface() {
     const gmailReadPrev = document.getElementById('gmailReadPrev');
     const gmailReadNext = document.getElementById('gmailReadNext');
     const gmailReadMoreMenu = document.getElementById('gmailReadMoreMenu');
+    const gmailReadMetaPopover = document.getElementById('gmailReadMetaPopover');
+    let gmailReadMetaLines = null;
     const gmailIconDelete = document.getElementById('gmailIconDelete');
     const gmailIconAssign = document.getElementById('gmailIconAssign');
     const gmailIconMore = document.getElementById('gmailIconMore');
@@ -718,13 +720,32 @@ function crmInitOutlookEmailsInterface() {
 
     document.addEventListener('click', function (event) {
         if (!gmailReadMoreMenu || gmailReadMoreMenu.hidden) {
-            return;
+            // continue — may still need to close meta popover
+        } else if (!event.target.closest('.gmail-read-more-wrap')) {
+            closeGmailReadMoreMenu();
         }
-        if (event.target.closest('.gmail-read-more-wrap')) {
-            return;
+        if (gmailReadMetaPopover && !gmailReadMetaPopover.hidden) {
+            if (!event.target.closest('#gmailReadMetaPopover') && !event.target.closest('.gmail-to-me--toggle')) {
+                closeGmailReadMetaPopover();
+            }
         }
-        closeGmailReadMoreMenu();
     });
+
+    const metaDetailsEl = document.querySelector('#readingPane .meta-details');
+    if (metaDetailsEl && !metaDetailsEl.dataset.metaPopoverBound) {
+        metaDetailsEl.dataset.metaPopoverBound = '1';
+        metaDetailsEl.addEventListener('click', function (event) {
+            if (!event.target.closest('.gmail-to-me--toggle')) {
+                return;
+            }
+            if (!isGmailUiMode()) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            toggleGmailReadMetaPopover();
+        });
+    }
 
     window.addEventListener('resize', function () {
         const iframe = document.getElementById('readBody');
@@ -1542,6 +1563,57 @@ function crmInitOutlookEmailsInterface() {
         gmailIconMore.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
+    function closeGmailReadMetaPopover() {
+        if (!gmailReadMetaPopover) {
+            return;
+        }
+        gmailReadMetaPopover.hidden = true;
+        gmailReadMetaPopover.innerHTML = '';
+        const toggle = document.querySelector('.gmail-to-me--toggle');
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    function renderGmailReadMetaPopover(lines) {
+        if (!gmailReadMetaPopover || !lines) {
+            return;
+        }
+        const rows = [];
+        if (lines.from) {
+            rows.push('<p class="gmail-read-meta-popover__row"><strong>from</strong> ' + escapeHtml(lines.from) + '</p>');
+        }
+        if (lines.to) {
+            rows.push('<p class="gmail-read-meta-popover__row"><strong>to</strong> ' + escapeHtml(lines.to) + '</p>');
+        }
+        if (lines.cc) {
+            rows.push('<p class="gmail-read-meta-popover__row"><strong>cc</strong> ' + escapeHtml(lines.cc) + '</p>');
+        }
+        if (lines.bcc) {
+            rows.push('<p class="gmail-read-meta-popover__row"><strong>bcc</strong> ' + escapeHtml(lines.bcc) + '</p>');
+        }
+        gmailReadMetaPopover.innerHTML = rows.join('');
+    }
+
+    function toggleGmailReadMetaPopover() {
+        if (!gmailReadMetaPopover || !gmailReadMetaLines) {
+            return;
+        }
+        closeGmailReadMoreMenu();
+        const willOpen = gmailReadMetaPopover.hidden;
+        if (willOpen) {
+            renderGmailReadMetaPopover(gmailReadMetaLines);
+            gmailReadMetaPopover.hidden = false;
+        } else {
+            closeGmailReadMetaPopover();
+            return;
+        }
+        const toggle = document.querySelector('.gmail-to-me--toggle');
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', 'true');
+        }
+    }
+
     function proxyClickButton(button) {
         if (button && !button.hidden && !button.disabled) {
             button.click();
@@ -1609,6 +1681,7 @@ function crmInitOutlookEmailsInterface() {
 
         updateGmailReadNav();
         closeGmailReadMoreMenu();
+        closeGmailReadMetaPopover();
     }
 
     function navigateGmailEmail(direction) {
@@ -6389,45 +6462,51 @@ function crmInitOutlookEmailsInterface() {
         const toLine = 'To: ' + cleanedTo;
         const ccLine = formatRecipientLine('Cc', email.cc);
         const bccLine = formatRecipientLine('Bcc', email.bcc);
+        const fromDisplay = cleanRecipients(email.from_mail) || email.from_mail || 'Unknown';
 
+        closeGmailReadMetaPopover();
         readToEl.hidden = false;
+
+        function applyIncomingCcBccLines() {
+            if (readCcEl) {
+                if (ccLine) {
+                    readCcEl.textContent = ccLine;
+                    readCcEl.hidden = false;
+                } else {
+                    readCcEl.textContent = '';
+                    readCcEl.hidden = true;
+                }
+            }
+            if (readBccEl) {
+                if (bccLine) {
+                    readBccEl.textContent = bccLine;
+                    readBccEl.hidden = false;
+                } else {
+                    readBccEl.textContent = '';
+                    readBccEl.hidden = true;
+                }
+            }
+        }
+
         if (isGmailUiMode()) {
-            // Show actual To addresses (with caret for tooltip of full header lines).
-            readToEl.innerHTML = '<span class="gmail-to-me">to ' + escapeHtml(cleanedTo)
-                + ' <i class="fa-solid fa-caret-down" aria-hidden="true"></i></span>';
-            const tooltipParts = [toLine];
-            if (ccLine) {
-                tooltipParts.push(ccLine);
-            }
-            if (bccLine) {
-                tooltipParts.push(bccLine);
-            }
-            readToEl.title = tooltipParts.join('\n');
+            gmailReadMetaLines = {
+                from: fromDisplay,
+                to: cleanedTo,
+                cc: ccLine ? cleanRecipients(email.cc) : '',
+                bcc: bccLine ? cleanRecipients(email.bcc) : ''
+            };
+            readToEl.innerHTML = '<button type="button" class="gmail-to-me gmail-to-me--toggle" aria-expanded="false" aria-controls="gmailReadMetaPopover">'
+                + '<span>to ' + escapeHtml(cleanedTo) + '</span>'
+                + ' <i class="fa-solid fa-caret-down" aria-hidden="true"></i></button>';
+            readToEl.removeAttribute('title');
         } else {
+            gmailReadMetaLines = null;
             readToEl.textContent = toLine;
             readToEl.removeAttribute('title');
         }
 
-        if (readCcEl) {
-            if (ccLine) {
-                readCcEl.textContent = ccLine;
-                readCcEl.hidden = false;
-            } else {
-                readCcEl.textContent = '';
-                readCcEl.hidden = true;
-            }
-        }
-
-        // Bcc only when present (privacy-friendly: hidden when empty / unknown).
-        if (readBccEl) {
-            if (bccLine) {
-                readBccEl.textContent = bccLine;
-                readBccEl.hidden = false;
-            } else {
-                readBccEl.textContent = '';
-                readBccEl.hidden = true;
-            }
-        }
+        // Incoming / sent mail: show Cc and Bcc under the header when stored on the log.
+        applyIncomingCcBccLines();
 
         const readSendErrorEl = document.getElementById('readSendError');
         if (readSendErrorEl) {
@@ -7505,6 +7584,7 @@ function crmInitOutlookEmailsInterface() {
             from_mail: (meta && meta.from_mail) || '',
             to_mail: (meta && meta.to_mail) || '',
             cc: (meta && meta.cc) || '',
+            bcc: (meta && meta.bcc) || '',
             text_preview: (meta && meta.text_preview) || '',
             fetch_mail_sent_time_display: (meta && meta.received_at_display) || '',
             fetch_mail_sent_time: (meta && meta.received_at) || null,
