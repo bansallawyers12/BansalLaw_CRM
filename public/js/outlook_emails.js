@@ -1580,6 +1580,9 @@ function crmInitOutlookEmailsInterface() {
             return;
         }
         const rows = [];
+        if (lines.sent) {
+            rows.push('<p class="gmail-read-meta-popover__row"><strong>sent</strong> ' + escapeHtml(lines.sent) + '</p>');
+        }
         if (lines.from) {
             rows.push('<p class="gmail-read-meta-popover__row"><strong>from</strong> ' + escapeHtml(lines.from) + '</p>');
         }
@@ -1592,7 +1595,43 @@ function crmInitOutlookEmailsInterface() {
         if (lines.bcc) {
             rows.push('<p class="gmail-read-meta-popover__row"><strong>bcc</strong> ' + escapeHtml(lines.bcc) + '</p>');
         }
+        if (lines.subject) {
+            rows.push('<p class="gmail-read-meta-popover__row"><strong>subject</strong> ' + escapeHtml(lines.subject) + '</p>');
+        }
         gmailReadMetaPopover.innerHTML = rows.join('');
+    }
+
+    function fetchEmailRecipientsAsync(email) {
+        if (!email || !email.id) {
+            return Promise.resolve(email);
+        }
+        return fetch('/email-logs/' + encodeURIComponent(email.id) + '/recipients', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data || !data.success) {
+                    return email;
+                }
+                if (data.cc) {
+                    email.cc = data.cc;
+                }
+                if (data.bcc) {
+                    email.bcc = data.bcc;
+                }
+                const idx = emails.findIndex(function (item) { return item.id === email.id; });
+                if (idx >= 0) {
+                    if (data.cc) {
+                        emails[idx].cc = data.cc;
+                    }
+                    if (data.bcc) {
+                        emails[idx].bcc = data.bcc;
+                    }
+                }
+                return email;
+            })
+            .catch(function () { return email; });
     }
 
     function toggleGmailReadMetaPopover() {
@@ -1601,17 +1640,36 @@ function crmInitOutlookEmailsInterface() {
         }
         closeGmailReadMoreMenu();
         const willOpen = gmailReadMetaPopover.hidden;
-        if (willOpen) {
-            renderGmailReadMetaPopover(gmailReadMetaLines);
-            gmailReadMetaPopover.hidden = false;
-        } else {
+        if (!willOpen) {
             closeGmailReadMetaPopover();
             return;
         }
-        const toggle = document.querySelector('.gmail-to-me--toggle');
-        if (toggle) {
-            toggle.setAttribute('aria-expanded', 'true');
+
+        const openWithCurrentLines = function () {
+            renderGmailReadMetaPopover(gmailReadMetaLines);
+            gmailReadMetaPopover.hidden = false;
+            const toggle = document.querySelector('.gmail-to-me--toggle');
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+        };
+
+        const needsHydrate = selectedEmail && emailRecipientsNeedHydration(selectedEmail);
+        if (needsHydrate) {
+            if (!selectedEmail._recipientsHydrateStarted) {
+                selectedEmail._recipientsHydrateStarted = true;
+            }
+            fetchEmailRecipientsAsync(selectedEmail).then(function (fresh) {
+                if (selectedEmailId !== fresh.id) {
+                    return;
+                }
+                renderReadRecipientHeader(fresh);
+                openWithCurrentLines();
+            });
+            return;
         }
+
+        openWithCurrentLines();
     }
 
     function proxyClickButton(button) {
@@ -6429,10 +6487,12 @@ function crmInitOutlookEmailsInterface() {
 
         if (isGmailUiMode()) {
             gmailReadMetaLines = {
+                sent: formatEmailDate(getEmailDate(email)) || '',
                 from: fromDisplay,
                 to: cleanedTo,
                 cc: ccLine ? cleanRecipients(email.cc) : '',
-                bcc: bccLine ? cleanRecipients(email.bcc) : ''
+                bcc: bccLine ? cleanRecipients(email.bcc) : '',
+                subject: email.subject || ''
             };
             readToEl.innerHTML = '<button type="button" class="gmail-to-me gmail-to-me--toggle" aria-expanded="false" aria-controls="gmailReadMetaPopover">'
                 + '<span>to ' + escapeHtml(cleanedTo) + '</span>'
@@ -6460,37 +6520,11 @@ function crmInitOutlookEmailsInterface() {
             return;
         }
         email._recipientsHydrateStarted = true;
-        fetch('/email-logs/' + encodeURIComponent(email.id) + '/recipients', {
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin'
-        })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (!data || !data.success) {
-                    return;
-                }
-                if (data.cc) {
-                    email.cc = data.cc;
-                }
-                if (data.bcc) {
-                    email.bcc = data.bcc;
-                }
-                const idx = emails.findIndex(function (item) { return item.id === email.id; });
-                if (idx >= 0) {
-                    if (data.cc) {
-                        emails[idx].cc = data.cc;
-                    }
-                    if (data.bcc) {
-                        emails[idx].bcc = data.bcc;
-                    }
-                }
-                if (selectedEmailId === email.id) {
-                    renderReadRecipientHeader(email);
-                }
-            })
-            .catch(function () {
-                // Optional enrichment; ignore failures.
-            });
+        fetchEmailRecipientsAsync(email).then(function (fresh) {
+            if (selectedEmailId === fresh.id) {
+                renderReadRecipientHeader(fresh);
+            }
+        });
     }
 
     function showEmail(email, listElement) {

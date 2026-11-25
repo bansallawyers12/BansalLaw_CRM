@@ -830,6 +830,14 @@ class EmailParserService:
                         rtype = getattr(recipient, 'type', None)
                         group_key = type_map.get(rtype)
                         if not group_key:
+                            type_label = str(rtype).lower() if rtype is not None else ''
+                            if 'bcc' in type_label:
+                                group_key = 'bcc'
+                            elif 'cc' in type_label:
+                                group_key = 'cc'
+                            elif 'to' in type_label:
+                                group_key = 'to'
+                        if not group_key:
                             continue
                         entry = self._format_recipient_entry(recipient)
                         if entry:
@@ -858,6 +866,31 @@ class EmailParserService:
 
         for group_key in groups:
             groups[group_key] = self._dedupe_preserve_order(groups[group_key])
+
+        # Sent-item .msg files often keep Bcc only on internet/transport headers.
+        if not groups['bcc']:
+            for header_blob in (
+                getattr(msg, 'header', None),
+                getattr(msg, 'transportHeaders', None),
+            ):
+                if not header_blob:
+                    continue
+                text = str(header_blob).replace('\r', '\n')
+                for line in text.split('\n'):
+                    line = line.strip()
+                    if re.match(r'^bcc\s*:', line, re.IGNORECASE):
+                        groups['bcc'].extend(
+                            self._parse_recipient_string(line.split(':', 1)[1])
+                        )
+            headers = self._extract_headers(msg)
+            for key, value in headers.items():
+                if str(key).lower() == 'bcc' and value:
+                    groups['bcc'].extend(self._parse_recipient_string(str(value)))
+
+        for group_key in groups:
+            groups[group_key] = self._dedupe_preserve_order(
+                self._filter_placeholder_recipients(groups[group_key])
+            )
 
         return groups
 

@@ -2191,6 +2191,12 @@ class EmailUploadController extends Controller
         if ((! is_array($list) || $list === []) && $fallbackKey !== null) {
             $list = $parsedData[$fallbackKey] ?? [];
         }
+        if ((! is_array($list) || $list === []) && $primaryKey === 'bcc_recipients') {
+            $fromHeaders = \App\Services\Email\EmailLogRecipientBackfillService::bccFromParsedHeaders($parsedData);
+            if ($fromHeaders !== '') {
+                return $fromHeaders;
+            }
+        }
         if (! is_array($list) || $list === []) {
             return '';
         }

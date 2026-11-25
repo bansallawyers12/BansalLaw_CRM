@@ -152,6 +152,12 @@ class EmailLogRecipientBackfillService
         if ((! is_array($list) || $list === []) && $fallbackKey !== null) {
             $list = $parsedData[$fallbackKey] ?? [];
         }
+        if ((! is_array($list) || $list === []) && $primaryKey === 'bcc_recipients') {
+            $fromHeaders = self::bccFromParsedHeaders($parsedData);
+            if ($fromHeaders !== '') {
+                return $fromHeaders;
+            }
+        }
         if (! is_array($list) || $list === []) {
             return '';
         }
@@ -172,5 +178,38 @@ class EmailLogRecipientBackfillService
         }
 
         return $normalized !== [] ? implode(',', array_values(array_unique($normalized))) : '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $parsedData
+     */
+    public static function bccFromParsedHeaders(array $parsedData): string
+    {
+        $headers = $parsedData['headers'] ?? [];
+        if (! is_array($headers)) {
+            return '';
+        }
+
+        foreach ($headers as $key => $value) {
+            if (strtolower((string) $key) !== 'bcc' || $value === null || $value === '') {
+                continue;
+            }
+            $parts = preg_split('/[,;]/', (string) $value) ?: [];
+            $normalized = [];
+            foreach ($parts as $part) {
+                $part = trim($part);
+                if ($part === '') {
+                    continue;
+                }
+                $entry = IncomingEmailSyncService::normalizeRecipientEntry($part);
+                if ($entry !== '') {
+                    $normalized[] = $entry;
+                }
+            }
+
+            return $normalized !== [] ? implode(',', array_values(array_unique($normalized))) : '';
+        }
+
+        return '';
     }
 }
