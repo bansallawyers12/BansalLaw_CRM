@@ -6391,6 +6391,108 @@ function crmInitOutlookEmailsInterface() {
         });
     }
 
+    function renderReadRecipientHeader(email) {
+        const readToEl = document.getElementById('readTo');
+        const readCcEl = document.getElementById('readCc');
+        const readBccEl = document.getElementById('readBcc');
+        if (!readToEl) {
+            return;
+        }
+
+        const cleanedTo = resolveToDisplay(email);
+        const toLine = 'To: ' + cleanedTo;
+        const ccLine = formatRecipientLine('Cc', email.cc);
+        const bccLine = formatRecipientLine('Bcc', email.bcc);
+        const fromDisplay = cleanRecipients(email.from_mail) || email.from_mail || 'Unknown';
+
+        closeGmailReadMetaPopover();
+        readToEl.hidden = false;
+
+        if (readCcEl) {
+            if (ccLine) {
+                readCcEl.textContent = ccLine;
+                readCcEl.hidden = false;
+            } else {
+                readCcEl.textContent = '';
+                readCcEl.hidden = true;
+            }
+        }
+        if (readBccEl) {
+            if (bccLine) {
+                readBccEl.textContent = bccLine;
+                readBccEl.hidden = false;
+            } else {
+                readBccEl.textContent = '';
+                readBccEl.hidden = true;
+            }
+        }
+
+        if (isGmailUiMode()) {
+            gmailReadMetaLines = {
+                from: fromDisplay,
+                to: cleanedTo,
+                cc: ccLine ? cleanRecipients(email.cc) : '',
+                bcc: bccLine ? cleanRecipients(email.bcc) : ''
+            };
+            readToEl.innerHTML = '<button type="button" class="gmail-to-me gmail-to-me--toggle" aria-expanded="false" aria-controls="gmailReadMetaPopover">'
+                + '<span>to ' + escapeHtml(cleanedTo) + '</span>'
+                + ' <i class="fa-solid fa-caret-down" aria-hidden="true"></i></button>';
+            readToEl.removeAttribute('title');
+        } else {
+            gmailReadMetaLines = null;
+            readToEl.textContent = toLine;
+            readToEl.removeAttribute('title');
+        }
+    }
+
+    function emailRecipientsNeedHydration(email) {
+        if (!email || !email.id) {
+            return false;
+        }
+        if (formatRecipientLine('Bcc', email.bcc)) {
+            return false;
+        }
+        return !!(email.uploaded_doc_id || email.preview_url);
+    }
+
+    function hydrateEmailRecipients(email) {
+        if (!emailRecipientsNeedHydration(email) || email._recipientsHydrateStarted) {
+            return;
+        }
+        email._recipientsHydrateStarted = true;
+        fetch('/email-logs/' + encodeURIComponent(email.id) + '/recipients', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data || !data.success) {
+                    return;
+                }
+                if (data.cc) {
+                    email.cc = data.cc;
+                }
+                if (data.bcc) {
+                    email.bcc = data.bcc;
+                }
+                const idx = emails.findIndex(function (item) { return item.id === email.id; });
+                if (idx >= 0) {
+                    if (data.cc) {
+                        emails[idx].cc = data.cc;
+                    }
+                    if (data.bcc) {
+                        emails[idx].bcc = data.bcc;
+                    }
+                }
+                if (selectedEmailId === email.id) {
+                    renderReadRecipientHeader(email);
+                }
+            })
+            .catch(function () {
+                // Optional enrichment; ignore failures.
+            });
+    }
+
     function showEmail(email, listElement) {
         if (emptyState) {
             emptyState.style.display = 'none';
@@ -6455,58 +6557,8 @@ function crmInitOutlookEmailsInterface() {
             }
         }
 
-        const readToEl = document.getElementById('readTo');
-        const readCcEl = document.getElementById('readCc');
-        const readBccEl = document.getElementById('readBcc');
-        const cleanedTo = resolveToDisplay(email);
-        const toLine = 'To: ' + cleanedTo;
-        const ccLine = formatRecipientLine('Cc', email.cc);
-        const bccLine = formatRecipientLine('Bcc', email.bcc);
-        const fromDisplay = cleanRecipients(email.from_mail) || email.from_mail || 'Unknown';
-
-        closeGmailReadMetaPopover();
-        readToEl.hidden = false;
-
-        function applyIncomingCcBccLines() {
-            if (readCcEl) {
-                if (ccLine) {
-                    readCcEl.textContent = ccLine;
-                    readCcEl.hidden = false;
-                } else {
-                    readCcEl.textContent = '';
-                    readCcEl.hidden = true;
-                }
-            }
-            if (readBccEl) {
-                if (bccLine) {
-                    readBccEl.textContent = bccLine;
-                    readBccEl.hidden = false;
-                } else {
-                    readBccEl.textContent = '';
-                    readBccEl.hidden = true;
-                }
-            }
-        }
-
-        if (isGmailUiMode()) {
-            gmailReadMetaLines = {
-                from: fromDisplay,
-                to: cleanedTo,
-                cc: ccLine ? cleanRecipients(email.cc) : '',
-                bcc: bccLine ? cleanRecipients(email.bcc) : ''
-            };
-            readToEl.innerHTML = '<button type="button" class="gmail-to-me gmail-to-me--toggle" aria-expanded="false" aria-controls="gmailReadMetaPopover">'
-                + '<span>to ' + escapeHtml(cleanedTo) + '</span>'
-                + ' <i class="fa-solid fa-caret-down" aria-hidden="true"></i></button>';
-            readToEl.removeAttribute('title');
-        } else {
-            gmailReadMetaLines = null;
-            readToEl.textContent = toLine;
-            readToEl.removeAttribute('title');
-        }
-
-        // Incoming / sent mail: show Cc and Bcc under the header when stored on the log.
-        applyIncomingCcBccLines();
+        renderReadRecipientHeader(email);
+        hydrateEmailRecipients(email);
 
         const readSendErrorEl = document.getElementById('readSendError');
         if (readSendErrorEl) {

@@ -127,6 +127,23 @@ class ClientEmailFilterController extends Controller
     }
 
     /**
+     * Full recipient headers; re-hydrates Cc/Bcc from original upload when the log row is empty.
+     */
+    public function recipients(int $id): JsonResponse
+    {
+        $email = EmailLog::query()->find($id, [
+            'id', 'client_id', 'client_matter_id', 'from_mail', 'to_mail', 'cc', 'bcc', 'type', 'uploaded_doc_id',
+        ]);
+        if (! $email) {
+            return response()->json(['success' => false, 'error' => 'Email not found'], 404);
+        }
+
+        $this->ensureEmailLogAccess($email);
+
+        return response()->json($this->lists->recipientsPayload($email));
+    }
+
+    /**
      * Deferred attachments for synced inbox list rows (lean list omits attachment payloads).
      */
     public function attachments(int $id): JsonResponse

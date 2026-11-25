@@ -256,6 +256,33 @@ class ClientEmailListService
     }
 
     /**
+     * Resolve From/To/Cc/Bcc; re-parse stored .msg/.eml when Cc/Bcc missing on the log.
+     *
+     * @return array{success: bool, from: string, to: string, cc: string, bcc: string}
+     */
+    public function recipientsPayload(EmailLog $email): array
+    {
+        $full = EmailLog::query()->find($email->id);
+        if (! $full) {
+            return [
+                'success' => false,
+                'from' => '',
+                'to' => '',
+                'cc' => '',
+                'bcc' => '',
+                'error' => 'Email not found',
+            ];
+        }
+
+        $recipients = app(EmailLogRecipientBackfillService::class)->ensureRecipients($full, true);
+
+        return [
+            'success' => true,
+            ...$recipients,
+        ];
+    }
+
+    /**
      * @return array{success: bool, message: string, text_preview: string}
      */
     public function bodyPayload(EmailLog $email): array

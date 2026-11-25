@@ -2093,6 +2093,33 @@
                 }
             }, 50);
         }
+
+        if (!bcc && email.id && (email.uploaded_doc_id || email.preview_url) && !email._recipientsHydrateStarted) {
+            email._recipientsHydrateStarted = true;
+            fetch('/email-logs/' + encodeURIComponent(email.id) + '/recipients', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data || !data.success) {
+                        return;
+                    }
+                    var changed = false;
+                    if (data.cc && !cleanRecipients(email.cc)) {
+                        email.cc = data.cc;
+                        changed = true;
+                    }
+                    if (data.bcc) {
+                        email.bcc = data.bcc;
+                        changed = true;
+                    }
+                    if (changed) {
+                        renderEmailDetail(email);
+                    }
+                })
+                .catch(function () { /* optional */ });
+        }
     }
 
     /**
