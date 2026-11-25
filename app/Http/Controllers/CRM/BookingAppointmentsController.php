@@ -1756,6 +1756,102 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
+     * Mark a free booking as paid after an offline payment.
+     */
+    public function markManualPayment($id)
+    {
+        $appointment = BookingAppointment::findOrFail($id);
+        $this->assertBookingAppointmentAccess($appointment);
+
+        if ($appointment->is_paid && $appointment->payment_status === 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This appointment is already marked as Paid.',
+            ], 422);
+        }
+
+        $amount = 150.00;
+        $appointment->forceFill([
+            'status' => 'paid',
+            'is_paid' => true,
+            'payment_status' => 'completed',
+            'payment_method' => 'manual',
+            'paid_at' => now(),
+            'amount' => $amount,
+            'final_amount' => $amount,
+        ])->save();
+
+        if ($appointment->client_id) {
+            $activityLog = new ActivitiesLog;
+            $activityLog->client_id = $appointment->client_id;
+            $activityLog->created_by = Auth::id();
+            $activityLog->subject = 'Booking appointment payment marked paid';
+            $activityLog->description = '<p><strong>Payment:</strong> Free → Paid (received manually, $150)</p>';
+            $activityLog->task_status = 0;
+            $activityLog->pin = 0;
+            $activityLog->activity_type = 'activity';
+            $activityLog->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment type updated from Free to Paid.',
+            'is_paid' => true,
+            'status' => $appointment->status,
+        ]);
+    }
+
+    /**
+     * Mark a free booking as a $150 pending payment. Does not email a payment link.
+     */
+    public function requestPayment($id)
+    {
+        $appointment = BookingAppointment::findOrFail($id);
+        $this->assertBookingAppointmentAccess($appointment);
+
+        if ($appointment->is_paid && $appointment->payment_status === 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This appointment is already marked as Paid.',
+            ], 422);
+        }
+
+        if (in_array($appointment->status, ['cancelled', 'completed'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment cannot be requested for a cancelled or completed appointment.',
+            ], 422);
+        }
+
+        $amount = 150.00;
+        $appointment->forceFill([
+            'amount' => $amount,
+            'final_amount' => $amount,
+            'payment_status' => 'pending',
+            'is_paid' => false,
+        ])->save();
+
+        if ($appointment->client_id) {
+            $activityLog = new ActivitiesLog;
+            $activityLog->client_id = $appointment->client_id;
+            $activityLog->created_by = Auth::id();
+            $activityLog->subject = 'Booking appointment payment requested';
+            $activityLog->description = '<p><strong>Payment:</strong> $150 payment requested. No payment-link email was sent from the calendar.</p>';
+            $activityLog->task_status = 0;
+            $activityLog->pin = 0;
+            $activityLog->activity_type = 'activity';
+            $activityLog->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Appointment marked as a $150 pending payment. No payment-link email was sent.',
+            'is_paid' => false,
+            'status' => $appointment->status,
+        ]);
+    }
+
+    /**
      * Update consultant assignment
      */
     public function updateConsultant(Request $request, $id)

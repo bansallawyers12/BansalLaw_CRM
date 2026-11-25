@@ -918,10 +918,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Generate client profile URL if client_id exists
-            let clientNameDisplay = props.client_name;
+            let clientNameDisplay = escapeHtml(props.client_name || 'Client');
             if (props.client_id_encoded) {
-                const clientProfileUrl = `/clients/detail/${props.client_id_encoded}`;
-                clientNameDisplay = `<a href="${clientProfileUrl}" target="_blank" class="booking-calendar-link">${props.client_name}</a>`;
+                const clientProfileUrl = `/clients/detail/${encodeURIComponent(props.client_id_encoded)}`;
+                clientNameDisplay = `<a href="${clientProfileUrl}" target="_blank">${clientNameDisplay}</a>`;
             }
             
             // Format meeting type for display
@@ -946,151 +946,179 @@ document.addEventListener('DOMContentLoaded', function() {
                 minute: '2-digit'
             });
 
+            const locationLabel = props.location
+                ? props.location.charAt(0).toUpperCase() + props.location.slice(1)
+                : 'N/A';
+            const languageLabel = props.preferred_language
+                ? props.preferred_language.charAt(0).toUpperCase() + props.preferred_language.slice(1).toLowerCase()
+                : 'English';
+            const statusKey = String(props.status || 'pending');
+            const finalAmount = parseFloat(props.final_amount || 0);
+            const isPaid = !!props.is_paid;
+            const paymentLabel = props.payment_status || (isPaid ? 'Paid' : 'Free');
+            const stableConsultantId = props.consultant_id != null ? String(props.consultant_id) : '';
+            const consultantOptions = (() => {
+                const uniqueConsultants = [];
+                const seenIds = new Set();
+                if (Array.isArray(consultantsData)) {
+                    consultantsData.forEach(consultant => {
+                        if (consultant && consultant.id && !seenIds.has(consultant.id)) {
+                            seenIds.add(consultant.id);
+                            uniqueConsultants.push(consultant);
+                        }
+                    });
+                }
+                const currentId = props.consultant_id != null ? Number(props.consultant_id) : null;
+                if (currentId && !seenIds.has(currentId)) {
+                    uniqueConsultants.push({
+                        id: currentId,
+                        name: props.consultant || 'Consultant',
+                        calendar_type: props.consultant_calendar_type || ''
+                    });
+                }
+                return uniqueConsultants.map(consultant => {
+                    const isSelected = currentId != null
+                        ? Number(consultant.id) === currentId
+                        : !!(props.consultant && consultant.name && String(props.consultant).indexOf(consultant.name) !== -1);
+                    const isTourist = consultant.calendar_type === 'tourist';
+                    const typeSuffix = (!isTourist && consultant.calendar_type && consultant.calendar_type !== 'paid')
+                        ? ` (${escapeHtml(consultant.calendar_type)})`
+                        : '';
+                    const titleAttr = isTourist ? ' title="Vijay(Tourist Visa)"' : '';
+                    return `<option value="${escapeHtml(consultant.id)}" data-calendar-type="${escapeHtml(consultant.calendar_type || '')}"${titleAttr}${isSelected ? ' selected' : ''}>${escapeHtml(consultant.name)}${typeSuffix}</option>`;
+                }).join('');
+            })();
+
             const managementSection = canManage ? `
-                    <section class="appt-detail-section appt-detail-section--actions">
-                        <h6 class="appt-detail-section__title"><i class="fa-solid fa-calendar-days"></i> Reschedule</h6>
-                        <div class="row g-3 align-items-end">
-                            <div class="col-md-4">
-                                <label class="form-label" for="rescheduleDate-${slotKey}">Appointment date</label>
-                                <input type="date" class="form-control" id="rescheduleDate-${slotKey}"
-                                       value="${melbourneDate}"
-                                       data-original-date="${melbourneDate}"
-                                       onchange="validateWeekendDate(this, '${slotKey}')">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label" for="rescheduleTime-${slotKey}">Appointment time</label>
-                                <input type="time" class="form-control" id="rescheduleTime-${slotKey}"
-                                       value="${melbourneTime}"
-                                       data-original-time="${melbourneTime}">
-                            </div>
-                            <div class="col-md-4">
-                                <button type="button" class="btn btn-primary w-100" onclick="rescheduleAppointmentDateTime('${slotKey}', ${manageId}, '${props.meeting_type || 'in_person'}', '${props.preferred_language || 'English'}')">
-                                    <i class="fa-solid fa-floppy-disk"></i> Update Date &amp; Time
-                                </button>
-                            </div>
-                        </div>
-                        <div class="form-text"><i class="fa-solid fa-circle-info"></i> Changes sync with the public booking website when linked.</div>
-                    </section>
-                    <div class="row g-3 appt-detail-actions-row">
-                        <div class="col-md-6 d-flex">
-                            <section class="appt-detail-section appt-detail-section--actions h-100 w-100">
-                                <h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change status</h6>
-                                <div class="appt-action-buttons">
-                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${manageId}, 'confirmed', this)">
-                                        <i class="fa-solid fa-check"></i> Confirmed
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAppointmentStatus(${manageId}, 'completed', this)">
-                                        <i class="fa-solid fa-circle-check"></i> Complete
-                                    </button>
-                                    ${props.final_amount && parseFloat(props.final_amount) > 0 ? `
-                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="updateAppointmentStatus(${manageId}, 'paid', this)">
-                                        <i class="fa-solid fa-dollar-sign"></i> Payment done
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${manageId}, 'pending', this)">
-                                        <i class="fa-solid fa-clock"></i> Payment pending
-                                    </button>
-                                    ` : ''}
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${manageId}, 'cancelled', this)">
-                                        <i class="fa-solid fa-xmark"></i> Cancelled
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAppointmentStatus(${manageId}, 'no_show', this)">
-                                        <i class="fa-solid fa-user-times"></i> No show
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6><i class="fa-solid fa-calendar-days"></i> Reschedule Date &amp; Time</h6>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-4">
+                                    <label class="small mb-1" for="rescheduleDate-${slotKey}">Appointment Date</label>
+                                    <input type="date" class="form-control form-control-sm" id="rescheduleDate-${slotKey}"
+                                           value="${escapeHtml(melbourneDate)}"
+                                           data-original-date="${escapeHtml(melbourneDate)}"
+                                           onchange="validateWeekendDate(this, '${slotKey}')">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="small mb-1" for="rescheduleTime-${slotKey}">Appointment Time</label>
+                                    <input type="time" class="form-control form-control-sm" id="rescheduleTime-${slotKey}"
+                                           value="${escapeHtml(melbourneTime)}"
+                                           data-original-time="${escapeHtml(melbourneTime)}">
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="button" class="btn btn-sm btn-primary w-100" onclick="rescheduleAppointmentDateTime('${slotKey}', ${manageId}, '${props.meeting_type || 'in_person'}', '${props.preferred_language || 'English'}')">
+                                        <i class="fa-solid fa-floppy-disk"></i> Update Date &amp; Time
                                     </button>
                                 </div>
-                            </section>
+                            </div>
+                            <small class="text-muted d-block mt-2"><i class="fa-solid fa-circle-info"></i> Changes will sync with the Bansal website if the appointment is linked.</small>
                         </div>
-                        <div class="col-md-6 d-flex">
-                            <section class="appt-detail-section appt-detail-section--actions h-100 w-100">
-                                <h6 class="appt-detail-section__title"><i class="fa-solid fa-right-left"></i> Change calendar</h6>
-                                <label class="form-label" for="consultantSelect-${slotKey}">Consultant</label>
-                                <select class="form-select" id="consultantSelect-${slotKey}" onchange="updateAppointmentConsultant(${manageId}, '${slotKey}', this.value)">
-                                    <option value="">Select consultant…</option>
-                                    ${(() => {
-                                        const uniqueConsultants = [];
-                                        const seenIds = new Set();
-                                        if (Array.isArray(consultantsData)) {
-                                            consultantsData.forEach(consultant => {
-                                                if (consultant && consultant.id && !seenIds.has(consultant.id)) {
-                                                    seenIds.add(consultant.id);
-                                                    uniqueConsultants.push(consultant);
-                                                }
-                                            });
-                                        }
-                                        return uniqueConsultants.map(consultant => {
-                                            const isSelected = props.consultant && props.consultant.includes(consultant.name);
-                                            return `<option value="${consultant.id}" ${isSelected ? 'selected' : ''}>${consultant.name} (${consultant.calendar_type})</option>`;
-                                        }).join('');
-                                    })()}
-                                </select>
-                                <div class="form-text"><i class="fa-solid fa-circle-info"></i> Moves this appointment to the selected calendar.</div>
-                            </section>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fa-solid fa-pen-to-square"></i> Change Status</h6>
+                            <div class="btn-group-vertical w-100" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${manageId}, 'confirmed', this)">
+                                    <i class="fa-solid fa-check"></i> Mark as Confirmed
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAppointmentStatus(${manageId}, 'completed', this)">
+                                    <i class="fa-solid fa-circle-check"></i> Mark as Complete
+                                </button>
+                                ${finalAmount > 0 ? `
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="updateAppointmentStatus(${manageId}, 'paid', this)">
+                                    <i class="fa-solid fa-dollar-sign"></i> Mark As Payment Done
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${manageId}, 'pending', this)">
+                                    <i class="fa-solid fa-clock"></i> Mark As Payment Pending
+                                </button>
+                                ` : ''}
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${manageId}, 'cancelled', this)">
+                                    <i class="fa-solid fa-xmark"></i> Mark as Cancelled
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAppointmentStatus(${manageId}, 'no_show', this)">
+                                    <i class="fa-solid fa-user-xmark"></i> Mark as No Show
+                                </button>
+                                ${!isPaid || !finalAmount ? `
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="markAppointmentManualPayment(${manageId})">
+                                    <i class="fa-solid fa-hand-holding-dollar"></i> Manual Payment Received
+                                </button>
+                                ` : ''}
+                                ${!isPaid ? `
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="requestAppointmentPayment(${manageId})">
+                                    <i class="fa-solid fa-envelope"></i> Request Payment From Client
+                                </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fa-solid fa-right-left"></i> Change Calendar Type</h6>
+                            <select class="form-select form-select-sm" id="consultantSelect-${slotKey}" data-stable-consultant-id="${escapeHtml(stableConsultantId)}" onchange="updateAppointmentConsultant(${manageId}, '${slotKey}', this.value)">
+                                <option value="">Select Consultant...</option>
+                                ${consultantOptions}
+                            </select>
+                            <small class="text-muted d-block mt-2"><i class="fa-solid fa-circle-info"></i> Changing consultant will move this appointment to the selected calendar type.</small>
                         </div>
                     </div>` : `
-                    <div class="appt-detail-tip">
+                    <div class="appt-detail-tip mt-3">
                         <i class="fa-solid fa-circle-info"></i>
                         <span>This appointment is from the public booking API. CRM actions appear after it syncs to BansalLaw CRM.</span>
                     </div>`;
-            
+
+            const meetingTypeField = canManage
+                ? `<span id="meetingTypeDisplay-${slotKey}" onclick="showMeetingTypeDropdown('${slotKey}', '${meetingTypeRaw}')" title="Click to change meeting type">${escapeHtml(meetingTypeDisplay)} <i class="fa-solid fa-pen-to-square" style="font-size: 0.8em;"></i></span>
+                    <select id="meetingTypeSelect-${slotKey}" class="form-select form-select-sm d-none" style="max-width: 200px; display: inline-block;" onchange="updateAppointmentMeetingType(${manageId}, '${slotKey}', this.value)" data-is-paid="${isPaid ? '1' : '0'}">
+                        <option value="in_person" ${props.meeting_type === 'in_person' ? 'selected' : ''}>In Person</option>
+                        <option value="phone" ${props.meeting_type === 'phone' ? 'selected' : ''}>Phone</option>
+                        ${isPaid ? `<option value="video" ${props.meeting_type === 'video' ? 'selected' : ''}>Video</option>` : ''}
+                    </select>`
+                : escapeHtml(meetingTypeDisplay);
+
             const modalBody = `
-                <div class="appt-detail-view">
-                    <div class="appt-detail-hero appt-detail-hero--booking">
-                        <div class="appt-detail-hero__main">
-                            <div class="appt-detail-hero__client">${clientNameDisplay}</div>
-                            <div class="appt-detail-hero__when">
-                                <i class="fa-solid fa-clock"></i>
-                                ${escapeHtml(formattedDate)} · ${duration} min
-                            </div>
+                <div class="appointment-details">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Client:</strong> ${clientNameDisplay}</p>
+                            <p><strong>Email:</strong> ${escapeHtml(props.client_email || '')}</p>
+                            <p><strong>Phone:</strong> ${escapeHtml(props.client_phone || '')}</p>
+                            <p><strong>Service:</strong> ${escapeHtml(props.service_type || '')}</p>
+                            <p><strong>Date &amp; Time:</strong> ${escapeHtml(formattedDate)}</p>
+                            <p><strong>Duration:</strong> ${escapeHtml(duration)} minutes</p>
                         </div>
-                        <div class="appt-detail-hero__meta">
-                            ${renderApptStatusPill(props.status, formatCalendarDetail(props.status_label) !== 'N/A' ? props.status_label : (props.status || '').toString().toUpperCase(), 'statusBadge')}
-                            <span class="appt-status-pill appt-status-pill--payment appt-status-pill--${props.is_paid ? 'paid' : 'unpaid'}">${escapeHtml(formatCalendarDetail(props.payment_status))}</span>
+                        <div class="col-md-6">
+                            <p><strong>Location:</strong> ${escapeHtml(locationLabel)}</p>
+                            <p><strong>Meeting Type:</strong> ${meetingTypeField}</p>
+                            <p><strong>Preferred Language:</strong> ${escapeHtml(languageLabel)}</p>
+                            <p><strong>Consultant:</strong> ${escapeHtml(props.consultant || 'Not Assigned')}</p>
+                            <p><strong>Status:</strong> <span class="appt-solid-badge appt-solid-badge--${escapeHtml(getStatusClass(statusKey))}" id="statusBadge">${escapeHtml(statusKey.toUpperCase())}</span></p>
+                            <p><strong>Payment:</strong> <span class="appt-solid-badge appt-solid-badge--${isPaid ? 'primary' : 'secondary'}" id="paymentBadge">${escapeHtml(String(paymentLabel))}</span></p>
+                            ${!isPaid && statusKey === 'awaiting_confirmation' ? `
+                            <p>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="sendAppointmentConfirmationReminder(${manageId})">
+                                    <i class="fa-solid fa-envelope"></i> Reminder For Appointment Confirmation
+                                </button>
+                            </p>` : ''}
                         </div>
                     </div>
-
-                    <div class="appt-detail-grid">
-                        ${renderApptDetailItem('fa-envelope', 'Email', escapeHtml(formatCalendarDetail(props.client_email)))}
-                        ${renderApptDetailItem('fa-phone', 'Phone', escapeHtml(formatCalendarDetail(props.client_phone)))}
-                        ${renderApptDetailItem('fa-briefcase', 'Service', escapeHtml(formatCalendarDetail(props.service_type)))}
-                        ${renderApptDetailItem('fa-location-dot', 'Location', escapeHtml(props.location ? props.location.charAt(0).toUpperCase() + props.location.slice(1) : 'N/A'))}
-                        ${canManage
-                            ? `<div class="appt-detail-item appt-detail-item--editable">
-                                <div class="appt-detail-item__icon"><i class="fa-solid fa-video"></i></div>
-                                <div class="appt-detail-item__content">
-                                    <span class="appt-detail-item__label">Meeting type</span>
-                                    <div class="appt-detail-item__value">
-                                        <span id="meetingTypeDisplay-${slotKey}" class="booking-calendar-link booking-calendar-link--action" onclick="showMeetingTypeDropdown('${slotKey}', '${meetingTypeRaw}')" title="Click to change meeting type">
-                                            ${escapeHtml(meetingTypeDisplay)}
-                                            <i class="fa-solid fa-pen-to-square ms-1" style="font-size: 0.8em;"></i>
-                                        </span>
-                                        <select id="meetingTypeSelect-${slotKey}" class="form-select form-select-sm d-none mt-1" style="max-width: 220px;" onchange="updateAppointmentMeetingType(${manageId}, '${slotKey}', this.value)" data-is-paid="${props.is_paid}">
-                                            <option value="in_person" ${props.meeting_type === 'in_person' ? 'selected' : ''}>In Person</option>
-                                            <option value="phone" ${props.meeting_type === 'phone' ? 'selected' : ''}>Phone</option>
-                                            ${props.is_paid ? `<option value="video" ${props.meeting_type === 'video' ? 'selected' : ''}>Video</option>` : ''}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>`
-                            : renderApptDetailItem('fa-video', 'Meeting type', escapeHtml(meetingTypeDisplay))}
-                        ${renderApptDetailItem('fa-language', 'Language', escapeHtml(props.preferred_language ? props.preferred_language.charAt(0).toUpperCase() + props.preferred_language.slice(1).toLowerCase() : 'English'))}
-                        ${renderApptDetailItem('fa-user-tie', 'Consultant', escapeHtml(props.consultant))}
-                        ${props.is_paid ? renderApptDetailItem('fa-dollar-sign', 'Amount', '$' + (props.final_amount ? parseFloat(props.final_amount).toFixed(2) : '0.00')) : ''}
-                    </div>
-
                     ${managementSection}
                 </div>
             `;
-            
+
             document.getElementById('eventModalBody').innerHTML = modalBody;
             setEventModalHeader({
                 title: 'Appointment Details',
-                subtitle: formatCalendarDetail(props.service_type) !== 'N/A' ? formatCalendarDetail(props.service_type) : props.client_name,
+                subtitle: '',
+                variant: 'booking',
                 iconHtml: '<i class="fa-solid fa-calendar-check"></i>',
                 iconBg: '#1e3d60',
                 iconColor: '#fff'
             });
             const vfd = document.getElementById('viewFullDetails');
             setEventModalCourtHearingFooter('hidden');
-            vfd.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i> View Full Details';
+            vfd.textContent = 'View Full Details';
             if (canManage) {
                 vfd.classList.remove('d-none');
                 vfd.href = BOOKING_WEB_BASE + '/appointments/' + manageId;
@@ -1228,10 +1256,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getStatusClass(status) {
         const classes = {
-            'pending': 'warning text-dark',
-            'paid': 'info text-dark',
+            'pending': 'warning',
+            'awaiting_confirmation': 'warning',
+            'paid': 'primary',
             'confirmed': 'success',
-            'completed': 'info text-dark',
+            'completed': 'info',
             'cancelled': 'danger',
             'no_show': 'secondary',
             'rescheduled': 'primary'
@@ -1427,6 +1456,10 @@ document.addEventListener('DOMContentLoaded', function() {
             iconEl.innerHTML = opts.iconHtml || '<i class="fa-solid fa-calendar-check"></i>';
             iconEl.style.backgroundColor = opts.iconBg || '#1e3d60';
             iconEl.style.color = opts.iconColor || '#fff';
+        }
+        const modal = document.getElementById('eventModal');
+        if (modal) {
+            modal.classList.toggle('event-modal--booking', opts.variant === 'booking');
         }
     }
 
@@ -3369,8 +3402,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var statusBadge = document.getElementById('statusBadge');
                 if (statusBadge) {
                     statusBadge.textContent = newStatus.toUpperCase();
-                    statusBadge.className = 'appt-status-pill appt-status-pill--' +
-                        String(newStatus).toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                    statusBadge.className = 'appt-solid-badge appt-solid-badge--' + getStatusClass(newStatus);
                 }
                 hideBootstrapModal(document.getElementById('eventModal'));
                 calendar.refetchEvents();
@@ -3398,15 +3430,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        const select = document.getElementById('consultantSelect-' + slotKey);
+        const stableConsultantId = select ? (select.getAttribute('data-stable-consultant-id') || '') : '';
         if (!confirm('Are you sure you want to change the consultant? This will move the appointment to a different calendar.')) {
-            const select = document.getElementById('consultantSelect-' + slotKey);
-            if (select) select.value = '';
+            if (select) select.value = stableConsultantId;
             return;
         }
         
-        const select = document.getElementById('consultantSelect-' + slotKey);
         if (!select) return;
-        const originalValue = select.value;
+        const originalValue = stableConsultantId || select.value;
         select.disabled = true;
         
         fetch(`${BOOKING_WEB_BASE}/appointments/${crmAppointmentId}/update-consultant`, {
@@ -3790,6 +3822,84 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .finally(() => {
             select.disabled = false;
+        });
+    };
+
+    function postAppointmentAction(appointmentId, path, confirmMessage) {
+        if (confirmMessage && !confirm(confirmMessage)) {
+            return Promise.resolve(null);
+        }
+        return fetch(`${BOOKING_WEB_BASE}/appointments/${appointmentId}/${path}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({})
+        }).then(async function (response) {
+            let data = {};
+            try { data = await response.json(); } catch (e) { data = {}; }
+            if (!response.ok || data.success !== true) {
+                throw new Error(data.message || 'Request failed');
+            }
+            return data;
+        });
+    }
+
+    window.markAppointmentManualPayment = function (appointmentId) {
+        postAppointmentAction(
+            appointmentId,
+            'manual-payment',
+            'Do you want to manually update (Payment received manually) the payment type from Free to Paid?'
+        ).then(function (data) {
+            if (!data) return;
+            $('#eventModal').modal('hide');
+            calendar.refetchEvents();
+            showAlert('success', data.message || 'Payment type updated from Free to Paid.');
+        }).catch(function (error) {
+            showAlert('danger', 'Failed to update payment: ' + (error.message || 'Please try again.'));
+        });
+    };
+
+    window.requestAppointmentPayment = function (appointmentId) {
+        postAppointmentAction(
+            appointmentId,
+            'request-payment',
+            'Request a $150 payment for this appointment? This marks it as payment pending. A payment-link email is not sent from this calendar.'
+        ).then(function (data) {
+            if (!data) return;
+            showAlert('success', data.message || 'Payment request email sent to the client.');
+        }).catch(function (error) {
+            showAlert('danger', 'Failed to send payment request: ' + (error.message || 'Please try again.'));
+        });
+    };
+
+    window.sendAppointmentConfirmationReminder = function (appointmentId) {
+        if (!confirm('Send a reminder for appointment confirmation to this client?')) {
+            return;
+        }
+        fetch(`${BOOKING_WEB_BASE}/appointments/${appointmentId}/send-reminder`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ type: 'email' })
+        }).then(async function (response) {
+            let data = {};
+            try { data = await response.json(); } catch (e) { data = {}; }
+            if (!response.ok || data.success !== true) {
+                throw new Error(data.message || 'Request failed');
+            }
+            showAlert('success', data.message || 'Reminder for appointment confirmation sent to the client.');
+        }).catch(function (error) {
+            showAlert('danger', 'Failed to send reminder: ' + (error.message || 'Please try again.'));
         });
     };
     
@@ -5114,6 +5224,135 @@ document.addEventListener('DOMContentLoaded', function() {
         flex: 1 1 auto;
     }
 }
+
+/* Booking appointment popup — matches Migration Manager calendar sheet */
+#eventModal.event-modal--booking .modal-dialog {
+    max-width: 760px;
+}
+
+#eventModal.event-modal--booking .appointment-detail-modal__icon {
+    display: none;
+}
+
+#eventModal.event-modal--booking .modal-title {
+    color: #102033;
+    font-weight: 700;
+}
+
+#eventModal .appointment-details p,
+#eventModal .appointment-details label,
+#eventModal .appointment-details h6 {
+    color: #1a2332;
+}
+
+#eventModal .appointment-details p {
+    margin-bottom: 0.7rem;
+}
+
+#eventModal .appointment-details strong {
+    color: #0f1b2d;
+}
+
+#eventModal .appointment-details a,
+#eventModal .appointment-details [id^="meetingTypeDisplay-"] {
+    color: #2f5fbf;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#eventModal .appointment-details h6 {
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+#eventModal .appointment-details hr {
+    margin: 0.35rem 0 1rem;
+    border-color: #e6ebf1;
+    opacity: 1;
+}
+
+#eventModal .appointment-details .text-muted,
+#eventModal .appointment-details small {
+    color: #5c6b7a !important;
+}
+
+#eventModal .appointment-details .btn-group-vertical {
+    display: flex;
+    gap: 8px;
+}
+
+#eventModal .appointment-details .btn-group-vertical > .btn {
+    border-radius: 8px !important;
+    margin: 0;
+    font-weight: 600;
+    text-align: left;
+    width: 100%;
+}
+
+#eventModal .appointment-details .btn-outline-success {
+    color: #0f6b38;
+    border-color: #b7dfc3;
+    background-color: #e7f7ee;
+}
+#eventModal .appointment-details .btn-outline-primary {
+    color: #1d4f91;
+    border-color: #c5d7f2;
+    background-color: #e8f1fb;
+}
+#eventModal .appointment-details .btn-outline-info {
+    color: #0a5f73;
+    border-color: #b7e0ea;
+    background-color: #e6f6fa;
+}
+#eventModal .appointment-details .btn-outline-warning {
+    color: #7a5b00;
+    border-color: #ead48a;
+    background-color: #fff6d6;
+}
+#eventModal .appointment-details .btn-outline-danger {
+    color: #b42318;
+    border-color: #f3c1bc;
+    background-color: #fdecec;
+}
+#eventModal .appointment-details .btn-outline-secondary {
+    color: #343a46;
+    border-color: #d5d8de;
+    background-color: #eef0f3;
+}
+
+#eventModal .appointment-details .btn-primary,
+#eventModal.event-modal--booking #viewFullDetails {
+    background: #6d4bd6;
+    border-color: #6d4bd6;
+    color: #fff;
+    font-weight: 600;
+}
+
+#eventModal .appointment-details .btn-primary:hover,
+#eventModal.event-modal--booking #viewFullDetails:hover {
+    background: #5b3cc4;
+    border-color: #5b3cc4;
+    color: #fff;
+}
+
+#eventModal .appt-solid-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28em 0.7em;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    background: #343a46;
+}
+#eventModal .appt-solid-badge--success { background: #157347; }
+#eventModal .appt-solid-badge--primary { background: #3b5ccc; }
+#eventModal .appt-solid-badge--warning { background: #c2410c; }
+#eventModal .appt-solid-badge--info { background: #0a5f73; }
+#eventModal .appt-solid-badge--danger { background: #b42318; }
+#eventModal .appt-solid-badge--secondary { background: #343a46; }
 </style>
 
 @endsection

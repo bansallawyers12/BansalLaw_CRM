@@ -132,15 +132,16 @@
         var iconEl = document.getElementById('eventModalIcon');
         if (titleEl) titleEl.textContent = 'Appointment Details';
         if (subtitleEl) {
-            var sub = props.service_type || props.client_name || '';
-            subtitleEl.textContent = sub;
-            subtitleEl.classList.toggle('d-none', !sub);
+            subtitleEl.textContent = '';
+            subtitleEl.classList.add('d-none');
         }
         if (iconEl) {
             iconEl.innerHTML = '<i class="fa-solid fa-calendar-check"></i>';
             iconEl.style.background = '#1e3d60';
             iconEl.style.color = '#fff';
         }
+        var modal = document.getElementById('eventModal');
+        if (modal) modal.classList.add('event-modal--booking');
         var editBtn = document.getElementById('courtHearingEditBtn');
         var saveBtn = document.getElementById('courtHearingSaveBtn');
         var cancelEditBtn = document.getElementById('courtHearingCancelEditBtn');
@@ -149,26 +150,42 @@
         if (cancelEditBtn) cancelEditBtn.classList.add('d-none');
     }
 
-    function consultantOptionsHtml(props, slotKey) {
+    function statusBadgeClass(status) {
+        var classes = {
+            pending: 'warning',
+            awaiting_confirmation: 'warning',
+            paid: 'primary',
+            confirmed: 'success',
+            completed: 'info',
+            cancelled: 'danger',
+            no_show: 'secondary',
+            rescheduled: 'primary',
+        };
+        return classes[String(status || '').toLowerCase()] || 'secondary';
+    }
+
+    function consultantOptionsHtml(props) {
         var list = Array.isArray(window.consultantsData) ? window.consultantsData : [];
         var seen = {};
-        var html = '<option value="">Select consultant…</option>';
+        var html = '<option value="">Select Consultant...</option>';
+        var currentId = props.consultant_id != null ? Number(props.consultant_id) : null;
         list.forEach(function (c) {
             if (!c || !c.id || seen[c.id]) return;
             seen[c.id] = true;
-            var selected = false;
-            if (props.consultant_id && Number(props.consultant_id) === Number(c.id)) selected = true;
-            else if (props.consultant && String(props.consultant).indexOf(c.name) !== -1) selected = true;
+            var selected = currentId != null && Number(c.id) === currentId;
+            if (!selected && props.consultant && String(props.consultant).indexOf(c.name) !== -1) selected = true;
+            var isTourist = c.calendar_type === 'tourist';
+            var typeSuffix = !isTourist && c.calendar_type && c.calendar_type !== 'paid' ? ' (' + escapeHtml(c.calendar_type) + ')' : '';
             html +=
                 '<option value="' +
                 escapeHtml(String(c.id)) +
                 '"' +
+                (isTourist ? ' title="Vijay(Tourist Visa)"' : '') +
                 (selected ? ' selected' : '') +
                 '>' +
                 escapeHtml(c.name) +
-                ' (' +
-                escapeHtml(c.calendar_type || '') +
-                ')</option>';
+                typeSuffix +
+                '</option>';
         });
         return html;
     }
@@ -181,24 +198,61 @@
         var duration = durationMinutes(props);
         var meetingLabel = props.meeting_type_label || String(props.meeting_type || '').replace(/_/g, ' ');
         meetingLabel = meetingLabel ? meetingLabel.charAt(0).toUpperCase() + meetingLabel.slice(1) : 'N/A';
+        var locationLabel = props.location
+            ? String(props.location).charAt(0).toUpperCase() + String(props.location).slice(1)
+            : 'N/A';
+        var language = props.preferred_language
+            ? String(props.preferred_language).charAt(0).toUpperCase() + String(props.preferred_language).slice(1).toLowerCase()
+            : 'English';
+        var formattedDate = formatWhen(props.starts_at || props.appointment_datetime);
+        var isPaid = !!props.is_paid;
+        var finalAmount = parseFloat(props.final_amount || 0);
+        var status = props.status || 'pending';
+        var clientName = escapeHtml(props.client_name || 'Client');
+
+        var meetingTypeField = canManage
+            ? '<span id="meetingTypeDisplay-' +
+              slotKey +
+              '" data-bam-action="meeting-type-edit" data-slot="' +
+              slotKey +
+              '" title="Click to change meeting type">' +
+              escapeHtml(meetingLabel) +
+              ' <i class="fa-solid fa-pen-to-square" style="font-size:0.8em;"></i></span>' +
+              '<select id="meetingTypeSelect-' +
+              slotKey +
+              '" class="form-select form-select-sm d-none" style="max-width:200px;display:inline-block;" data-bam-action="meeting-type" data-id="' +
+              manageId +
+              '" data-slot="' +
+              slotKey +
+              '">' +
+              '<option value="in_person"' +
+              (props.meeting_type === 'in_person' ? ' selected' : '') +
+              '>In Person</option>' +
+              '<option value="phone"' +
+              (props.meeting_type === 'phone' ? ' selected' : '') +
+              '>Phone</option>' +
+              (isPaid ? '<option value="video"' + (props.meeting_type === 'video' ? ' selected' : '') + '>Video</option>' : '') +
+              '</select>'
+            : escapeHtml(meetingLabel);
 
         var management = canManage
-            ? '<section class="appt-detail-section">' +
-              '<h6 class="appt-detail-section__title"><i class="fa-solid fa-calendar-days"></i> Reschedule</h6>' +
-              '<div class="row g-3 align-items-end">' +
-              '<div class="col-md-4"><label class="form-label">Appointment date</label>' +
-              '<input type="date" class="form-control" id="rescheduleDate-' +
+            ? '<hr><div class="row mb-3"><div class="col-12"><h6><i class="fa-solid fa-calendar-days"></i> Reschedule Date &amp; Time</h6>' +
+              '<div class="row g-2 align-items-end"><div class="col-md-4"><label class="small mb-1">Appointment Date</label>' +
+              '<input type="date" class="form-control form-control-sm" id="rescheduleDate-' +
               slotKey +
               '" value="' +
               escapeHtml(when.date) +
-              '"></div>' +
-              '<div class="col-md-4"><label class="form-label">Appointment time</label>' +
-              '<input type="time" class="form-control" id="rescheduleTime-' +
+              '" data-original-date="' +
+              escapeHtml(when.date) +
+              '"></div><div class="col-md-4"><label class="small mb-1">Appointment Time</label>' +
+              '<input type="time" class="form-control form-control-sm" id="rescheduleTime-' +
               slotKey +
               '" value="' +
               escapeHtml(when.time) +
-              '"></div>' +
-              '<div class="col-md-4"><button type="button" class="btn btn-primary w-100" data-bam-action="reschedule" data-id="' +
+              '" data-original-time="' +
+              escapeHtml(when.time) +
+              '"></div><div class="col-md-4">' +
+              '<button type="button" class="btn btn-sm btn-primary w-100" data-bam-action="reschedule" data-id="' +
               manageId +
               '" data-slot="' +
               slotKey +
@@ -206,81 +260,88 @@
               escapeHtml(props.meeting_type || 'in_person') +
               '" data-language="' +
               escapeHtml(props.preferred_language || 'English') +
-              '"><i class="fa-solid fa-floppy-disk"></i> Update Date &amp; Time</button></div></div></section>' +
-              '<div class="row g-3"><div class="col-md-6"><section class="appt-detail-section h-100">' +
-              '<h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change status</h6>' +
-              '<div class="appt-action-buttons">' +
+              '"><i class="fa-solid fa-floppy-disk"></i> Update Date &amp; Time</button></div></div>' +
+              '<small class="text-muted d-block mt-2"><i class="fa-solid fa-circle-info"></i> Changes will sync with the Bansal website if the appointment is linked.</small></div></div><hr>' +
+              '<div class="row"><div class="col-md-6"><h6><i class="fa-solid fa-pen-to-square"></i> Change Status</h6><div class="btn-group-vertical w-100">' +
               '<button type="button" class="btn btn-sm btn-outline-success" data-bam-action="status" data-id="' +
               manageId +
-              '" data-status="confirmed"><i class="fa-solid fa-check"></i> Confirmed</button>' +
+              '" data-status="confirmed"><i class="fa-solid fa-check"></i> Mark as Confirmed</button>' +
               '<button type="button" class="btn btn-sm btn-outline-primary" data-bam-action="status" data-id="' +
               manageId +
-              '" data-status="completed"><i class="fa-solid fa-circle-check"></i> Complete</button>' +
-              (props.final_amount && parseFloat(props.final_amount) > 0
+              '" data-status="completed"><i class="fa-solid fa-circle-check"></i> Mark as Complete</button>' +
+              (finalAmount > 0
                   ? '<button type="button" class="btn btn-sm btn-outline-info" data-bam-action="status" data-id="' +
                     manageId +
-                    '" data-status="paid"><i class="fa-solid fa-dollar-sign"></i> Payment done</button>' +
+                    '" data-status="paid"><i class="fa-solid fa-dollar-sign"></i> Mark As Payment Done</button>' +
                     '<button type="button" class="btn btn-sm btn-outline-warning" data-bam-action="status" data-id="' +
                     manageId +
-                    '" data-status="pending"><i class="fa-solid fa-clock"></i> Payment pending</button>'
+                    '" data-status="pending"><i class="fa-solid fa-clock"></i> Mark As Payment Pending</button>'
                   : '') +
               '<button type="button" class="btn btn-sm btn-outline-danger" data-bam-action="status" data-id="' +
               manageId +
-              '" data-status="cancelled"><i class="fa-solid fa-xmark"></i> Cancelled</button>' +
+              '" data-status="cancelled"><i class="fa-solid fa-xmark"></i> Mark as Cancelled</button>' +
               '<button type="button" class="btn btn-sm btn-outline-secondary" data-bam-action="status" data-id="' +
               manageId +
-              '" data-status="no_show"><i class="fa-solid fa-user-times"></i> No show</button>' +
-              '</div></section></div>' +
-              '<div class="col-md-6"><section class="appt-detail-section h-100">' +
-              '<h6 class="appt-detail-section__title"><i class="fa-solid fa-right-left"></i> Change calendar</h6>' +
-              '<label class="form-label">Consultant</label>' +
-              '<select class="form-select" id="consultantSelect-' +
+              '" data-status="no_show"><i class="fa-solid fa-user-xmark"></i> Mark as No Show</button>' +
+              (!isPaid || !finalAmount
+                  ? '<button type="button" class="btn btn-sm btn-outline-success" data-bam-action="manual-payment" data-id="' +
+                    manageId +
+                    '"><i class="fa-solid fa-hand-holding-dollar"></i> Manual Payment Received</button>'
+                  : '') +
+              (!isPaid
+                  ? '<button type="button" class="btn btn-sm btn-outline-primary" data-bam-action="request-payment" data-id="' +
+                    manageId +
+                    '"><i class="fa-solid fa-envelope"></i> Request Payment From Client</button>'
+                  : '') +
+              '</div></div><div class="col-md-6"><h6><i class="fa-solid fa-right-left"></i> Change Calendar Type</h6>' +
+              '<select class="form-select form-select-sm" id="consultantSelect-' +
               slotKey +
               '" data-bam-action="consultant" data-id="' +
               manageId +
-              '" data-slot="' +
-              slotKey +
+              '" data-stable-consultant-id="' +
+              escapeHtml(props.consultant_id != null ? String(props.consultant_id) : '') +
               '">' +
-              consultantOptionsHtml(props, slotKey) +
-              '</select>' +
-              '<div class="form-text">Moves this appointment to the selected calendar.</div></section></div></div>'
+              consultantOptionsHtml(props) +
+              '</select><small class="text-muted d-block mt-2"><i class="fa-solid fa-circle-info"></i> Changing consultant will move this appointment to the selected calendar type.</small></div></div>'
             : '<div class="appt-detail-tip"><i class="fa-solid fa-circle-info"></i><span>CRM actions need a synced local appointment id.</span></div>';
 
         return (
-            '<div class="appt-detail-view">' +
-            '<div class="appt-detail-hero appt-detail-hero--booking">' +
-            '<div class="appt-detail-hero__main">' +
-            '<div class="appt-detail-hero__client">' +
-            escapeHtml(props.client_name) +
-            '</div>' +
-            '<div class="appt-detail-hero__when"><i class="fa-solid fa-clock"></i> ' +
-            escapeHtml(formatWhen(props.starts_at || props.appointment_datetime)) +
-            ' · ' +
-            duration +
-            ' min</div></div>' +
-            '<div class="appt-detail-hero__meta">' +
-            statusPill(props.status, props.status_label) +
-            '<span class="appt-status-pill appt-status-pill--payment appt-status-pill--payment--' +
-            (props.is_paid ? 'paid' : 'unpaid') +
+            '<div class="appointment-details"><div class="row"><div class="col-md-6">' +
+            '<p><strong>Client:</strong> ' +
+            clientName +
+            '</p><p><strong>Email:</strong> ' +
+            escapeHtml(props.client_email || '') +
+            '</p><p><strong>Phone:</strong> ' +
+            escapeHtml(props.client_phone || '') +
+            '</p><p><strong>Service:</strong> ' +
+            escapeHtml(props.service_type || '') +
+            '</p><p><strong>Date &amp; Time:</strong> ' +
+            escapeHtml(formattedDate) +
+            '</p><p><strong>Duration:</strong> ' +
+            escapeHtml(duration) +
+            ' minutes</p></div><div class="col-md-6"><p><strong>Location:</strong> ' +
+            escapeHtml(locationLabel) +
+            '</p><p><strong>Meeting Type:</strong> ' +
+            meetingTypeField +
+            '</p><p><strong>Preferred Language:</strong> ' +
+            escapeHtml(language) +
+            '</p><p><strong>Consultant:</strong> ' +
+            escapeHtml(props.consultant || 'Not Assigned') +
+            '</p><p><strong>Status:</strong> <span class="appt-solid-badge appt-solid-badge--' +
+            statusBadgeClass(status) +
+            '" id="statusBadge">' +
+            escapeHtml(String(status).toUpperCase()) +
+            '</span></p><p><strong>Payment:</strong> <span class="appt-solid-badge appt-solid-badge--' +
+            (isPaid ? 'primary' : 'secondary') +
             '">' +
-            escapeHtml(props.payment_status) +
-            '</span></div></div>' +
-            '<div class="appt-detail-grid">' +
-            detailItem('fa-envelope', 'Email', escapeHtml(props.client_email || 'N/A')) +
-            detailItem('fa-phone', 'Phone', escapeHtml(props.client_phone || 'N/A')) +
-            detailItem('fa-briefcase', 'Service', escapeHtml(props.service_type || 'N/A')) +
-            detailItem('fa-location-dot', 'Location', escapeHtml(props.location || 'N/A')) +
-            detailItem('fa-video', 'Meeting type', escapeHtml(meetingLabel)) +
-            detailItem('fa-language', 'Language', escapeHtml(props.preferred_language || 'English')) +
-            detailItem('fa-user-tie', 'Consultant', escapeHtml(props.consultant || 'N/A')) +
-            (props.is_paid
-                ? detailItem(
-                      'fa-dollar-sign',
-                      'Amount',
-                      '$' + (props.final_amount ? parseFloat(props.final_amount).toFixed(2) : '0.00')
-                  )
+            escapeHtml(props.payment_status || (isPaid ? 'Paid' : 'Free')) +
+            '</span></p>' +
+            (!isPaid && status === 'awaiting_confirmation'
+                ? '<p><button type="button" class="btn btn-sm btn-outline-primary" data-bam-action="confirmation-reminder" data-id="' +
+                  manageId +
+                  '"><i class="fa-solid fa-envelope"></i> Reminder For Appointment Confirmation</button></p>'
                 : '') +
-            '</div>' +
+            '</div></div>' +
             management +
             '</div>'
         );
@@ -334,7 +395,7 @@
             if (!isNaN(manageId) && manageId > 0) {
                 vfd.classList.remove('d-none');
                 vfd.href = bookingBase() + '/appointments/' + manageId;
-                vfd.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i> View Full Details';
+                vfd.textContent = 'View Full Details';
             } else {
                 vfd.classList.add('d-none');
             }
@@ -482,8 +543,13 @@
         }
     }
 
-    function updateConsultant(appointmentId, consultantId) {
+    function updateConsultant(appointmentId, consultantId, selectEl) {
         if (!consultantId) return;
+        var stable = selectEl ? selectEl.getAttribute('data-stable-consultant-id') || '' : '';
+        if (!window.confirm('Are you sure you want to change the consultant? This will move the appointment to a different calendar.')) {
+            if (selectEl) selectEl.value = stable;
+            return;
+        }
         postJson(bookingBase() + '/appointments/' + appointmentId + '/update-consultant', {
             consultant_id: parseInt(consultantId, 10),
         })
@@ -493,6 +559,7 @@
                 notifyChanged();
             })
             .catch(function (err) {
+                if (selectEl) selectEl.value = stable;
                 showToast('danger', err.message || 'Failed to update consultant');
             });
     }
@@ -503,8 +570,25 @@
         if (!dateEl || !timeEl) return;
         var date = dateEl.value;
         var time = timeEl.value;
+        if (date && (new Date(date + 'T12:00:00').getDay() === 0 || new Date(date + 'T12:00:00').getDay() === 6)) {
+            dateEl.value = dateEl.getAttribute('data-original-date') || '';
+            showToast('warning', 'Weekends (Saturday and Sunday) are not available for appointments. Please select a weekday.');
+            return;
+        }
+        if (
+            date === dateEl.getAttribute('data-original-date') &&
+            time === timeEl.getAttribute('data-original-time')
+        ) {
+            showToast('info', 'No changes detected. Date and time remain the same.');
+            return;
+        }
         if (!date || !time) {
-            showToast('warning', 'Choose a date and time');
+            showToast('warning', 'Please select both date and time.');
+            return;
+        }
+        if (!window.confirm('Are you sure you want to reschedule this appointment to ' + date + ' at ' + time + '?')) {
+            dateEl.value = dateEl.getAttribute('data-original-date') || '';
+            timeEl.value = timeEl.getAttribute('data-original-time') || '';
             return;
         }
         var formData = new FormData();
@@ -551,6 +635,17 @@
         if (!btn) return;
         var action = btn.getAttribute('data-bam-action');
         var id = parseInt(btn.getAttribute('data-id'), 10);
+        if (action === 'meeting-type-edit') {
+            var editSlot = btn.getAttribute('data-slot');
+            var display = document.getElementById('meetingTypeDisplay-' + editSlot);
+            var select = document.getElementById('meetingTypeSelect-' + editSlot);
+            if (display && select) {
+                display.classList.add('d-none');
+                select.classList.remove('d-none');
+                select.focus();
+            }
+            return;
+        }
         if (!id) return;
         if (action === 'status') {
             updateStatus(id, btn.getAttribute('data-status'), btn);
@@ -561,15 +656,62 @@
                 btn.getAttribute('data-meeting-type'),
                 btn.getAttribute('data-language')
             );
+        } else if (action === 'manual-payment') {
+            if (!window.confirm('Do you want to manually update (Payment received manually) the payment type from Free to Paid?')) return;
+            postJson(bookingBase() + '/appointments/' + id + '/manual-payment', {})
+                .then(function (data) {
+                    showToast('success', (data && data.message) || 'Payment type updated from Free to Paid.');
+                    hideModal('eventModal');
+                    notifyChanged();
+                })
+                .catch(function (err) {
+                    showToast('danger', err.message || 'Failed to update payment');
+                });
+        } else if (action === 'request-payment') {
+            if (!window.confirm('Request a $150 payment for this appointment? This marks it as payment pending. A payment-link email is not sent from this calendar.')) return;
+            postJson(bookingBase() + '/appointments/' + id + '/request-payment', {})
+                .then(function (data) {
+                    showToast('success', (data && data.message) || 'Appointment marked as a $150 pending payment.');
+                })
+                .catch(function (err) {
+                    showToast('danger', err.message || 'Failed to request payment');
+                });
+        } else if (action === 'confirmation-reminder') {
+            if (!window.confirm('Send a reminder for appointment confirmation to this client?')) return;
+            postJson(bookingBase() + '/appointments/' + id + '/send-reminder', { type: 'email' })
+                .then(function (data) {
+                    showToast('success', (data && data.message) || 'Reminder sent.');
+                })
+                .catch(function (err) {
+                    showToast('danger', err.message || 'Failed to send reminder');
+                });
         }
     }
 
     function onBodyChange(e) {
         var el = e.target;
-        if (!el || el.getAttribute('data-bam-action') !== 'consultant') return;
-        var id = parseInt(el.getAttribute('data-id'), 10);
-        if (!id) return;
-        updateConsultant(id, el.value);
+        var action = el.getAttribute('data-bam-action');
+        if (action === 'consultant') {
+            var consultantId = parseInt(el.getAttribute('data-id'), 10);
+            if (!consultantId) return;
+            updateConsultant(consultantId, el.value, el);
+            return;
+        }
+        if (action === 'meeting-type') {
+            var meetingId = parseInt(el.getAttribute('data-id'), 10);
+            if (!meetingId || !el.value) return;
+            postJson(bookingBase() + '/appointments/' + meetingId + '/update-meeting-type', {
+                meeting_type: el.value,
+            })
+                .then(function () {
+                    showToast('success', 'Meeting type updated successfully!');
+                    hideModal('eventModal');
+                    notifyChanged();
+                })
+                .catch(function (err) {
+                    showToast('danger', err.message || 'Failed to update meeting type');
+                });
+        }
     }
 
     function bindOnce() {

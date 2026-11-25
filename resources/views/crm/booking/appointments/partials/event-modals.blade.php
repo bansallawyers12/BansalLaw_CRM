@@ -25,13 +25,11 @@
                 </button>
                 <div class="appointment-detail-modal__footer-actions ms-auto">
                     <button type="button" id="courtHearingCancelEditBtn" class="btn btn-secondary d-none">Cancel</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" id="courtHearingSaveBtn" class="btn btn-primary d-none">
                         <i class="fa-solid fa-floppy-disk"></i> Save Changes
                     </button>
-                    <a href="#" id="viewFullDetails" class="btn btn-primary d-none" target="_blank">
-                        <i class="fa-solid fa-user"></i> Open Client
-                    </a>
+                    <a href="#" id="viewFullDetails" class="btn btn-primary d-none" target="_blank">View Full Details</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

@@ -187,3 +187,118 @@
         grid-template-columns: 1fr;
     }
 }
+
+#eventModal.event-modal--booking .modal-dialog {
+    max-width: 760px;
+}
+
+#eventModal.event-modal--booking .appointment-detail-modal__icon {
+    display: none;
+}
+
+#eventModal.event-modal--booking .modal-title {
+    color: #102033;
+    font-weight: 700;
+}
+
+#eventModal .appointment-details p,
+#eventModal .appointment-details label,
+#eventModal .appointment-details h6 {
+    color: #1a2332;
+}
+
+#eventModal .appointment-details p {
+    margin-bottom: 0.7rem;
+}
+
+#eventModal .appointment-details strong {
+    color: #0f1b2d;
+}
+
+#eventModal .appointment-details a,
+#eventModal .appointment-details [id^="meetingTypeDisplay-"] {
+    color: #2f5fbf;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#eventModal .appointment-details h6 {
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+#eventModal .appointment-details .text-muted,
+#eventModal .appointment-details small {
+    color: #5c6b7a !important;
+}
+
+#eventModal .appointment-details .btn-group-vertical {
+    display: flex;
+    gap: 8px;
+}
+
+#eventModal .appointment-details .btn-group-vertical > .btn {
+    border-radius: 8px !important;
+    margin: 0;
+    font-weight: 600;
+    text-align: left;
+    width: 100%;
+}
+
+#eventModal .appointment-details .btn-outline-success {
+    color: #0f6b38;
+    border-color: #b7dfc3;
+    background-color: #e7f7ee;
+}
+#eventModal .appointment-details .btn-outline-primary {
+    color: #1d4f91;
+    border-color: #c5d7f2;
+    background-color: #e8f1fb;
+}
+#eventModal .appointment-details .btn-outline-info {
+    color: #0a5f73;
+    border-color: #b7e0ea;
+    background-color: #e6f6fa;
+}
+#eventModal .appointment-details .btn-outline-warning {
+    color: #7a5b00;
+    border-color: #ead48a;
+    background-color: #fff6d6;
+}
+#eventModal .appointment-details .btn-outline-danger {
+    color: #b42318;
+    border-color: #f3c1bc;
+    background-color: #fdecec;
+}
+#eventModal .appointment-details .btn-outline-secondary {
+    color: #343a46;
+    border-color: #d5d8de;
+    background-color: #eef0f3;
+}
+
+#eventModal .appointment-details .btn-primary,
+#eventModal.event-modal--booking #viewFullDetails {
+    background: #6d4bd6;
+    border-color: #6d4bd6;
+    color: #fff;
+    font-weight: 600;
+}
+
+#eventModal .appt-solid-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28em 0.7em;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    background: #343a46;
+}
+#eventModal .appt-solid-badge--success { background: #157347; }
+#eventModal .appt-solid-badge--primary { background: #3b5ccc; }
+#eventModal .appt-solid-badge--warning { background: #c2410c; }
+#eventModal .appt-solid-badge--info { background: #0a5f73; }
+#eventModal .appt-solid-badge--danger { background: #b42318; }
+#eventModal .appt-solid-badge--secondary { background: #343a46; }

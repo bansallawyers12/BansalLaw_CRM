@@ -55,6 +55,14 @@ Route::controller(BookingAppointmentsController::class)
             ->name('appointments.update-meeting-type')
             ->whereNumber('id');
 
+        Route::post('/appointments/{id}/manual-payment', 'markManualPayment')
+            ->name('appointments.manual-payment')
+            ->whereNumber('id');
+
+        Route::post('/appointments/{id}/request-payment', 'requestPayment')
+            ->name('appointments.request-payment')
+            ->whereNumber('id');
+
         Route::get('/appointments/{id}/update-meeting-type', function (int|string $id) {
             return redirect()->route('booking.appointments.show', ['id' => $id]);
         })->whereNumber('id');
